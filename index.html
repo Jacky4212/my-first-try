@@ -10,19 +10,55 @@
         body {
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             min-height: 100vh;
-            color: #3d2c4a;
+            color: #e8e0f0;
             position: relative;
             overflow-x: hidden;
         }
 
-        /* ===== 渐变背景 ===== */
+        /* ===== 深海渐变背景 ===== */
         .bg-gradient {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: -2;
-            background: linear-gradient(145deg, #ede4f7 0%, #fce4ec 35%, #e3f2fd 65%, #f3e5f5 100%);
+            background: linear-gradient(145deg, #0c0e2b 0%, #1a1040 30%, #0d1f3c 60%, #12103a 100%);
             background-attachment: fixed;
+        }
+
+        /* ===== 深海流光 ===== */
+        .bg-flow {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-flow::before,
+        .bg-flow::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            border-radius: 40%;
+            opacity: 0.04;
+            animation: flowSpin 16s linear infinite;
+        }
+        .bg-flow::before {
+            background: radial-gradient(ellipse at 30% 50%, #6a5acd, transparent 60%);
+            animation-duration: 20s;
+        }
+        .bg-flow::after {
+            background: radial-gradient(ellipse at 70% 50%, #cd5c7a, transparent 60%);
+            animation-duration: 24s;
+            animation-direction: reverse;
+        }
+        @keyframes flowSpin {
+            0%   { transform: rotate(0deg) scale(1); }
+            50%  { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
         }
 
         /* ===== Canvas 星空层 ===== */
@@ -30,52 +66,44 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: -1;
+            z-index: 0;
             pointer-events: none;
         }
 
         /* ===== 玫瑰花瓣 ===== */
-        .floating-petals {
+        .petals {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none;
-            z-index: 0;
+            z-index: 1;
             overflow: hidden;
         }
-        .petal {
+        .p {
             position: absolute;
-            width: 20px; height: 24px;
             border-radius: 50% 0 50% 0;
             opacity: 0;
-            animation: floatPetal linear infinite;
+            animation: fall linear infinite;
         }
-        .petal {
-            position: absolute;
-            width: 20px; height: 24px;
-            border-radius: 50% 0 50% 0;
-            opacity: 0;
-            animation: fallPetal linear infinite;
-        }
-        .petal:nth-child(1)  { left: 5%;  width: 16px; height: 18px; animation-duration: 28s; animation-delay: 0s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
-        .petal:nth-child(2)  { left: 15%; width: 22px; height: 24px; animation-duration: 32s; animation-delay: 5s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .petal:nth-child(3)  { left: 28%; width: 14px; height: 16px; animation-duration: 26s; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .petal:nth-child(4)  { left: 40%; width: 26px; height: 28px; animation-duration: 34s; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .petal:nth-child(5)  { left: 52%; width: 18px; height: 20px; animation-duration: 29s; animation-delay: 10s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .petal:nth-child(6)  { left: 62%; width: 24px; height: 26px; animation-duration: 31s; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
-        .petal:nth-child(7)  { left: 75%; width: 16px; height: 18px; animation-duration: 27s; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
-        .petal:nth-child(8)  { left: 85%; width: 22px; height: 24px; animation-duration: 33s; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .petal:nth-child(9)  { left: 48%; width: 20px; height: 22px; animation-duration: 36s; animation-delay: 12s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .petal:nth-child(10) { left: 92%; width: 17px; height: 19px; animation-duration: 25s; animation-delay: 7s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .petal:nth-child(11) { left: 22%; width: 21px; height: 23px; animation-duration: 30s; animation-delay: 14s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .petal:nth-child(12) { left: 68%; width: 15px; height: 17px; animation-duration: 35s; animation-delay: 11s; background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
-        @keyframes fallPetal {
-            0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+        .p:nth-child(1)  { left: 5%;  width: 14px; height: 16px; animation-duration: 26s; animation-delay: 0s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
+        .p:nth-child(2)  { left: 15%; width: 20px; height: 22px; animation-duration: 30s; animation-delay: 4s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
+        .p:nth-child(3)  { left: 28%; width: 12px; height: 14px; animation-duration: 28s; animation-delay: 7s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
+        .p:nth-child(4)  { left: 40%; width: 22px; height: 24px; animation-duration: 32s; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
+        .p:nth-child(5)  { left: 52%; width: 16px; height: 18px; animation-duration: 27s; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
+        .p:nth-child(6)  { left: 62%; width: 20px; height: 22px; animation-duration: 33s; animation-delay: 5s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
+        .p:nth-child(7)  { left: 75%; width: 14px; height: 16px; animation-duration: 29s; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
+        .p:nth-child(8)  { left: 85%; width: 18px; height: 20px; animation-duration: 31s; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
+        .p:nth-child(9)  { left: 48%; width: 16px; height: 18px; animation-duration: 35s; animation-delay: 11s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
+        .p:nth-child(10) { left: 92%; width: 15px; height: 17px; animation-duration: 25s; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
+        .p:nth-child(11) { left: 22%; width: 19px; height: 21px; animation-duration: 34s; animation-delay: 12s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
+        .p:nth-child(12) { left: 68%; width: 13px; height: 15px; animation-duration: 28s; animation-delay: 10s; background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
+        @keyframes fall {
+            0%   { transform: translateY(-8vh) rotate(0deg) translateX(0); opacity: 0; }
             10%  { opacity: 0.5; }
-            30%  { transform: translateY(25vh) rotate(180deg); opacity: 0.55; }
-            60%  { transform: translateY(55vh) rotate(320deg); opacity: 0.4; }
-            85%  { opacity: 0.2; }
-            100% { transform: translateY(110vh) rotate(480deg); opacity: 0; }
+            30%  { transform: translateY(20vh) rotate(150deg) translateX(15px); opacity: 0.55; }
+            60%  { transform: translateY(55vh) rotate(300deg) translateX(-10px); opacity: 0.35; }
+            85%  { opacity: 0.15; }
+            100% { transform: translateY(108vh) rotate(480deg) translateX(5px); opacity: 0; }
         }
 
         /* ===== 主容器 ===== */
@@ -102,18 +130,19 @@
         .header .ornament .bar {
             width: 50px;
             height: 1px;
-            background: linear-gradient(90deg, transparent, #d81b60, transparent);
+            background: linear-gradient(90deg, transparent, #f48fb1, transparent);
         }
         .header .ornament .dot {
             width: 7px; height: 7px;
             background: #f48fb1;
             transform: rotate(45deg);
             border-radius: 1px;
+            box-shadow: 0 0 8px rgba(244, 143, 177, 0.5);
         }
         .header h1 {
             font-size: 44px;
             font-weight: 700;
-            background: linear-gradient(135deg, #7c4dff, #d81b60);
+            background: linear-gradient(135deg, #b39ddb, #f48fb1, #81d4fa);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -122,7 +151,7 @@
         .header .subtitle {
             margin-top: 12px;
             font-size: 15px;
-            color: #b09cb8;
+            color: #8a7aaa;
             letter-spacing: 4px;
             font-weight: 300;
         }
@@ -130,7 +159,7 @@
             width: 100px;
             height: 2px;
             margin: 22px auto 0;
-            background: linear-gradient(90deg, #b39ddb, #f48fb1, #81d4fa);
+            background: linear-gradient(90deg, transparent, #f48fb1, transparent);
             border-radius: 2px;
         }
 
@@ -149,21 +178,21 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.55);
-            color: #7a5c8c;
+            background: rgba(255, 255, 255, 0.06);
+            color: #b8a0cc;
             backdrop-filter: blur(10px);
-            box-shadow: 0 2px 12px rgba(150, 100, 180, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             letter-spacing: 2px;
         }
         .tab-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(150, 100, 180, 0.18);
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(244, 143, 177, 0.2);
         }
         .tab-btn.active {
-            background: linear-gradient(135deg, #b39ddb, #f48fb1);
-            color: #fff;
-            box-shadow: 0 4px 20px rgba(180, 130, 210, 0.30);
+            background: linear-gradient(135deg, rgba(120, 80, 180, 0.4), rgba(200, 60, 120, 0.3));
+            border-color: rgba(244, 143, 177, 0.3);
+            color: #e8d8f0;
+            box-shadow: 0 4px 20px rgba(150, 80, 180, 0.15);
         }
 
         .tab-content { display: none; animation: fadeUp 0.5s ease; }
@@ -180,39 +209,38 @@
             gap: 20px;
         }
         .card {
-            background: rgba(255, 255, 255, 0.70);
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(16px);
             border-radius: 20px;
             padding: 24px;
-            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.50);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             transition: all 0.3s ease;
             cursor: pointer;
         }
         .card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 36px rgba(150, 100, 180, 0.16);
-            border-color: rgba(244, 143, 177, 0.35);
+            border-color: rgba(244, 143, 177, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(100, 60, 160, 0.15);
         }
-        .card .icon { font-size: 32px; margin-bottom: 10px; }
-        .card h3 { font-size: 18px; font-weight: 700; color: #3d2c4a; margin-bottom: 6px; }
-        .card p { font-size: 14px; color: #8a7a9a; line-height: 1.6; }
+        .card .icon { font-size: 28px; margin-bottom: 8px; }
+        .card h3 { font-size: 17px; font-weight: 600; color: #e0d0e8; margin-bottom: 4px; }
+        .card p  { font-size: 13px; color: #8a7aaa; line-height: 1.6; }
 
         /* ===== 关于 ===== */
         .about-card {
-            background: rgba(255, 255, 255, 0.70);
+            background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(16px);
             border-radius: 24px;
             padding: 44px 36px;
-            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.50);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             max-width: 700px;
             margin: 0 auto;
             text-align: center;
         }
-        .about-card h2 { font-size: 26px; font-weight: 700; color: #3d2c4a; margin-bottom: 14px; }
-        .about-card .bio { font-size: 15px; color: #7a6a8a; line-height: 2; }
-        .about-card .bio .hl { color: #d81b60; font-weight: 600; }
+        .about-card h2 { font-size: 26px; font-weight: 700; color: #e0d0e8; margin-bottom: 14px; }
+        .about-card .bio { font-size: 15px; color: #a090b8; line-height: 2; }
+        .about-card .bio .hl { color: #f48fb1; font-weight: 600; }
         .about-card .divider-sm {
             width: 50px; height: 1px;
             margin: 20px auto 0;
@@ -222,10 +250,9 @@
         .footer {
             text-align: center;
             padding: 40px 20px 20px;
-            color: #c0b0cc;
+            color: #6a5a80;
             font-size: 13px;
             letter-spacing: 2px;
-            font-weight: 300;
         }
 
         @media (max-width: 640px) {
@@ -239,12 +266,13 @@
 <body>
 
     <div class="bg-gradient"></div>
+    <div class="bg-flow"></div>
     <canvas id="star-canvas"></canvas>
 
-    <div class="floating-petals">
-        <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
-        <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
-        <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+    <div class="petals">
+        <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
+        <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
+        <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
     </div>
 
     <div class="container">
@@ -307,7 +335,7 @@
         function renderCards(id, data) {
             const g = document.getElementById(id);
             if (!data || !data.length) {
-                g.innerHTML = '<div class="empty-state"><div style="font-size:48px;margin-bottom:12px">🌸</div><p>还没有内容～</p></div>';
+                g.innerHTML = '<div class="empty-state" style="text-align:center;padding:60px 0;color:#6a5a80"><div style="font-size:48px;margin-bottom:12px">🌸</div><p>还没有内容～</p></div>';
                 return;
             }
             g.innerHTML = data.map(d =>
@@ -330,8 +358,7 @@
         renderCards('study-grid', study);
 
         // ================================================================
-        //  星空 & 双鱼座星座 (Canvas)
-        //  关键: 在浅色背景上用深色/有色彩的星星而非白色
+        //  星空 Canvas — 漫画风格闪光星星 + 双鱼座星座
         // ================================================================
         (function() {
             const canvas = document.getElementById('star-canvas');
@@ -345,47 +372,87 @@
             resize();
             window.addEventListener('resize', resize);
 
+            // ---- 漫画风格闪光星星绘制函数 ----
+            // 4 角星（漫画闪光的经典形状，类似 ✨）
+            function drawSparkle(cx, cy, size, color, rotation) {
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(rotation || 0);
+                ctx.beginPath();
+                // 使用贝塞尔曲线绘制柔和四角星
+                const s = size;
+                // 上顶点 → 右上凹 → 右顶点 → 右下凹 → 下顶点 → 左下凹 → 左顶点 → 左上凹
+                const pts = [
+                    { x: 0,    y: -s },   // 上
+                    { x: s*0.3, y: -s*0.3 },
+                    { x: s,    y: 0 },    // 右
+                    { x: s*0.3, y: s*0.3 },
+                    { x: 0,    y: s },    // 下
+                    { x: -s*0.3, y: s*0.3 },
+                    { x: -s,   y: 0 },    // 左
+                    { x: -s*0.3, y: -s*0.3 },
+                ];
+                ctx.moveTo(pts[0].x, pts[0].y);
+                for (let i = 1; i < pts.length; i++) {
+                    ctx.lineTo(pts[i].x, pts[i].y);
+                }
+                ctx.closePath();
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // 中心高光小圆
+                ctx.beginPath();
+                ctx.arc(0, 0, s * 0.12, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.fill();
+
+                ctx.restore();
+            }
+
             // ---- 1. 背景星星 ----
-            const STARS = 200;
+            // 两种类型: 小圆点 + 漫画闪光星
+            const STARS = 180;
             const stars = [];
-            // 调色板: 粉色系 + 紫色系 + 金色系, 在浅背景上可见
-            const palettes = [
-                [180, 120, 200],  // 淡紫
-                [200, 130, 170],  // 粉紫
-                [210, 150, 160],  // 粉红
-                [160, 140, 210],  // 紫蓝
-                [200, 160, 130],  // 香槟金
-                [190, 120, 180],  // 玫紫
+            // 星色彩色板 (在深色背景上发光)
+            const colors = [
+                { r: 200, g: 170, b: 255 },  // 淡紫
+                { r: 255, g: 200, b: 220 },  // 粉红
+                { r: 180, g: 210, b: 255 },  // 淡蓝
+                { r: 255, g: 220, b: 180 },  // 暖金
+                { r: 220, g: 180, b: 255 },  // 紫罗兰
+                { r: 255, g: 190, b: 210 },  // 玫瑰粉
             ];
 
             for (let i = 0; i < STARS; i++) {
-                const pal = palettes[Math.floor(Math.random() * palettes.length)];
+                const col = colors[Math.floor(Math.random() * colors.length)];
+                const isSparkle = Math.random() < 0.25; // 25% 是闪光星
                 stars.push({
                     x: Math.random() * W,
                     y: Math.random() * H,
-                    r: Math.random() * 2.5 + 0.8,
-                    r2: Math.random() * 0.5 + 0.2,  // 内核心大小
-                    pal,
-                    // 闪烁参数: 双波不同步
-                    s1: Math.random() * 0.018 + 0.006,
-                    s2: Math.random() * 0.030 + 0.012,
+                    r: isSparkle ? Math.random() * 5 + 3 : Math.random() * 1.8 + 0.5,
+                    type: isSparkle ? 'sparkle' : 'dot',
+                    col,
+                    rot: Math.random() * Math.PI * 2,
+                    rotSpeed: (Math.random() - 0.5) * 0.002,
+                    s1: Math.random() * 0.012 + 0.004,
+                    s2: Math.random() * 0.022 + 0.010,
                     p1: Math.random() * Math.PI * 2,
                     p2: Math.random() * Math.PI * 2,
-                    depth: Math.random() * 0.6 + 0.3,
-                    baseA: Math.random() * 0.4 + 0.25,
+                    depth: Math.random() * 0.55 + 0.25,
+                    baseA: Math.random() * 0.35 + 0.2,
                 });
             }
 
-            // ---- 2. 星座 ----
+            // ---- 2. 双鱼座星座 ----
             const pts = [
                 { x: 0.16, y: 0.58 }, { x: 0.20, y: 0.50 },
                 { x: 0.26, y: 0.44 }, { x: 0.32, y: 0.41 },
                 { x: 0.37, y: 0.44 }, { x: 0.35, y: 0.50 },
-                { x: 0.40, y: 0.54 },  // 结星
-                { x: 0.45, y: 0.57 }, { x: 0.50, y: 0.53 },
-                { x: 0.56, y: 0.50 }, { x: 0.62, y: 0.49 },
-                { x: 0.68, y: 0.52 }, { x: 0.72, y: 0.57 },
-                { x: 0.13, y: 0.65 }, { x: 0.75, y: 0.50 },
+                { x: 0.40, y: 0.53 },  // 结星
+                { x: 0.45, y: 0.56 }, { x: 0.50, y: 0.52 },
+                { x: 0.56, y: 0.49 }, { x: 0.62, y: 0.48 },
+                { x: 0.68, y: 0.51 }, { x: 0.72, y: 0.56 },
+                { x: 0.13, y: 0.64 }, { x: 0.75, y: 0.49 },
             ];
 
             let cst;
@@ -393,7 +460,6 @@
             updCst();
             window.addEventListener('resize', updCst);
 
-            // 连线: [起点, 终点, 组]
             const edges = [
                 [0, 1, 0], [1, 2, 0], [2, 3, 0], [3, 4, 0], [4, 5, 0],
                 [5, 6, 2], [6, 7, 1],
@@ -402,108 +468,121 @@
             ];
             const grpPh = [0, 2.5, 4.2];
 
-            // 星座星闪烁参数
             const cstParams = pts.map(() => ({
-                speed: 0.010 + Math.random() * 0.014,
+                speed: 0.008 + Math.random() * 0.012,
                 phase: Math.random() * Math.PI * 2,
                 depth: 0.3 + Math.random() * 0.4,
             }));
 
             // ---- 3. 渲染循环 ----
-            let t = 0;
+            let frame = 0;
 
             function draw() {
                 ctx.clearRect(0, 0, W, H);
-                t++;
+                frame++;
 
                 // --- 背景星星 ---
                 for (const s of stars) {
-                    const w1 = Math.sin(t * s.s1 + s.p1);
-                    const w2 = Math.sin(t * s.s2 + s.p2) * 0.35;
+                    const w1 = Math.sin(frame * s.s1 + s.p1);
+                    const w2 = Math.sin(frame * s.s2 + s.p2) * 0.35;
                     const tw = (w1 + w2) * s.depth * 0.45 + (1 - s.depth * 0.45);
-                    const a = s.baseA * Math.max(0.08, tw);
-                    const [r, g, b] = s.pal;
+                    const a = s.baseA * Math.max(0.05, tw);
+                    const { r, g, b } = s.col;
 
-                    // 外光晕
-                    const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
-                    gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.2})`);
-                    gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
-                    ctx.fillStyle = gr;
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
-                    ctx.fill();
+                    if (s.type === 'dot') {
+                        // 圆点星: 光晕 + 核心
+                        const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
+                        gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.15})`);
+                        gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                        ctx.fillStyle = gr;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2);
+                        ctx.fill();
 
-                    // 核心
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r * tw, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.9})`;
-                    ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * Math.max(0.3, tw), 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.85})`;
+                        ctx.fill();
 
-                    // 高光内核
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r2, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255,255,255,${a * 0.5})`;
-                    ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 0.3, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255,255,255,${a * 0.5})`;
+                        ctx.fill();
+                    } else {
+                        // 漫画闪光星
+                        const bright = Math.max(0.3, tw);
+                        s.rot += s.rotSpeed;
+                        const color = `rgba(${r},${g},${b},${a * 0.85})`;
+                        drawSparkle(s.x, s.y, s.r * bright, color, s.rot);
+
+                        // 外加一层光晕
+                        const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
+                        gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.08})`);
+                        gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                        ctx.fillStyle = gr;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 }
 
-                // --- 星座连线 (每组呼吸不同步) ---
+                // --- 星座连线 ---
                 for (const [i, j, g] of edges) {
                     const p1 = cst[i], p2 = cst[j];
-                    const breath = Math.sin(t * 0.005 + grpPh[g] + i * 0.25) * 0.5 + 0.5;
-                    const la = 0.08 + breath * 0.22;
+                    const breath = Math.sin(frame * 0.005 + grpPh[g] + i * 0.25) * 0.5 + 0.5;
+                    const la = 0.06 + breath * 0.20;
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
                     ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = `rgba(160, 120, 200, ${la})`;
-                    ctx.lineWidth = 1.0 + breath * 0.8;
+                    ctx.strokeStyle = `rgba(170, 130, 210, ${la})`;
+                    ctx.lineWidth = 0.8 + breath * 0.6;
                     ctx.stroke();
                 }
 
-                // --- 星座星星 ---
+                // --- 星座星星 (全部用漫画闪光星风格) ---
                 for (let i = 0; i < cst.length; i++) {
                     const p = cst[i];
                     const cp = cstParams[i];
                     const isKnot = i === 6;
                     const isExtra = i >= 13;
 
-                    const tw = Math.sin(t * cp.speed + cp.phase) * cp.depth * 0.45 + (1 - cp.depth * 0.45);
-                    const a = Math.max(0.2, tw);
+                    const tw = Math.sin(frame * cp.speed + cp.phase) * cp.depth * 0.4 + (1 - cp.depth * 0.4);
+                    const a = Math.max(0.25, tw);
 
-                    const size = isKnot ? 5.5 : isExtra ? 2.5 : 4;
-                    const glowR = isKnot ? 30 : isExtra ? 8 : 18;
+                    const baseSize = isKnot ? 10 : isExtra ? 4 : 7;
+                    const glowR = isKnot ? 40 : isExtra ? 12 : 25;
 
-                    // 光晕 (玫瑰粉紫色)
+                    // 光晕 (用玫瑰粉紫)
                     const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                    const ga = isKnot ? 0.25 : 0.15;
-                    grd.addColorStop(0, `rgba(200, 140, 180, ${ga * a})`);
-                    grd.addColorStop(1, `rgba(200, 140, 180, 0)`);
+                    const ga = isKnot ? 0.18 : 0.10;
+                    grd.addColorStop(0, `rgba(200, 130, 180, ${ga * a})`);
+                    grd.addColorStop(1, `rgba(200, 130, 180, 0)`);
                     ctx.fillStyle = grd;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // 内核: 结星用玫瑰红, 其他用粉紫
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, size * a, 0, Math.PI * 2);
-                    ctx.fillStyle = isKnot
-                        ? `rgba(220, 80, 130, ${0.85 * a})`
-                        : `rgba(180, 130, 200, ${0.75 * a})`;
-                    ctx.fill();
+                    // 用闪光星绘制星座星
+                    const starColor = isKnot
+                        ? `rgba(244, 140, 170, ${0.9 * a})`
+                        : `rgba(200, 160, 230, ${0.8 * a})`;
+                    const rot = frame * 0.005 + i * 1.2;
+                    drawSparkle(p.x, p.y, baseSize * a, starColor, rot);
 
-                    // 结星内高光
+                    // 结星加玫瑰金高光环
                     if (isKnot) {
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, size * 0.35, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 220, 230, ${0.8 * a})`;
+                        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 220, 230, ${0.7 * a})`;
                         ctx.fill();
                     }
                 }
 
                 // --- 标注 ---
                 const lb = cst[11];
-                const blink = Math.sin(t * 0.007) * 0.5 + 0.5;
-                ctx.font = '13px "Segoe UI", sans-serif';
-                ctx.fillStyle = `rgba(150, 120, 180, ${0.15 + blink * 0.35})`;
+                const blink = Math.sin(frame * 0.006) * 0.5 + 0.5;
+                ctx.font = '12px "Segoe UI", sans-serif';
+                ctx.fillStyle = `rgba(150, 130, 180, ${0.15 + blink * 0.25})`;
                 ctx.textAlign = 'left';
                 ctx.fillText('♓ Pisces', lb.x + 14, lb.y + 6);
 
@@ -512,7 +591,6 @@
 
             draw();
 
-            // 窗口缩放重排背景星
             window.addEventListener('resize', () => {
                 for (const s of stars) {
                     s.x = Math.random() * W;
