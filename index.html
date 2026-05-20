@@ -50,25 +50,32 @@
             opacity: 0;
             animation: floatPetal linear infinite;
         }
-        .petal:nth-child(1)  { left: 5%;  width: 14px; height: 16px; animation-duration: 18s; animation-delay: 0s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
-        .petal:nth-child(2)  { left: 15%; width: 20px; height: 22px; animation-duration: 22s; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .petal:nth-child(3)  { left: 28%; width: 12px; height: 14px; animation-duration: 17s; animation-delay: 5s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .petal:nth-child(4)  { left: 40%; width: 24px; height: 26px; animation-duration: 24s; animation-delay: 1s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .petal:nth-child(5)  { left: 52%; width: 16px; height: 18px; animation-duration: 19s; animation-delay: 7s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .petal:nth-child(6)  { left: 62%; width: 22px; height: 24px; animation-duration: 21s; animation-delay: 4s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
-        .petal:nth-child(7)  { left: 75%; width: 14px; height: 16px; animation-duration: 20s; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
-        .petal:nth-child(8)  { left: 85%; width: 20px; height: 22px; animation-duration: 16s; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .petal:nth-child(9)  { left: 48%; width: 18px; height: 20px; animation-duration: 25s; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .petal:nth-child(10) { left: 92%; width: 15px; height: 17px; animation-duration: 18s; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .petal:nth-child(11) { left: 22%; width: 19px; height: 21px; animation-duration: 23s; animation-delay: 10s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .petal:nth-child(12) { left: 68%; width: 13px; height: 15px; animation-duration: 20s; animation-delay: 11s; background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
-        @keyframes floatPetal {
-            0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-            8%   { opacity: 0.45; }
-            20%  { transform: translateY(75vh) rotate(120deg); opacity: 0.5; }
-            60%  { transform: translateY(30vh) rotate(300deg); opacity: 0.4; }
-            90%  { opacity: 0.2; }
-            100% { transform: translateY(-10vh) rotate(480deg); opacity: 0; }
+        .petal {
+            position: absolute;
+            width: 20px; height: 24px;
+            border-radius: 50% 0 50% 0;
+            opacity: 0;
+            animation: fallPetal linear infinite;
+        }
+        .petal:nth-child(1)  { left: 5%;  width: 16px; height: 18px; animation-duration: 28s; animation-delay: 0s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
+        .petal:nth-child(2)  { left: 15%; width: 22px; height: 24px; animation-duration: 32s; animation-delay: 5s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
+        .petal:nth-child(3)  { left: 28%; width: 14px; height: 16px; animation-duration: 26s; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
+        .petal:nth-child(4)  { left: 40%; width: 26px; height: 28px; animation-duration: 34s; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
+        .petal:nth-child(5)  { left: 52%; width: 18px; height: 20px; animation-duration: 29s; animation-delay: 10s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
+        .petal:nth-child(6)  { left: 62%; width: 24px; height: 26px; animation-duration: 31s; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
+        .petal:nth-child(7)  { left: 75%; width: 16px; height: 18px; animation-duration: 27s; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
+        .petal:nth-child(8)  { left: 85%; width: 22px; height: 24px; animation-duration: 33s; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
+        .petal:nth-child(9)  { left: 48%; width: 20px; height: 22px; animation-duration: 36s; animation-delay: 12s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
+        .petal:nth-child(10) { left: 92%; width: 17px; height: 19px; animation-duration: 25s; animation-delay: 7s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
+        .petal:nth-child(11) { left: 22%; width: 21px; height: 23px; animation-duration: 30s; animation-delay: 14s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
+        .petal:nth-child(12) { left: 68%; width: 15px; height: 17px; animation-duration: 35s; animation-delay: 11s; background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
+        @keyframes fallPetal {
+            0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.5; }
+            30%  { transform: translateY(25vh) rotate(180deg); opacity: 0.55; }
+            60%  { transform: translateY(55vh) rotate(320deg); opacity: 0.4; }
+            85%  { opacity: 0.2; }
+            100% { transform: translateY(110vh) rotate(480deg); opacity: 0; }
         }
 
         /* ===== 主容器 ===== */
@@ -324,187 +331,188 @@
 
         // ================================================================
         //  星空 & 双鱼座星座 (Canvas)
+        //  关键: 在浅色背景上用深色/有色彩的星星而非白色
         // ================================================================
         (function() {
             const canvas = document.getElementById('star-canvas');
             const ctx = canvas.getContext('2d');
-
             let W, H;
+
             function resize() {
                 W = canvas.width = window.innerWidth;
                 H = canvas.height = window.innerHeight;
             }
-            window.addEventListener('resize', resize);
             resize();
+            window.addEventListener('resize', resize);
 
-            // ------------------------------------------------------------
-            //  1. 背景星星 —— 每颗都有自己的闪烁节奏
-            // ------------------------------------------------------------
-            const STARS = 160;
+            // ---- 1. 背景星星 ----
+            const STARS = 200;
             const stars = [];
+            // 调色板: 粉色系 + 紫色系 + 金色系, 在浅背景上可见
+            const palettes = [
+                [180, 120, 200],  // 淡紫
+                [200, 130, 170],  // 粉紫
+                [210, 150, 160],  // 粉红
+                [160, 140, 210],  // 紫蓝
+                [200, 160, 130],  // 香槟金
+                [190, 120, 180],  // 玫紫
+            ];
+
             for (let i = 0; i < STARS; i++) {
+                const pal = palettes[Math.floor(Math.random() * palettes.length)];
                 stars.push({
                     x: Math.random() * W,
                     y: Math.random() * H,
-                    r: Math.random() * 2.0 + 0.4,
-                    baseAlpha: Math.random() * 0.4 + 0.15,
-                    // 两层不同频率的波，制造自然闪烁
-                    speed1: Math.random() * 0.015 + 0.005,
-                    speed2: Math.random() * 0.025 + 0.010,
-                    phase1: Math.random() * Math.PI * 2,
-                    phase2: Math.random() * Math.PI * 2,
-                    // 闪烁深度: 0.3=微微闪, 0.9=大幅闪
-                    depth: Math.random() * 0.6 + 0.2,
+                    r: Math.random() * 2.5 + 0.8,
+                    r2: Math.random() * 0.5 + 0.2,  // 内核心大小
+                    pal,
+                    // 闪烁参数: 双波不同步
+                    s1: Math.random() * 0.018 + 0.006,
+                    s2: Math.random() * 0.030 + 0.012,
+                    p1: Math.random() * Math.PI * 2,
+                    p2: Math.random() * Math.PI * 2,
+                    depth: Math.random() * 0.6 + 0.3,
+                    baseA: Math.random() * 0.4 + 0.25,
                 });
             }
 
-            // ------------------------------------------------------------
-            //  2. 双鱼座星座
-            // ------------------------------------------------------------
-            // 归一化坐标 (0-1)，随窗口自适应
+            // ---- 2. 星座 ----
             const pts = [
-                // 左鱼 (尾巴 → 头)
-                { x: 0.16, y: 0.58 },
-                { x: 0.20, y: 0.50 },
-                { x: 0.26, y: 0.44 },
-                { x: 0.32, y: 0.41 },
-                { x: 0.37, y: 0.44 },
-                { x: 0.35, y: 0.50 },
-                // 结星 (连接点)
-                { x: 0.40, y: 0.54 },
-                // 右鱼 (头 → 尾巴)
-                { x: 0.45, y: 0.57 },
-                { x: 0.50, y: 0.53 },
-                { x: 0.56, y: 0.50 },
-                { x: 0.62, y: 0.49 },
-                { x: 0.68, y: 0.52 },
-                { x: 0.72, y: 0.57 },
-                // 装饰星
-                { x: 0.13, y: 0.65 },
-                { x: 0.75, y: 0.50 },
+                { x: 0.16, y: 0.58 }, { x: 0.20, y: 0.50 },
+                { x: 0.26, y: 0.44 }, { x: 0.32, y: 0.41 },
+                { x: 0.37, y: 0.44 }, { x: 0.35, y: 0.50 },
+                { x: 0.40, y: 0.54 },  // 结星
+                { x: 0.45, y: 0.57 }, { x: 0.50, y: 0.53 },
+                { x: 0.56, y: 0.50 }, { x: 0.62, y: 0.49 },
+                { x: 0.68, y: 0.52 }, { x: 0.72, y: 0.57 },
+                { x: 0.13, y: 0.65 }, { x: 0.75, y: 0.50 },
             ];
 
-            let cst; // 当前像素坐标
-            function updateCst() {
-                cst = pts.map(p => ({ x: p.x * W, y: p.y * H }));
-            }
-            window.addEventListener('resize', updateCst);
-            updateCst();
+            let cst;
+            function updCst() { cst = pts.map(p => ({ x: p.x * W, y: p.y * H })); }
+            updCst();
+            window.addEventListener('resize', updCst);
 
-            // 连线定义: [起点下标, 终点下标, 组别]
-            // 组别用来控制不同区域不同步呼吸
+            // 连线: [起点, 终点, 组]
             const edges = [
                 [0, 1, 0], [1, 2, 0], [2, 3, 0], [3, 4, 0], [4, 5, 0],
-                [5, 6, 2],
-                [6, 7, 1],
+                [5, 6, 2], [6, 7, 1],
                 [7, 8, 1], [8, 9, 1], [9, 10, 1], [10, 11, 1],
                 [5, 13, 0], [11, 14, 1],
             ];
-            // 每组的呼吸相位
-            const groupPhases = [0, 2.1, 4.0];
+            const grpPh = [0, 2.5, 4.2];
 
-            // 每颗星座星的闪烁参数
-            const starParams = pts.map((_, i) => ({
-                speed: 0.012 + Math.random() * 0.012,
+            // 星座星闪烁参数
+            const cstParams = pts.map(() => ({
+                speed: 0.010 + Math.random() * 0.014,
                 phase: Math.random() * Math.PI * 2,
-                depth: 0.35 + Math.random() * 0.35,
+                depth: 0.3 + Math.random() * 0.4,
             }));
 
-            // ------------------------------------------------------------
-            //  3. 主循环
-            // ------------------------------------------------------------
-            let frame = 0;
+            // ---- 3. 渲染循环 ----
+            let t = 0;
 
             function draw() {
                 ctx.clearRect(0, 0, W, H);
-                frame++;
+                t++;
 
-                // ---------- 2a. 背景星星 ----------
+                // --- 背景星星 ---
                 for (const s of stars) {
-                    // 用两层正弦波叠加，产生不规则闪烁
-                    const w1 = Math.sin(frame * s.speed1 + s.phase1);
-                    const w2 = Math.sin(frame * s.speed2 + s.phase2) * 0.35;
-                    const twinkle = (w1 + w2) * s.depth * 0.5 + (1 - s.depth * 0.5);
-                    const alpha = s.baseAlpha * Math.max(0.05, twinkle);
+                    const w1 = Math.sin(t * s.s1 + s.p1);
+                    const w2 = Math.sin(t * s.s2 + s.p2) * 0.35;
+                    const tw = (w1 + w2) * s.depth * 0.45 + (1 - s.depth * 0.45);
+                    const a = s.baseA * Math.max(0.08, tw);
+                    const [r, g, b] = s.pal;
 
+                    // 外光晕
+                    const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
+                    gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.2})`);
+                    gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                    ctx.fillStyle = gr;
                     ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                    ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 核心
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r * tw, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.9})`;
+                    ctx.fill();
+
+                    // 高光内核
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r2, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255,255,255,${a * 0.5})`;
                     ctx.fill();
                 }
 
-                // ---------- 2b. 星座连线 (不同步呼吸) ----------
-                for (const [i, j, group] of edges) {
-                    const p1 = cst[i];
-                    const p2 = cst[j];
-                    // 每条线独立呼吸：基础透明度 + 随帧变化的波动
-                    const breath = Math.sin(frame * 0.006 + groupPhases[group] + i * 0.3) * 0.5 + 0.5;
-                    const lineAlpha = 0.06 + breath * 0.18;
-
+                // --- 星座连线 (每组呼吸不同步) ---
+                for (const [i, j, g] of edges) {
+                    const p1 = cst[i], p2 = cst[j];
+                    const breath = Math.sin(t * 0.005 + grpPh[g] + i * 0.25) * 0.5 + 0.5;
+                    const la = 0.08 + breath * 0.22;
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
                     ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = `rgba(190, 160, 220, ${lineAlpha})`;
-                    ctx.lineWidth = 1.0 + breath * 0.6;
+                    ctx.strokeStyle = `rgba(160, 120, 200, ${la})`;
+                    ctx.lineWidth = 1.0 + breath * 0.8;
                     ctx.stroke();
                 }
 
-                // ---------- 2c. 星座星星 ----------
+                // --- 星座星星 ---
                 for (let i = 0; i < cst.length; i++) {
                     const p = cst[i];
-                    const sp = starParams[i];
-                    const isKnot = (i === 6);
-                    const isExtra = (i >= 13);
+                    const cp = cstParams[i];
+                    const isKnot = i === 6;
+                    const isExtra = i >= 13;
 
-                    // 每颗星独立闪烁
-                    const twinkle = Math.sin(frame * sp.speed + sp.phase) * sp.depth * 0.5 + (1 - sp.depth * 0.5);
-                    const a = Math.max(0.2, twinkle);
+                    const tw = Math.sin(t * cp.speed + cp.phase) * cp.depth * 0.45 + (1 - cp.depth * 0.45);
+                    const a = Math.max(0.2, tw);
 
-                    const size = isKnot ? 4.5 : isExtra ? 2.0 : 3.2;
-                    const glowR = isKnot ? 22 : isExtra ? 6 : 12;
+                    const size = isKnot ? 5.5 : isExtra ? 2.5 : 4;
+                    const glowR = isKnot ? 30 : isExtra ? 8 : 18;
 
-                    // 外光晕 (跟随闪烁)
-                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                    const glowAlpha = isKnot ? 0.20 : 0.12;
-                    grad.addColorStop(0, `rgba(220, 180, 230, ${glowAlpha * a})`);
-                    grad.addColorStop(1, `rgba(220, 180, 230, 0)`);
+                    // 光晕 (玫瑰粉紫色)
+                    const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+                    const ga = isKnot ? 0.25 : 0.15;
+                    grd.addColorStop(0, `rgba(200, 140, 180, ${ga * a})`);
+                    grd.addColorStop(1, `rgba(200, 140, 180, 0)`);
+                    ctx.fillStyle = grd;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
-                    ctx.fillStyle = grad;
                     ctx.fill();
 
-                    // 内核 (白色/粉色)
-                    const hue = isKnot ? 240 : 210;
+                    // 内核: 结星用玫瑰红, 其他用粉紫
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, size * a, 0, Math.PI * 2);
                     ctx.fillStyle = isKnot
-                        ? `rgba(244, 143, 177, ${0.85 * a})`
-                        : `rgba(210, 185, 235, ${0.7 * a})`;
+                        ? `rgba(220, 80, 130, ${0.85 * a})`
+                        : `rgba(180, 130, 200, ${0.75 * a})`;
                     ctx.fill();
 
-                    // 结星高光内核
+                    // 结星内高光
                     if (isKnot) {
                         ctx.beginPath();
                         ctx.arc(p.x, p.y, size * 0.35, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 255, 255, ${0.7 * a})`;
+                        ctx.fillStyle = `rgba(255, 220, 230, ${0.8 * a})`;
                         ctx.fill();
                     }
                 }
 
-                // ---------- 2d. 星座名称 ----------
-                const label = cst[11];
-                const labelBlink = Math.sin(frame * 0.008) * 0.5 + 0.5;
-                ctx.font = '12px "Segoe UI", sans-serif';
-                ctx.fillStyle = `rgba(170, 150, 200, ${0.15 + labelBlink * 0.25})`;
+                // --- 标注 ---
+                const lb = cst[11];
+                const blink = Math.sin(t * 0.007) * 0.5 + 0.5;
+                ctx.font = '13px "Segoe UI", sans-serif';
+                ctx.fillStyle = `rgba(150, 120, 180, ${0.15 + blink * 0.35})`;
                 ctx.textAlign = 'left';
-                ctx.fillText('♓ Pisces', label.x + 12, label.y + 5);
+                ctx.fillText('♓ Pisces', lb.x + 14, lb.y + 6);
 
                 requestAnimationFrame(draw);
             }
 
             draw();
 
-            // 窗口缩放时重新分布背景星星
+            // 窗口缩放重排背景星
             window.addEventListener('resize', () => {
                 for (const s of stars) {
                     s.x = Math.random() * W;
