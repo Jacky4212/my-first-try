@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双鱼小栈</title>
+    <style>
+        /* ===== 重置 & 基础 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            color: #3d2c4a;
+            position: relative;
+        }
+
+        /* ===== 动态渐变背景 ===== */
+        .bg-anim {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -3;
+            background: linear-gradient(125deg, #f0e6ff, #fce4ec, #e3f2fd, #f3e5f5, #ffe0ec);
+            background-size: 400% 400%;
+            animation: gradientShift 22s ease infinite;
+        }
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            25%  { background-position: 50% 0%; }
+            50%  { background-position: 100% 50%; }
+            75%  { background-position: 50% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ===== 双鱼座星座符号背景 ===== */
+        .bg-zodiac {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -2;
+            font-size: 80vw;
+            font-weight: 300;
+            color: rgba(180, 140, 220, 0.06);
+            pointer-events: none;
+            user-select: none;
+            animation: zodiacSpin 30s linear infinite;
+            line-height: 1;
+        }
+        @keyframes zodiacSpin {
+            0%   { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* ===== 双鱼座双鱼水纹 ===== */
+        .bg-fish {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-fish::before,
+        .bg-fish::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            opacity: 0.04;
+            animation: fishSwim 12s ease-in-out infinite alternate;
+        }
+        .bg-fish::before {
+            top: 20%;
+            left: -100px;
+            background: radial-gradient(circle, #b39ddb, transparent 70%);
+            box-shadow: 0 0 80px 40px rgba(179, 157, 219, 0.06);
+            animation-duration: 14s;
+        }
+        .bg-fish::after {
+            bottom: 20%;
+            right: -100px;
+            background: radial-gradient(circle, #f48fb1, transparent 70%);
+            box-shadow: 0 0 80px 40px rgba(244, 143, 177, 0.06);
+            animation-duration: 18s;
+            animation-delay: -4s;
+        }
+        @keyframes fishSwim {
+            0%   { transform: translate(0, 0) scale(1); }
+            50%  { transform: translate(80px, -40px) scale(1.15); }
+            100% { transform: translate(-40px, 60px) scale(0.9); }
+        }
+
+        /* ===== 水波纹 ===== */
+        .bg-ripple {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-ripple::before,
+        .bg-ripple::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            border-radius: 45%;
+            opacity: 0.06;
+            animation: rippleSpin 14s linear infinite;
+        }
+        .bg-ripple::before {
+            background: radial-gradient(ellipse at 30% 50%, #b39ddb, transparent 60%);
+            animation-duration: 20s;
+        }
+        .bg-ripple::after {
+            background: radial-gradient(ellipse at 70% 50%, #f48fb1, transparent 60%);
+            animation-duration: 24s;
+            animation-direction: reverse;
+        }
+        @keyframes rippleSpin {
+            0%   { transform: rotate(0deg) scale(1); }
+            50%  { transform: rotate(180deg) scale(1.08); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* ===== 玫瑰花瓣 ===== */
+        .floating-petals {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .petal {
+            position: absolute;
+            border-radius: 50% 0 50% 0;
+            opacity: 0;
+            animation: floatPetal linear infinite;
+        }
+        .petal-rose {
+            background: radial-gradient(circle at 30% 30%, #f8bbd0, #e91e63);
+        }
+        .petal-blush {
+            background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292);
+        }
+        .petal-pink {
+            background: radial-gradient(circle at 30% 30%, #f48fb1, #ec407a);
+        }
+        @keyframes floatPetal {
+            0%   { transform: translateY(100vh) rotate(0deg) scale(0.8); opacity: 0; }
+            8%   { opacity: 0.4; }
+            20%  { transform: translateY(75vh) rotate(120deg) scale(1); opacity: 0.5; }
+            60%  { transform: translateY(30vh) rotate(300deg) scale(0.9); opacity: 0.4; }
+            90%  { opacity: 0.3; }
+            100% { transform: translateY(-10vh) rotate(480deg) scale(0.6); opacity: 0; }
+        }
+        .petal:nth-child(1)  { left: 3%;  width: 14px; height: 16px; animation-duration: 16s; animation-delay: 0s; }
+        .petal:nth-child(2)  { left: 12%; width: 22px; height: 24px; animation-duration: 20s; animation-delay: 3s; }
+        .petal:nth-child(3)  { left: 22%; width: 12px; height: 14px; animation-duration: 18s; animation-delay: 6s; }
+        .petal:nth-child(4)  { left: 35%; width: 26px; height: 28px; animation-duration: 24s; animation-delay: 1s; }
+        .petal:nth-child(5)  { left: 48%; width: 16px; height: 18px; animation-duration: 22s; animation-delay: 8s; }
+        .petal:nth-child(6)  { left: 58%; width: 20px; height: 22px; animation-duration: 19s; animation-delay: 4s; }
+        .petal:nth-child(7)  { left: 70%; width: 15px; height: 17px; animation-duration: 21s; animation-delay: 2s; }
+        .petal:nth-child(8)  { left: 82%; width: 24px; height: 26px; animation-duration: 17s; animation-delay: 7s; }
+        .petal:nth-child(9)  { left: 90%; width: 13px; height: 15px; animation-duration: 23s; animation-delay: 5s; }
+        .petal:nth-child(10) { left: 45%; width: 18px; height: 20px; animation-duration: 25s; animation-delay: 9s; }
+        .petal:nth-child(11) { left: 18%; width: 20px; height: 22px; animation-duration: 15s; animation-delay: 2s; }
+        .petal:nth-child(12) { left: 75%; width: 17px; height: 19px; animation-duration: 26s; animation-delay: 11s; }
+
+        /* ===== 玫瑰金装饰角 ===== */
+        .rose-corner {
+            position: fixed;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.08;
+        }
+        .rose-corner--tl {
+            top: -30px; left: -30px;
+            width: 120px; height: 120px;
+            border-top: 3px solid #e91e63;
+            border-left: 3px solid #e91e63;
+            border-radius: 20px 0 0 0;
+        }
+        .rose-corner--br {
+            bottom: -30px; right: -30px;
+            width: 120px; height: 120px;
+            border-bottom: 3px solid #e91e63;
+            border-right: 3px solid #e91e63;
+            border-radius: 0 0 20px 0;
+        }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        /* ===== 头部 ===== */
+        .header {
+            text-align: center;
+            padding: 40px 20px 30px;
+            position: relative;
+        }
+        .header .rose-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .header .rose-line .line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e91e63, transparent);
+        }
+        .header .rose-line .diamond {
+            width: 8px;
+            height: 8px;
+            background: #f48fb1;
+            transform: rotate(45deg);
+            border-radius: 1px;
+        }
+        .header h1 {
+            font-size: 44px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c4dff, #e91e63);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 8px;
+        }
+        .header .subtitle {
+            margin-top: 12px;
+            font-size: 15px;
+            color: #b09cb8;
+            letter-spacing: 4px;
+            font-weight: 300;
+        }
+        .header .divider {
+            width: 100px;
+            height: 2px;
+            margin: 22px auto 0;
+            background: linear-gradient(90deg, #b39ddb, #f48fb1, #81d4fa);
+            border-radius: 2px;
+        }
+
+        /* ===== 标签导航 ===== */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 36px 0 30px;
+        }
+        .tab-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.55);
+            color: #7a5c8c;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(150, 100, 180, 0.08);
+            letter-spacing: 2px;
+        }
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(150, 100, 180, 0.18);
+            background: rgba(255, 255, 255, 0.75);
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #b39ddb, #f48fb1);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(180, 130, 210, 0.30);
+        }
+
+        /* ===== 内容区 ===== */
+        .tab-content {
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== 卡片网格 ===== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.70);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(150, 100, 180, 0.16);
+            border-color: rgba(244, 143, 177, 0.35);
+        }
+        .card .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #3d2c4a;
+            margin-bottom: 6px;
+        }
+        .card p {
+            font-size: 14px;
+            color: #8a7a9a;
+            line-height: 1.6;
+        }
+
+        /* ===== 关于页面 ===== */
+        .about-card {
+            background: rgba(255, 255, 255, 0.70);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 44px 36px;
+            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .about-card::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 150px; height: 150px;
+            background: radial-gradient(circle, rgba(244, 143, 177, 0.12), transparent 70%);
+            border-radius: 50%;
+        }
+        .about-card::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -60px;
+            width: 150px; height: 150px;
+            background: radial-gradient(circle, rgba(179, 157, 219, 0.12), transparent 70%);
+            border-radius: 50%;
+        }
+        .about-card .zodiac-deco {
+            font-size: 56px;
+            color: rgba(179, 157, 219, 0.25);
+            line-height: 1;
+            margin-bottom: 4px;
+            letter-spacing: 12px;
+        }
+        .about-card h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #3d2c4a;
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .about-card .bio {
+            font-size: 15px;
+            color: #7a6a8a;
+            line-height: 2;
+            position: relative;
+        }
+        .about-card .bio .highlight {
+            color: #d81b60;
+            font-weight: 600;
+        }
+        .about-card .signature-line {
+            margin: 20px auto 0;
+            width: 50px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #f48fb1, transparent);
+        }
+
+        /* ===== 空状态 ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9c8ca8;
+        }
+        .empty-state .big {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* ===== 底部 ===== */
+        .footer {
+            text-align: center;
+            padding: 40px 20px 20px;
+            color: #c0b0cc;
+            font-size: 13px;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 640px) {
+            .header h1 { font-size: 30px; letter-spacing: 5px; }
+            .tabs { flex-direction: column; align-items: center; gap: 10px; }
+            .tab-btn { width: 200px; }
+            .about-card { padding: 30px 20px; }
+            .bg-zodiac { font-size: 120vw; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 背景层 ===== -->
+    <div class="bg-anim"></div>
+    <div class="bg-zodiac">♓</div>
+    <div class="bg-fish"></div>
+    <div class="bg-ripple"></div>
+
+    <!-- ===== 玫瑰花瓣 ===== -->
+    <div class="floating-petals">
+        <div class="petal petal-rose"></div>
+        <div class="petal petal-blush"></div>
+        <div class="petal petal-pink"></div>
+        <div class="petal petal-rose"></div>
+        <div class="petal petal-pink"></div>
+        <div class="petal petal-blush"></div>
+        <div class="petal petal-rose"></div>
+        <div class="petal petal-pink"></div>
+        <div class="petal petal-blush"></div>
+        <div class="petal petal-rose"></div>
+        <div class="petal petal-pink"></div>
+        <div class="petal petal-blush"></div>
+    </div>
+
+    <!-- ===== 玫瑰金装饰角 ===== -->
+    <div class="rose-corner rose-corner--tl"></div>
+    <div class="rose-corner rose-corner--br"></div>
+
+    <!-- ===== 主容器 ===== -->
+    <div class="container">
+
+        <!-- 头部 -->
+        <header class="header">
+            <div class="rose-line">
+                <span class="line"></span>
+                <span class="diamond"></span>
+                <span class="line"></span>
+            </div>
+            <h1>双鱼小栈</h1>
+            <p class="subtitle">— 收藏美好 · 静待花开 —</p>
+            <div class="divider"></div>
+        </header>
+
+        <!-- 导航 -->
+        <nav class="tabs" id="tabs">
+            <button class="tab-btn active" data-tab="tools">🧰 常用工具</button>
+            <button class="tab-btn" data-tab="study">📚 学习空间</button>
+            <button class="tab-btn" data-tab="about">🌸 关于</button>
+        </nav>
+
+        <!-- ===== 常用工具 ===== -->
+        <section class="tab-content active" id="tab-tools">
+            <div class="grid" id="tools-grid"></div>
+        </section>
+
+        <!-- ===== 学习空间 ===== -->
+        <section class="tab-content" id="tab-study">
+            <div class="grid" id="study-grid"></div>
+        </section>
+
+        <!-- ===== 关于 ===== -->
+        <section class="tab-content" id="tab-about">
+            <div class="about-card">
+                <div class="zodiac-deco">♓</div>
+                <h2>关于双鱼小栈</h2>
+                <p class="bio">
+                    这里是 <span class="highlight">Jacky</span> 的小小收藏馆。<br>
+                    喜欢把实用的工具和有趣的知识<Br>像花瓣一样一片片收集起来。<br><br>
+                    愿来到这里的你，也能找到属于你的那片花瓣
+                </p>
+                <div class="signature-line"></div>
+            </div>
+        </section>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            Made with love by Jacky · 双鱼小栈
+        </footer>
+    </div>
+
+    <script>
+        // ============================================================
+        //   📦 数据 —— 你要添加/修改链接就在下面这两个数组里改
+        // ============================================================
+
+        const tools = [
+            { icon: '🔍', name: 'Google',        desc: '全球最大的搜索引擎',    url: 'https://www.google.com' },
+            { icon: '📦', name: 'GitHub',         desc: '代码托管与开源社区',    url: 'https://github.com' },
+            { icon: '🤖', name: 'ChatGPT',        desc: 'OpenAI 人工智能助手',  url: 'https://chat.openai.com' },
+            { icon: '🎨', name: 'Canva',           desc: '在线设计工具，海报/封面', url: 'https://www.canva.com' },
+            { icon: '📝', name: 'Notion',          desc: '多功能笔记与知识库',   url: 'https://www.notion.so' },
+            { icon: '🌤', name: '中国天气网',      desc: '实时天气预报',         url: 'https://www.weather.com.cn' },
+        ];
+
+        const study = [
+            { icon: '📖', name: 'MDN Web 文档',   desc: '前端开发权威参考手册',  url: 'https://developer.mozilla.org/zh-CN/' },
+            { icon: '🐍', name: 'Python 官方教程', desc: 'Python 入门到进阶',    url: 'https://docs.python.org/zh-cn/3/tutorial/' },
+            { icon: '🎓', name: '菜鸟教程',        desc: '编程基础教程大全',     url: 'https://www.runoob.com' },
+            { icon: '📊', name: 'Kaggle',          desc: '数据科学 & 机器学习',  url: 'https://www.kaggle.com' },
+            { icon: '🌐', name: 'W3Schools',       desc: 'Web 开发在线教程',     url: 'https://www.w3schools.com' },
+            { icon: '📺', name: 'Bilibili',        desc: '视频学习平台',         url: 'https://www.bilibili.com' },
+        ];
+
+        // ============================================================
+        //   🎨 渲染函数
+        // ============================================================
+
+        function renderCards(containerId, data) {
+            const grid = document.getElementById(containerId);
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="big">🌸</div><p>还没有内容，敬请期待～</p></div>`;
+                return;
+            }
+            grid.innerHTML = data.map(item => `
+                <div class="card" onclick="window.open('${item.url}', '_blank')">
+                    <div class="icon">${item.icon}</div>
+                    <h3>${item.name}</h3>
+                    <p>${item.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        // ============================================================
+        //   🔄 标签切换
+        // ============================================================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                document.getElementById('tab-' + tab).classList.add('active');
+            });
+        });
+
+        // ============================================================
+        //   🚀 初始化
+        // ============================================================
+
+        renderCards('tools-grid', tools);
+        renderCards('study-grid', study);
+    </script>
+
+</body>
+</html>
