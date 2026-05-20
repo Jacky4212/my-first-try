@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双鱼小栈</title>
+    <style>
+        /* ===== 重置 & 基础 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            color: #3d2c4a;
+            position: relative;
+        }
+        /* 动态渐变背景 */
+        .bg-anim {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -2;
+            background: linear-gradient(125deg, #f0e6ff, #fce4ec, #e3f2fd, #f3e5f5, #ffe0ec);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            25%  { background-position: 50% 0%; }
+            50%  { background-position: 100% 50%; }
+            75%  { background-position: 50% 100%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* 水波纹叠加层 */
+        .bg-ripple {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .bg-ripple::before,
+        .bg-ripple::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            border-radius: 45%;
+            opacity: 0.08;
+            animation: rippleSpin 14s linear infinite;
+        }
+        .bg-ripple::before {
+            background: radial-gradient(ellipse at 30% 50%, #b39ddb, transparent 60%);
+            animation-duration: 18s;
+        }
+        .bg-ripple::after {
+            background: radial-gradient(ellipse at 70% 50%, #f48fb1, transparent 60%);
+            animation-duration: 22s;
+            animation-direction: reverse;
+        }
+        @keyframes rippleSpin {
+            0%   { transform: rotate(0deg) scale(1); }
+            50%  { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* ===== 浮动装饰 ===== */
+        .floating-petals {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .petal {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle at 30% 30%, #f8bbd0, #f48fb1);
+            border-radius: 50% 0 50% 0;
+            opacity: 0.35;
+            animation: floatPetal linear infinite;
+        }
+        @keyframes floatPetal {
+            0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.35; }
+            90%  { opacity: 0.35; }
+            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+        }
+        .petal:nth-child(1)  { left: 5%;  width: 14px; height: 14px; animation-duration: 18s; animation-delay: 0s; }
+        .petal:nth-child(2)  { left: 15%; width: 20px; height: 20px; animation-duration: 22s; animation-delay: 3s; }
+        .petal:nth-child(3)  { left: 30%; width: 12px; height: 12px; animation-duration: 16s; animation-delay: 6s; }
+        .petal:nth-child(4)  { left: 45%; width: 22px; height: 22px; animation-duration: 25s; animation-delay: 1s; }
+        .petal:nth-child(5)  { left: 55%; width: 16px; height: 16px; animation-duration: 20s; animation-delay: 8s; }
+        .petal:nth-child(6)  { left: 70%; width: 14px; height: 14px; animation-duration: 19s; animation-delay: 4s; }
+        .petal:nth-child(7)  { left: 80%; width: 18px; height: 18px; animation-duration: 23s; animation-delay: 2s; }
+        .petal:nth-child(8)  { left: 90%; width: 15px; height: 15px; animation-duration: 17s; animation-delay: 7s; }
+        .petal:nth-child(9)  { left: 40%; width: 20px; height: 20px; animation-duration: 21s; animation-delay: 5s; }
+        .petal:nth-child(10) { left: 60%; width: 13px; height: 13px; animation-duration: 24s; animation-delay: 9s; }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px 60px;
+        }
+
+        /* ===== 头部 ===== */
+        .header {
+            text-align: center;
+            padding: 50px 20px 40px;
+            position: relative;
+        }
+        .header .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c4dff, #e91e63);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 6px;
+        }
+        .header .subtitle {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #9c7cae;
+            letter-spacing: 3px;
+        }
+        .header .divider {
+            width: 80px;
+            height: 3px;
+            margin: 20px auto 0;
+            background: linear-gradient(90deg, #b39ddb, #f48fb1, #81d4fa);
+            border-radius: 2px;
+        }
+
+        /* ===== 标签导航 ===== */
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 40px 0 30px;
+        }
+        .tab-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.55);
+            color: #7a5c8c;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 12px rgba(150, 100, 180, 0.10);
+            letter-spacing: 2px;
+        }
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(150, 100, 180, 0.20);
+            background: rgba(255, 255, 255, 0.75);
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #b39ddb, #f48fb1);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(180, 130, 210, 0.35);
+        }
+
+        /* ===== 内容区 ===== */
+        .tab-content {
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== 卡片网格 ===== */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.70);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(150, 100, 180, 0.18);
+            border-color: rgba(244, 143, 177, 0.40);
+        }
+        .card .emoji {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #3d2c4a;
+            margin-bottom: 6px;
+        }
+        .card p {
+            font-size: 14px;
+            color: #8a7a9a;
+            line-height: 1.6;
+        }
+        .card a {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        /* ===== 关于页面 ===== */
+        .about-card {
+            background: rgba(255, 255, 255, 0.70);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(150, 100, 180, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.50);
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .about-card .big-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+        .about-card h2 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #3d2c4a;
+            margin-bottom: 12px;
+        }
+        .about-card .bio {
+            font-size: 15px;
+            color: #7a6a8a;
+            line-height: 1.9;
+            margin-bottom: 20px;
+        }
+        .about-card .badge {
+            display: inline-block;
+            margin: 4px 6px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #e8e0f0, #fce4ec);
+            font-size: 13px;
+            color: #6a4a7a;
+        }
+        .about-card .footer-note {
+            margin-top: 24px;
+            font-size: 13px;
+            color: #b09cb8;
+            border-top: 1px solid rgba(150, 100, 180, 0.12);
+            padding-top: 20px;
+        }
+
+        /* ===== 信息提示（空状态/操作反馈） ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9c8ca8;
+        }
+        .empty-state .big {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* ===== 底部 ===== */
+        .footer {
+            text-align: center;
+            padding: 40px 20px 20px;
+            color: #b8a8c4;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+        .footer .heart {
+            color: #f48fb1;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 640px) {
+            .header h1 { font-size: 30px; letter-spacing: 4px; }
+            .tabs { flex-direction: column; align-items: center; gap: 10px; }
+            .tab-btn { width: 200px; }
+            .about-card { padding: 28px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== 动态背景 ===== -->
+    <div class="bg-anim"></div>
+    <div class="bg-ripple"></div>
+
+    <!-- ===== 浮动花瓣 ===== -->
+    <div class="floating-petals">
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+        <div class="petal"></div>
+    </div>
+
+    <!-- ===== 主容器 ===== -->
+    <div class="container">
+
+        <!-- 头部 -->
+        <header class="header">
+            <span class="icon">♓ 🌹</span>
+            <h1>双鱼小栈</h1>
+            <p class="subtitle">— 收藏美好 · 静待花开 —</p>
+            <div class="divider"></div>
+        </header>
+
+        <!-- 导航 -->
+        <nav class="tabs" id="tabs">
+            <button class="tab-btn active" data-tab="tools">🧰 常用工具</button>
+            <button class="tab-btn" data-tab="study">📚 学习空间</button>
+            <button class="tab-btn" data-tab="about">🌹 关于</button>
+        </nav>
+
+        <!-- ===== 常用工具 ===== -->
+        <section class="tab-content active" id="tab-tools">
+            <div class="grid" id="tools-grid">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+        </section>
+
+        <!-- ===== 学习空间 ===== -->
+        <section class="tab-content" id="tab-study">
+            <div class="grid" id="study-grid">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+        </section>
+
+        <!-- ===== 关于 ===== -->
+        <section class="tab-content" id="tab-about">
+            <div class="about-card">
+                <div class="big-icon">♓</div>
+                <h2>关于双鱼小栈</h2>
+                <p class="bio">
+                    这里是 <strong>Jacky</strong> 的小小收藏馆。<br>
+                    双鱼座的我，喜欢把实用的工具和有趣的知识<Br>像花瓣一样一片片收集起来。<br><br>
+                    愿来到这里的你，也能找到属于你的那片花瓣 🌸
+                </p>
+                <div>
+                    <span class="badge">♓ 双鱼座</span>
+                    <span class="badge">🌹 玫瑰收藏家</span>
+                    <span class="badge">💻 终身学习者</span>
+                </div>
+                <div class="footer-note">
+                    ✦ 本站内容持续更新中 ✦
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            Made with <span class="heart">♥</span> by Jacky &nbsp;·&nbsp; 双鱼小栈
+        </footer>
+    </div>
+
+    <script>
+        // ============================================================
+        //   📦 数据 —— 你要添加/修改链接就在下面这两个数组里改
+        // ============================================================
+
+        const tools = [
+            { emoji: '🔍', name: 'Google',        desc: '全球最大的搜索引擎',    url: 'https://www.google.com' },
+            { emoji: '📦', name: 'GitHub',         desc: '代码托管与开源社区',    url: 'https://github.com' },
+            { emoji: '🤖', name: 'ChatGPT',        desc: 'OpenAI 人工智能助手',  url: 'https://chat.openai.com' },
+            { emoji: '🎨', name: 'Canva',           desc: '在线设计工具，海报/封面', url: 'https://www.canva.com' },
+            { emoji: '📝', name: 'Notion',          desc: '多功能笔记与知识库',   url: 'https://www.notion.so' },
+            { emoji: '🌤', name: '中国天气网',      desc: '实时天气预报',         url: 'https://www.weather.com.cn' },
+        ];
+
+        const study = [
+            { emoji: '📖', name: 'MDN Web 文档',   desc: '前端开发权威参考手册',  url: 'https://developer.mozilla.org/zh-CN/' },
+            { emoji: '🐍', name: 'Python 官方教程', desc: 'Python 入门到进阶',    url: 'https://docs.python.org/zh-cn/3/tutorial/' },
+            { emoji: '🎓', name: '菜鸟教程',        desc: '编程基础教程大全',     url: 'https://www.runoob.com' },
+            { emoji: '📊', name: 'Kaggle',          desc: '数据科学 & 机器学习',  url: 'https://www.kaggle.com' },
+            { emoji: '🌐', name: 'W3Schools',       desc: 'Web 开发在线教程',     url: 'https://www.w3schools.com' },
+            { emoji: '📺', name: 'Bilibili',        desc: '视频学习平台',         url: 'https://www.bilibili.com' },
+        ];
+
+        // ============================================================
+        //   🎨 渲染函数
+        // ============================================================
+
+        function renderCards(containerId, data) {
+            const grid = document.getElementById(containerId);
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="big">🌸</div><p>还没有内容，敬请期待～</p></div>`;
+                return;
+            }
+            grid.innerHTML = data.map(item => `
+                <div class="card" onclick="window.open('${item.url}', '_blank')">
+                    <div class="emoji">${item.emoji}</div>
+                    <h3>${item.name}</h3>
+                    <p>${item.desc}</p>
+                </div>
+            `).join('');
+        }
+
+        // ============================================================
+        //   🔄 标签切换
+        // ============================================================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                const tab = btn.dataset.tab;
+                document.getElementById('tab-' + tab).classList.add('active');
+            });
+        });
+
+        // ============================================================
+        //   🚀 初始化
+        // ============================================================
+
+        renderCards('tools-grid', tools);
+        renderCards('study-grid', study);
+    </script>
+
+</body>
+</html>
