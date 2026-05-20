@@ -413,33 +413,33 @@
             // 两种类型: 小圆点 + 漫画闪光星
             const STARS = 180;
             const stars = [];
-            // 星色彩色板 (在深色背景上发光)
+            // 星色彩色板 — 高饱和鲜艳色
             const colors = [
-                { r: 200, g: 170, b: 255 },  // 淡紫
-                { r: 255, g: 200, b: 220 },  // 粉红
-                { r: 180, g: 210, b: 255 },  // 淡蓝
-                { r: 255, g: 220, b: 180 },  // 暖金
-                { r: 220, g: 180, b: 255 },  // 紫罗兰
-                { r: 255, g: 190, b: 210 },  // 玫瑰粉
+                { r: 210, g: 130, b: 255 },  // 亮紫
+                { r: 255, g: 130, b: 180 },  // 亮粉
+                { r: 130, g: 180, b: 255 },  // 亮蓝
+                { r: 255, g: 210, b: 100 },  // 金黄
+                { r: 200, g: 140, b: 255 },  // 紫罗兰
+                { r: 255, g: 150, b: 200 },  // 玫瑰粉
             ];
 
             for (let i = 0; i < STARS; i++) {
                 const col = colors[Math.floor(Math.random() * colors.length)];
-                const isSparkle = Math.random() < 0.25; // 25% 是闪光星
+                const isSparkle = Math.random() < 0.30; // 30% 是闪光星
                 stars.push({
                     x: Math.random() * W,
                     y: Math.random() * H,
-                    r: isSparkle ? Math.random() * 5 + 3 : Math.random() * 1.8 + 0.5,
+                    r: isSparkle ? Math.random() * 6 + 4 : Math.random() * 2.0 + 0.8,
                     type: isSparkle ? 'sparkle' : 'dot',
                     col,
                     rot: Math.random() * Math.PI * 2,
-                    rotSpeed: (Math.random() - 0.5) * 0.002,
+                    rotSpeed: (Math.random() - 0.5) * 0.0006,
                     s1: Math.random() * 0.012 + 0.004,
                     s2: Math.random() * 0.022 + 0.010,
                     p1: Math.random() * Math.PI * 2,
                     p2: Math.random() * Math.PI * 2,
                     depth: Math.random() * 0.55 + 0.25,
-                    baseA: Math.random() * 0.35 + 0.2,
+                    baseA: Math.random() * 0.35 + 0.35,  // 更高基础透明度
                 });
             }
 
@@ -490,7 +490,34 @@
                     const { r, g, b } = s.col;
 
                     if (s.type === 'dot') {
-                        // 圆点星: 光晕 + 核心
+                        // 圆点星: 大光晕 + 彩色核心 + 白色高光
+                        const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+                        gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.2})`);
+                        gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                        ctx.fillStyle = gr;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 彩色内核
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * Math.max(0.4, tw), 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.9})`;
+                        ctx.fill();
+
+                        // 白色高光核心
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.r * 0.35, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255,255,255,${a * 0.6})`;
+                        ctx.fill();
+                    } else {
+                        // 漫画闪光星 — 高光强化版
+                        const bright = Math.max(0.3, tw);
+                        s.rot += s.rotSpeed;
+                        const color = `rgba(${r},${g},${b},${a * 0.9})`;
+                        drawSparkle(s.x, s.y, s.r * bright, color, s.rot);
+
+                        // 大光晕 (更明显)
                         const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
                         gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.15})`);
                         gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
@@ -499,30 +526,16 @@
                         ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2);
                         ctx.fill();
 
+                        // 额外高光十字线 (漫画闪光标志)
                         ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r * Math.max(0.3, tw), 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.85})`;
-                        ctx.fill();
-
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r * 0.3, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255,255,255,${a * 0.5})`;
-                        ctx.fill();
-                    } else {
-                        // 漫画闪光星
-                        const bright = Math.max(0.3, tw);
-                        s.rot += s.rotSpeed;
-                        const color = `rgba(${r},${g},${b},${a * 0.85})`;
-                        drawSparkle(s.x, s.y, s.r * bright, color, s.rot);
-
-                        // 外加一层光晕
-                        const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
-                        gr.addColorStop(0, `rgba(${r},${g},${b},${a * 0.08})`);
-                        gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
-                        ctx.fillStyle = gr;
-                        ctx.beginPath();
-                        ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
-                        ctx.fill();
+                        const hl = s.r * bright * 1.1;
+                        ctx.moveTo(s.x - hl * 0.4, s.y - hl * 0.4);
+                        ctx.lineTo(s.x + hl * 0.4, s.y + hl * 0.4);
+                        ctx.moveTo(s.x - hl * 0.4, s.y + hl * 0.4);
+                        ctx.lineTo(s.x + hl * 0.4, s.y - hl * 0.4);
+                        ctx.strokeStyle = `rgba(255,255,255,${a * 0.2})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
                     }
                 }
 
@@ -549,14 +562,14 @@
                     const tw = Math.sin(frame * cp.speed + cp.phase) * cp.depth * 0.4 + (1 - cp.depth * 0.4);
                     const a = Math.max(0.25, tw);
 
-                    const baseSize = isKnot ? 10 : isExtra ? 4 : 7;
-                    const glowR = isKnot ? 40 : isExtra ? 12 : 25;
+                    const baseSize = isKnot ? 12 : isExtra ? 5 : 8;
+                    const glowR = isKnot ? 50 : isExtra ? 16 : 30;
 
-                    // 光晕 (用玫瑰粉紫)
+                    // 光晕 (更亮)
                     const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                    const ga = isKnot ? 0.18 : 0.10;
-                    grd.addColorStop(0, `rgba(200, 130, 180, ${ga * a})`);
-                    grd.addColorStop(1, `rgba(200, 130, 180, 0)`);
+                    const ga = isKnot ? 0.25 : 0.15;
+                    grd.addColorStop(0, `rgba(220, 140, 190, ${ga * a})`);
+                    grd.addColorStop(1, `rgba(220, 140, 190, 0)`);
                     ctx.fillStyle = grd;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
@@ -564,16 +577,25 @@
 
                     // 用闪光星绘制星座星
                     const starColor = isKnot
-                        ? `rgba(244, 140, 170, ${0.9 * a})`
-                        : `rgba(200, 160, 230, ${0.8 * a})`;
-                    const rot = frame * 0.005 + i * 1.2;
+                        ? `rgba(255, 140, 170, ${0.95 * a})`
+                        : `rgba(210, 160, 240, ${0.85 * a})`;
+                    const rot = frame * 0.003 + i * 1.2;
                     drawSparkle(p.x, p.y, baseSize * a, starColor, rot);
 
-                    // 结星加玫瑰金高光环
+                    // 结星加玫瑰金高光
                     if (isKnot) {
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 220, 230, ${0.7 * a})`;
+                        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 220, 235, ${0.8 * a})`;
+                        ctx.fill();
+
+                        // 结星外圈光晕
+                        const g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 20);
+                        g2.addColorStop(0, `rgba(255, 200, 220, ${0.15 * a})`);
+                        g2.addColorStop(1, `rgba(255, 200, 220, 0)`);
+                        ctx.fillStyle = g2;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
