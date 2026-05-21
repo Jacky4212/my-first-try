@@ -1,432 +1,312 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>吉他谱 - 双鱼小栈</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(145deg, #1a1d4e 0%, #301d5e 30%, #1d3d5e 60%, #2a1f60 100%);
-            color: #e8e0f0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吉他谱 - 双鱼小栈</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  min-height:100vh;
+  background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
+  color:#e8e0f0
+}
 
-        /* ===== Header ===== */
-        .header { max-width: 900px; margin: 0 auto; padding: 30px 20px 10px; }
-        .back-link {
-            color: #8a7aaa; text-decoration: none; font-size: 14px;
-            display: inline-block; margin-bottom: 10px; transition: color .2s;
-            letter-spacing: 1px;
-        }
-        .back-link:hover { color: #f48fb1; }
-        .header h1 {
-            font-size: 34px; font-weight: 700; letter-spacing: 4px;
-            background: linear-gradient(135deg, #b39ddb, #f48fb1, #81d4fa);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .header .subtitle { font-size: 14px; color: #8a7aaa; margin-top: 6px; letter-spacing: 2px; }
-        .header .divider {
-            width: 80px; height: 2px; margin: 16px 0 0;
-            background: linear-gradient(90deg, transparent, #f48fb1, transparent);
-            border-radius: 2px;
-        }
+/* header */
+.hdr{max-width:900px;margin:0 auto;padding:30px 20px 10px}
+.hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
+.hdr a:hover{color:#f48fb1}
+.hdr h1{font-size:34px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
+.hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
 
-        /* ===== Song List ===== */
-        .song-list { max-width: 900px; margin: 20px auto; padding: 0 20px; display: grid; gap: 14px; }
-        .song-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(16px);
-            border-radius: 16px; padding: 20px 24px;
-            border: 1px solid rgba(255,255,255,0.06);
-            cursor: pointer; transition: all .3s;
-            display: flex; align-items: center; gap: 16px;
-        }
-        .song-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(244,143,177,0.2);
-            background: rgba(255,255,255,0.08);
-            box-shadow: 0 8px 30px rgba(100,60,160,0.15);
-        }
-        .song-card .icon-wrap {
-            width: 52px; height: 52px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(255,255,255,0.06);
-            border-radius: 12px; font-size: 28px;
-        }
-        .song-card .info h3 { font-size: 18px; font-weight: 600; color: #e0d0e8; }
-        .song-card .info p  { font-size: 13px; color: #8a7aaa; margin-top: 2px; letter-spacing: 1px; }
-        .empty-state { text-align: center; padding: 80px 20px; color: #6a5a80; grid-column: 1 / -1; }
-        .empty-state .big-icon { font-size: 56px; margin-bottom: 14px; }
-        .empty-state p { font-size: 15px; letter-spacing: 1px; }
+/* song list */
+.list{max-width:900px;margin:20px auto;padding:0 20px;display:grid;gap:14px}
+.card{
+  background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border-radius:16px;
+  padding:20px 24px;border:1px solid rgba(255,255,255,0.06);
+  cursor:pointer;transition:all .3s;
+  display:flex;align-items:center;gap:16px
+}
+.card:hover{
+  transform:translateY(-2px);border-color:rgba(244,143,177,0.2);
+  background:rgba(255,255,255,0.08);box-shadow:0 8px 30px rgba(100,60,160,0.15)
+}
+.card .ico{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-radius:12px;font-size:28px}
+.card .n h3{font-size:18px;font-weight:600;color:#e0d0e8}
+.card .n p{font-size:13px;color:#8a7aaa;margin-top:2px;letter-spacing:1px}
 
-        /* ===== Footer ===== */
-        .footer { text-align: center; padding: 40px 20px 20px; color: #6a5a80; font-size: 13px; letter-spacing: 2px; }
+.footer{text-align:center;padding:40px 20px 20px;color:#6a5a80;font-size:13px;letter-spacing:2px}
 
-        /* ===== Image Viewer Overlay ===== */
-        .viewer {
-            display: none; position: fixed; inset: 0; z-index: 1000;
-            background: rgba(0,0,0,0.92);
-            flex-direction: column;
-        }
-        .viewer.open { display: flex; }
+/* ========== VIEWER OVERLAY ========== */
+.vwr{display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column}
+.vwr.on{display:flex}
+.vwr .top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.8);flex-shrink:0;z-index:2}
+.vwr .top .t{font-size:15px;font-weight:600;color:#e0d0e8;letter-spacing:1px}
+.vwr .top button{width:34px;height:34px;border:none;background:rgba(255,255,255,0.12);border-radius:50%;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.vwr .top button:hover{background:rgba(255,255,255,0.25)}
 
-        /* ---- Top bar ---- */
-        .viewer-top {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 16px;
-            background: rgba(0,0,0,0.5);
-            position: relative; z-index: 2;
-            flex-shrink: 0;
-        }
-        .viewer-top .song-title { font-size: 15px; font-weight: 600; color: #e0d0e8; letter-spacing: 1px; }
-        .btn-close {
-            width: 36px; height: 36px; border: none;
-            background: rgba(255,255,255,0.1); border-radius: 50%;
-            color: #fff; font-size: 18px; cursor: pointer;
-            transition: background .2s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-close:hover { background: rgba(255,255,255,0.2); }
+/* scrollable body */
+.vwr .body{
+  flex:1;overflow:auto;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;align-items:center
+}
+.vwr .body::-webkit-scrollbar{width:5px}
+.vwr .body::-webkit-scrollbar-track{background:transparent}
+.vwr .body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px}
+.vwr .body img{display:block;width:100%;max-width:1000px;height:auto}
+.vwr .body .ld{color:#8a7aaa;font-size:14px;letter-spacing:2px;margin-top:50px}
 
-        /* ---- Scrollable image area ---- */
-        .viewer-body {
-            flex: 1; overflow: auto; -webkit-overflow-scrolling: touch;
-            display: flex; justify-content: center;
-            position: relative;
-        }
-        .viewer-body::-webkit-scrollbar { width: 5px; }
-        .viewer-body::-webkit-scrollbar-track { background: transparent; }
-        .viewer-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-        .viewer-body img {
-            display: block;
-            width: 100%; max-width: 1100px;
-            height: auto;
-            flex-shrink: 0;
-        }
-        .viewer-loading {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%,-50%);
-            color: #8a7aaa; font-size: 14px; letter-spacing: 2px;
-            z-index: 0;
-        }
+/* bottom bar */
+.vwr .bot{
+  flex-shrink:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);
+  padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center
+}
+.btn-roll{
+  padding:8px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+  background:#2ecc71;color:#fff;white-space:nowrap
+}
+.btn-roll:hover{background:#27ae60}
+.btn-roll.on{background:#e74c3c}
+.btn-roll.on:hover{background:#c0392b}
 
-        /* ---- Bottom control bar ---- */
-        .viewer-bottom {
-            flex-shrink: 0;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            padding: 10px 16px;
-            display: flex; align-items: center; gap: 14px;
-            flex-wrap: wrap; justify-content: center;
-        }
+.sgrp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sgrp .lb{font-size:13px;color:#ccc}
+.sgrp .sv{color:#a8d8ea;font-weight:600;font-size:13px;min-width:20px;text-align:center}
+.sgrp input[type=range]{
+  width:110px;height:4px;-webkit-appearance:none;appearance:none;background:#444;border-radius:2px;outline:none
+}
+.sgrp input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
+}
+.sgrp input[type=range]::-moz-range-thumb{
+  width:16px;height:16px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
+}
+.sgrp .ni{
+  width:46px;padding:4px 4px;border:1px solid #555;border-radius:5px;
+  background:#111;color:#eee;font-size:13px;font-family:'Courier New',monospace;text-align:center;outline:none
+}
+.sgrp .ni:focus{border-color:#a8d8ea}
+.sgrp .ni.er{border-color:#e74c3c}
+.agrp{display:inline-flex;flex-direction:column;gap:1px;vertical-align:middle}
+.agrp button{
+  width:22px;height:15px;border:none;cursor:pointer;font-size:7px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:3px;background:#444;color:#a8d8ea;padding:0;user-select:none
+}
+.agrp button:hover{background:#666}
+.agrp button:active{background:#777}
 
-        /* Auto-scroll button */
-        .btn-scroll {
-            padding: 8px 18px; border: none; border-radius: 8px;
-            font-size: 14px; font-weight: 600; cursor: pointer;
-            background: #2ecc71; color: #fff;
-            transition: all .2s; flex-shrink: 0;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .btn-scroll:hover { background: #27ae60; }
-        .btn-scroll.running { background: #e74c3c; }
-        .btn-scroll.running:hover { background: #c0392b; }
-
-        /* Speed control (pendulum style) */
-        .speed-group {
-            display: flex; align-items: center; gap: 8px;
-            flex-wrap: wrap;
-        }
-        .speed-group .slabel { font-size: 13px; color: #ccc; }
-        .speed-group .sval { color: #a8d8ea; font-weight: 600; font-size: 13px; min-width: 20px; text-align: center; }
-        input[type="range"].s-slider {
-            width: 120px; height: 4px;
-            -webkit-appearance: none; appearance: none;
-            background: #333; border-radius: 2px; outline: none;
-        }
-        input[type="range"].s-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none;
-            width: 16px; height: 16px;
-            background: #a8d8ea; border-radius: 50%; cursor: pointer; border: none;
-        }
-        input[type="range"].s-slider::-moz-range-thumb {
-            width: 16px; height: 16px;
-            background: #a8d8ea; border-radius: 50%; cursor: pointer; border: none;
-        }
-        .s-input {
-            width: 48px; padding: 4px 6px;
-            border: 1px solid #444; border-radius: 5px;
-            background: #111; color: #eee;
-            font-size: 13px; font-family: 'Courier New', monospace;
-            text-align: center; outline: none;
-        }
-        .s-input:focus { border-color: #a8d8ea; }
-        .s-input.invalid { border-color: #e74c3c; }
-        .arrow-group {
-            display: inline-flex; flex-direction: column; gap: 1px;
-            vertical-align: middle;
-        }
-        .arrow-btn {
-            width: 22px; height: 15px; border: none; cursor: pointer;
-            font-size: 7px; line-height: 1;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 3px; background: #333; color: #a8d8ea;
-            transition: background .15s; padding: 0; user-select: none;
-        }
-        .arrow-btn:hover { background: #555; }
-        .arrow-btn:active { background: #666; }
-
-        /* ===== Responsive ===== */
-        @media (max-width: 640px) {
-            .header h1 { font-size: 26px; letter-spacing: 3px; }
-            .song-card { padding: 14px 16px; }
-            .song-card .icon-wrap { width: 42px; height: 42px; font-size: 22px; }
-            .viewer-body img { max-width: 100%; }
-            input[type="range"].s-slider { width: 90px; }
-            .viewer-bottom { padding: 10px 12px; gap: 10px; }
-        }
-    </style>
+@media(max-width:640px){
+  .hdr h1{font-size:26px;letter-spacing:3px}
+  .card{padding:14px 16px}
+  .card .ico{width:42px;height:42px;font-size:22px}
+  .sgrp input[type=range]{width:85px}
+}
+</style>
 </head>
 <body>
-    <!-- ===== Song List View ===== -->
-    <div class="header">
-        <a href="../index.html" class="back-link">← 返回首页</a>
-        <h1>吉他谱</h1>
-        <p class="subtitle">收藏喜欢的吉他谱，随时弹唱</p>
-        <div class="divider"></div>
+
+<div class="hdr">
+  <a href="../index.html">← 返回首页</a>
+  <h1>吉他谱</h1>
+  <p>收藏喜欢的吉他谱，随时弹唱</p>
+  <div class="div"></div>
+</div>
+
+<div class="list" id="list"></div>
+
+<div class="footer">双鱼小栈 · 吉他谱</div>
+
+<!-- Viewer -->
+<div class="vwr" id="vwr">
+  <div class="top">
+    <span class="t" id="vTitle">—</span>
+    <button id="vClose">✕</button>
+  </div>
+  <div class="body" id="vBody">
+    <div class="ld" id="vLd">加载中...</div>
+    <img id="vImg" alt="吉他谱">
+  </div>
+  <div class="bot">
+    <button class="btn-roll" id="vRoll">▶ 自动滚动</button>
+    <div class="sgrp">
+      <span class="lb">速度</span>
+      <span class="sv" id="spdVal">5</span>
+      <input type="range" id="spdRng" min="1" max="10" step="1" value="5">
+      <input type="text" class="ni" id="spdInp" value="5" maxlength="2" inputmode="numeric">
+      <div class="agrp">
+        <button data-d="1">▲</button>
+        <button data-d="-1">▼</button>
+      </div>
     </div>
+  </div>
+</div>
 
-    <div class="song-list" id="songList"></div>
+<script>
+(function(){
+'use strict';
 
-    <footer class="footer">🎸 双鱼小栈 · 吉他谱</footer>
+// ===== songs =====
+var SONGS = [
+  {id:'hourai', title:'后来', artist:'刘若英', file:'后来.jpg'}
+];
 
-    <!-- ===== Image Viewer Overlay ===== -->
-    <div class="viewer" id="viewer">
-        <div class="viewer-top">
-            <span class="song-title" id="viewerTitle">—</span>
-            <button class="btn-close" id="btnClose" title="退出 (Esc)">✕</button>
-        </div>
-        <div class="viewer-body" id="viewerBody">
-            <div class="viewer-loading" id="viewerLoading">加载中...</div>
-            <img id="viewerImage" alt="吉他谱">
-        </div>
-        <div class="viewer-bottom">
-            <button class="btn-scroll" id="btnAutoScroll">▶ 自动滚动</button>
-            <div class="speed-group">
-                <span class="slabel">速度</span>
-                <span class="sval" id="speedVal">5</span>
-                <input type="range" class="s-slider" id="speedSlider" min="1" max="10" step="1" value="5">
-                <input type="text" class="s-input" id="speedInput" value="5" maxlength="2" inputmode="numeric">
-                <div class="arrow-group">
-                    <button class="arrow-btn" data-dir="1" title="加速">▲</button>
-                    <button class="arrow-btn" data-dir="-1" title="减速">▼</button>
-                </div>
-            </div>
-        </div>
-    </div>
+// ===== render list =====
+var listEl = document.getElementById('list');
+listEl.innerHTML = SONGS.map(function(s){
+  return '<div class="card" data-id="'+s.id+'">'+
+    '<div class="ico">🎸</div>'+
+    '<div class="n"><h3>'+s.title+'</h3><p>'+s.artist+'</p></div>'+
+    '</div>';
+}).join('');
 
-    <script>
-    (function() {
-        // ============================================================
-        //  歌曲数据 — 在此添加新歌
-        // ============================================================
-        const songs = [
-            { id: 'hourai', title: '后来', artist: '刘若英', file: '后来.jpg' },
-            // { id: 'xxx', title: '歌名', artist: '艺术家', file: 'xxx.jpg' },
-        ];
+// ===== viewer =====
+var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
+    vImg=document.getElementById('vImg'), vLd=document.getElementById('vLd'),
+    vTitle=document.getElementById('vTitle'), vClose=document.getElementById('vClose'),
+    vRoll=document.getElementById('vRoll'),
+    spdRng=document.getElementById('spdRng'), spdInp=document.getElementById('spdInp'),
+    spdVal=document.getElementById('spdVal');
 
-        // ============================================================
-        //  渲染歌单
-        // ============================================================
-        const songList = document.getElementById('songList');
-        function renderSongList() {
-            if (!songs.length) {
-                songList.innerHTML = '<div class="empty-state"><div class="big-icon">🎸</div><p>还没有吉他谱～</p></div>';
-                return;
-            }
-            songList.innerHTML = songs.map(s => `
-                <div class="song-card" data-id="${s.id}">
-                    <div class="icon-wrap">🎸</div>
-                    <div class="info">
-                        <h3>${s.title}</h3>
-                        <p>${s.artist || '未知艺术家'}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-        renderSongList();
+var rolling=false, rafId=null, speed=5, arrowTimers={};
 
-        // ============================================================
-        //  图查看控件
-        // ============================================================
-        const viewer = document.getElementById('viewer');
-        const viewerBody = document.getElementById('viewerBody');
-        const viewerImage = document.getElementById('viewerImage');
-        const viewerTitle = document.getElementById('viewerTitle');
-        const viewerLoading = document.getElementById('viewerLoading');
-        const btnClose = document.getElementById('btnClose');
-        const btnAutoScroll = document.getElementById('btnAutoScroll');
-        const speedSlider = document.getElementById('speedSlider');
-        const speedInput = document.getElementById('speedInput');
-        const speedVal = document.getElementById('speedVal');
+function openViewer(song){
+  rolling=false; if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  vRoll.textContent='▶ 自动滚动'; vRoll.classList.remove('on');
+  vImg.style.display='none';
+  vLd.style.display='block'; vLd.textContent='加载中...';
+  vTitle.textContent=song.title+' — '+song.artist;
+  vBody.scrollTop=0;
+  vwr.classList.add('on');
 
-        let autoScrolling = false;
-        let animId = null;
-        let arrowTimers = {};
-        let speed = 5;
+  vImg.onload=function(){
+    vLd.style.display='none';
+    vImg.style.display='block';
+  };
+  vImg.onerror=function(){
+    vLd.textContent='加载失败：找不到图片';
+  };
+  vImg.src=song.file;
+}
 
-        // ---- 打开查看器 ----
-        songList.addEventListener('click', function(e) {
-            const card = e.target.closest('.song-card');
-            if (!card) return;
-            const id = card.dataset.id;
-            const song = songs.find(s => s.id === id);
-            if (!song) return;
+function closeViewer(){
+  vwr.classList.remove('on');
+  rolling=false;
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+}
 
-            stopAutoScroll();
-            viewerImage.src = '';
-            viewerTitle.textContent = song.title + ' — ' + (song.artist || '');
-            viewerLoading.style.display = 'block';
-            viewerLoading.textContent = '加载中...';
-            viewerBody.scrollTop = 0;
-            viewer.classList.add('open');
+// click song
+listEl.addEventListener('click',function(e){
+  var card=e.target.closest('.card');
+  if(!card)return;
+  var song=SONGS.find(function(s){return s.id===card.dataset.id});
+  if(song)openViewer(song);
+});
 
-            viewerImage.onload = function() {
-                viewerLoading.style.display = 'none';
-            };
-            viewerImage.onerror = function() {
-                viewerLoading.textContent = '加载失败，请检查图片路径';
-            };
-            // 触发加载
-            viewerImage.src = song.file;
-        });
+vClose.addEventListener('click',closeViewer);
 
-        // ---- 关闭查看器 ----
-        function closeViewer() {
-            viewer.classList.remove('open');
-            stopAutoScroll();
-        }
-        btnClose.addEventListener('click', closeViewer);
+// keyboard
+document.addEventListener('keydown',function(e){
+  if(!vwr.classList.contains('on'))return;
+  if(e.key==='Escape')closeViewer();
+  if(e.key===' '){e.preventDefault();vRoll.click();}
+});
 
-        // ---- 键盘快捷键 ----
-        document.addEventListener('keydown', function(e) {
-            if (!viewer.classList.contains('open')) return;
-            if (e.key === 'Escape') { closeViewer(); }
-            if (e.key === ' ') { e.preventDefault(); btnAutoScroll.click(); }
-        });
+// ===== auto scroll =====
+vRoll.addEventListener('click',function(){
+  if(rolling)stopRoll();
+  else startRoll();
+});
 
-        // ---- 自动滚动 ----
-        btnAutoScroll.addEventListener('click', function() {
-            autoScrolling ? stopAutoScroll() : startAutoScroll();
-        });
+function startRoll(){
+  if(rolling)return;
+  rolling=true;
+  vRoll.textContent='⏸ 暂停';
+  vRoll.classList.add('on');
+  rollLoop();
+}
 
-        function startAutoScroll() {
-            if (autoScrolling) return;
-            autoScrolling = true;
-            btnAutoScroll.textContent = '⏸ 暂停';
-            btnAutoScroll.classList.add('running');
-            scrollLoop();
-        }
+function stopRoll(){
+  rolling=false;
+  vRoll.textContent='▶ 自动滚动';
+  vRoll.classList.remove('on');
+  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+}
 
-        function stopAutoScroll() {
-            autoScrolling = false;
-            btnAutoScroll.textContent = '▶ 自动滚动';
-            btnAutoScroll.classList.remove('running');
-            if (animId) { cancelAnimationFrame(animId); animId = null; }
-        }
+function rollLoop(){
+  if(!rolling)return;
+  var px=speed*0.4;
+  vBody.scrollTop+=px;
+  // stop at bottom
+  if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
+    rolling=false;
+    vRoll.textContent='▶ 自动滚动';
+    vRoll.classList.remove('on');
+    rafId=null;
+    return;
+  }
+  rafId=requestAnimationFrame(rollLoop);
+}
 
-        function scrollLoop() {
-            if (!autoScrolling) return;
-            // 速度 1→10 对应 0.3→3.0 px/frame (≈18~180 px/s at 60fps)
-            var px = speed * 0.3;
-            viewerBody.scrollTop += px;
+// pause on manual scroll
+(function(){
+  var t;
+  vBody.addEventListener('scroll',function(){
+    if(!rolling)return;
+    if(t)clearTimeout(t);
+    // briefly pause when user manually scrolls, then resume
+    stopRoll();
+    // actually, the user just wants it to be simpler - don't auto-pause
+    // let the user toggle manually
+  });
+})();
 
-            // 到底自动停止
-            if (viewerBody.scrollTop + viewerBody.clientHeight >= viewerBody.scrollHeight - 5) {
-                // 已到底，停止自动滚动
-                autoScrolling = false;
-                btnAutoScroll.textContent = '▶ 自动滚动';
-                btnAutoScroll.classList.remove('running');
-                animId = null;
-                return;
-            }
-            animId = requestAnimationFrame(scrollLoop);
-        }
+// ===== speed control =====
+function setSpeed(v){
+  if(v<1)v=1; if(v>10)v=10;
+  speed=v;
+  spdRng.value=v;
+  spdInp.value=v;
+  spdVal.textContent=v;
+}
 
-        // ---- 速度控制: 滑块 ----
-        speedSlider.addEventListener('input', function() {
-            speed = parseInt(speedSlider.value);
-            speedInput.value = speed;
-            speedVal.textContent = speed;
-        });
+spdRng.addEventListener('input',function(){
+  setSpeed(parseInt(spdRng.value));
+});
 
-        // ---- 速度控制: 输入框 ----
-        speedInput.addEventListener('focus', function() { this.select(); });
-        speedInput.addEventListener('blur', function() {
-            var v = parseInt(this.value);
-            if (isNaN(v) || v < 1) v = 1;
-            if (v > 10) v = 10;
-            this.classList.remove('invalid');
-            speed = v;
-            speedSlider.value = v;
-            this.value = v;
-            speedVal.textContent = v;
-        });
-        speedInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') this.blur();
-        });
+spdInp.addEventListener('focus',function(){this.select();});
+spdInp.addEventListener('blur',function(){
+  var v=parseInt(this.value);
+  if(isNaN(v))v=speed;
+  setSpeed(v);
+  this.classList.remove('er');
+});
+spdInp.addEventListener('keydown',function(e){
+  if(e.key==='Enter')this.blur();
+});
 
-        // ---- 速度控制: 微调按钮 ----
-        var arrowBtns = document.querySelectorAll('.arrow-btn');
-        for (var i = 0; i < arrowBtns.length; i++) {
-            (function(btn) {
-                var dir = parseInt(btn.dataset.dir);
-                function doStep() {
-                    var v = speed + dir;
-                    if (v < 1) v = 1;
-                    if (v > 10) v = 10;
-                    speed = v;
-                    speedSlider.value = v;
-                    speedInput.value = v;
-                    speedVal.textContent = v;
-                }
-                btn.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    doStep();
-                    var id = setInterval(doStep, 120);
-                    arrowTimers['s' + dir] = id;
-                });
-                btn.addEventListener('mouseup', function() {
-                    clearInterval(arrowTimers['s' + dir]);
-                    delete arrowTimers['s' + dir];
-                });
-                btn.addEventListener('mouseleave', function() {
-                    clearInterval(arrowTimers['s' + dir]);
-                    delete arrowTimers['s' + dir];
-                });
-                btn.addEventListener('touchstart', function(e) {
-                    e.preventDefault();
-                    doStep();
-                    var id = setInterval(doStep, 120);
-                    arrowTimers['s' + dir + 't'] = id;
-                });
-                btn.addEventListener('touchend', function() {
-                    clearInterval(arrowTimers['s' + dir + 't']);
-                    delete arrowTimers['s' + dir + 't'];
-                });
-            })(arrowBtns[i]);
-        }
+// arrow buttons
+var arrows=document.querySelectorAll('.agrp button');
+for(var i=0;i<arrows.length;i++){(function(btn){
+  var d=parseInt(btn.dataset.d);
+  function step(){
+    setSpeed(speed+d);
+  }
+  btn.addEventListener('mousedown',function(e){
+    e.preventDefault();step();
+    var id=setInterval(step,120);
+    arrowTimers['a'+d]=id;
+  });
+  btn.addEventListener('mouseup',function(){clearInterval(arrowTimers['a'+d]);delete arrowTimers['a'+d];});
+  btn.addEventListener('mouseleave',function(){clearInterval(arrowTimers['a'+d]);delete arrowTimers['a'+d];});
+  btn.addEventListener('touchstart',function(e){e.preventDefault();step();
+    var id=setInterval(step,120);arrowTimers['a'+d+'t']=id;});
+  btn.addEventListener('touchend',function(){clearInterval(arrowTimers['a'+d+'t']);delete arrowTimers['a'+d+'t'];});
+})(arrows[i]);}
 
-        // ---- 点击图片外部区域关闭 ----
-        viewerBody.addEventListener('click', function(e) {
-            if (e.target === viewerBody || e.target === viewerLoading) {
-                closeViewer();
-            }
-        });
-    })();
-    </script>
+})();
+</script>
 </body>
 </html>
