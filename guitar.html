@@ -141,9 +141,9 @@ body{
 
     <div class="cgrp">
       <span class="lb">速度</span>
-      <span class="vl" id="spdVal">5.0</span>
-      <input type="range" id="spdRng" min="1" max="10" step="0.1" value="5">
-      <input type="text" class="ni" id="spdInp" value="5.0" maxlength="4" inputmode="decimal">
+      <span class="vl" id="spdVal">4.0</span>
+      <input type="range" id="spdRng" min="1" max="10" step="0.1" value="4">
+      <input type="text" class="ni" id="spdInp" value="4.0" maxlength="4" inputmode="decimal">
       <div class="agrp">
         <button data-d="1">▲</button>
         <button data-d="-1">▼</button>
@@ -155,7 +155,7 @@ body{
     <div class="cgrp">
       <span class="lb">缩放</span>
       <button class="zbtn" id="zmOut">−</button>
-      <span class="vl" id="zmVal" style="min-width:36px">100%</span>
+      <span class="vl" id="zmVal" style="min-width:36px">25%</span>
       <button class="zbtn" id="zmIn">+</button>
     </div>
   </div>
@@ -193,11 +193,11 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     zmIn=document.getElementById('zmIn'), zmOut=document.getElementById('zmOut'),
     zmVal=document.getElementById('zmVal');
 
-var rolling=false, speed=5, zoom=100, arrowTimers={}, rollTimer=null;
+var rolling=false, speed=4, zoom=25, arrowTimers={}, rollTimer=null, rollAcc=0;
 
 function openViewer(song){
   stopRoll();
-  zoom=100;
+  zoom=25;
   applyZoom();
   vLd.style.display='block'; vLd.textContent='加载中...';
   vTitle.textContent=song.title+' — '+(song.artist||'');
@@ -240,12 +240,12 @@ vRoll.addEventListener('click',function(){
 
 function startRoll(){
   if(rolling)return;
-  rolling=true;
+  rolling=true; rollAcc=0;
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
   rollTimer=setInterval(function(){
-    var px=speed*speed*0.03 + speed*0.1;
-    vBody.scrollTop+=px;
+    rollAcc+=speed*speed*0.03 + speed*0.1;
+    if(rollAcc>=1){vBody.scrollTop+=Math.floor(rollAcc); rollAcc%=1;}
     if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3) stopRoll();
   },50);
 }
