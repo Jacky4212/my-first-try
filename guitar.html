@@ -166,15 +166,21 @@ body{
 'use strict';
 
 var SONGS = [
-  {id:'hourai', title:'后来', artist:'刘若英', file:'hourai.jpg'}
+  {id:'hourai',  title:'后来',             artist:'刘若英', file:'hourai.jpg',  size:'2.9 MB'},
+  {id:'amani',   title:'Amani',            artist:'BEYOND',  file:'amani.jpg',   size:'596 KB'},
+  {id:'tianshi', title:'跌落凡间的天使',  artist:'',        file:'tianshi.jpg', size:'908 KB'},
+  {id:'star',    title:'夜空中最亮的星',  artist:'',        file:'star.jpg',    size:'2.2 MB'},
+  {id:'coldday', title:'最冷一天',          artist:'',        file:'coldday.jpg', size:'424 KB'},
 ];
 
 // ===== render =====
 var listEl = document.getElementById('list');
 listEl.innerHTML = SONGS.map(function(s){
+  var info = s.size;
+  if (s.artist) info = s.artist + ' · ' + info;
   return '<div class="card" data-id="'+s.id+'">'+
     '<div class="ico">🎸</div>'+
-    '<div class="n"><h3>'+s.title+'</h3><p>'+s.artist+'</p></div></div>';
+    '<div class="n"><h3>'+s.title+'</h3><p>'+info+'</p></div></div>';
 }).join('');
 
 // ===== viewer =====
@@ -193,13 +199,15 @@ function openViewer(song){
   stopRoll();
   zoom=100;
   applyZoom();
-  vImg.style.display='none';
   vLd.style.display='block'; vLd.textContent='加载中...';
   vTitle.textContent=song.title+' — '+(song.artist||'');
   vBody.scrollTop=0;
   vwr.classList.add('on');
-  vImg.onload=function(){ vLd.style.display='none'; vImg.style.display='block'; };
-  vImg.onerror=function(){ vLd.textContent='加载失败'; };
+
+  // 超时兜底：1秒后隐藏加载提示，图片会逐步显示
+  var ldTimer = setTimeout(function(){ vLd.style.display='none'; }, 1000);
+  vImg.onload=function(){ clearTimeout(ldTimer); vLd.style.display='none'; };
+  vImg.onerror=function(){ clearTimeout(ldTimer); vLd.textContent='加载失败'; };
   vImg.src=song.file;
 }
 
