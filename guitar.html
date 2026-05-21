@@ -141,9 +141,9 @@ body{
 
     <div class="cgrp">
       <span class="lb">速度</span>
-      <span class="vl" id="spdVal">5</span>
-      <input type="range" id="spdRng" min="1" max="10" step="1" value="5">
-      <input type="text" class="ni" id="spdInp" value="5" maxlength="2" inputmode="numeric">
+      <span class="vl" id="spdVal">5.0</span>
+      <input type="range" id="spdRng" min="1" max="10" step="0.1" value="5">
+      <input type="text" class="ni" id="spdInp" value="5.0" maxlength="4" inputmode="decimal">
       <div class="agrp">
         <button data-d="1">▲</button>
         <button data-d="-1">▼</button>
@@ -259,17 +259,18 @@ function stopRoll(){
 
 // ===== speed =====
 function setSpeed(v){
+  v=Math.round(v*10)/10;
   if(v<1)v=1; if(v>10)v=10;
   speed=v;
   spdRng.value=v;
-  spdInp.value=v;
-  spdVal.textContent=v;
+  spdInp.value=v.toFixed(1);
+  spdVal.textContent=v.toFixed(1);
 }
 
-spdRng.addEventListener('input',function(){setSpeed(parseInt(spdRng.value));});
+spdRng.addEventListener('input',function(){setSpeed(parseFloat(spdRng.value));});
 spdInp.addEventListener('focus',function(){this.select();});
 spdInp.addEventListener('blur',function(){
-  var v=parseInt(this.value);
+  var v=parseFloat(this.value);
   if(isNaN(v))v=speed;
   setSpeed(v);
   this.classList.remove('er');
