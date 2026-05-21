@@ -24,7 +24,7 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: -2;
-            background: linear-gradient(145deg, #1a1d4e 0%, #301d5e 30%, #1d3d5e 60%, #2a1f60 100%);
+            background: linear-gradient(145deg, #202565 0%, #382870 30%, #254870 60%, #322870 100%);
             background-attachment: fixed;
         }
 
@@ -43,8 +43,8 @@
             width: 200%; height: 200%;
             top: -50%; left: -50%;
             border-radius: 38%;
-            background: radial-gradient(ellipse at 40% 50%, rgba(140, 100, 200, 0.06), transparent 55%);
-            animation: flowDrift1 40s ease-in-out infinite;
+            background: radial-gradient(ellipse at 40% 50%, rgba(140, 100, 200, 0.04), transparent 60%);
+            animation: flowDrift1 45s ease-in-out infinite;
         }
         .bg-flow::after {
             content: '';
@@ -52,8 +52,8 @@
             width: 180%; height: 180%;
             top: -40%; left: -40%;
             border-radius: 42%;
-            background: radial-gradient(ellipse at 60% 40%, rgba(200, 120, 160, 0.05), transparent 50%);
-            animation: flowDrift2 50s ease-in-out infinite;
+            background: radial-gradient(ellipse at 60% 40%, rgba(200, 120, 160, 0.03), transparent 55%);
+            animation: flowDrift2 55s ease-in-out infinite;
         }
         @keyframes flowDrift1 {
             0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
@@ -582,29 +582,18 @@
                     }
                 }
 
-                // --- 星座连线 (带光晕细节) ---
+                // --- 星座连线 (呼吸亮线，无光晕) ---
                 for (const [i, j, g] of edges) {
                     const p1 = cst[i], p2 = cst[j];
-                    const breath = Math.sin(frame * 0.005 + grpPh[g] + i * 0.25) * 0.5 + 0.5;
-                    const la = 0.08 + breath * 0.22;
+                    const breath = Math.sin(frame * 0.008 + grpPh[g] + i * 0.25) * 0.35 + 0.65;
+                    const la = 0.20 + breath * 0.50;
                     const isCord = g === 2;
                     const mainColor = isCord
-                        ? `rgba(230, 200, 80, ${la})`
-                        : `rgba(160, 180, 220, ${la})`;
-                    const glowColor = isCord
-                        ? `rgba(230, 200, 80, ${la * 0.25})`
-                        : `rgba(160, 180, 220, ${la * 0.2})`;
-                    const lw = 1.2 + breath * 0.8;
+                        ? `rgba(255, 240, 180, ${la})`
+                        : `rgba(210, 220, 255, ${la})`;
+                    const lw = 1.0 + breath * 0.6;
 
-                    // 光晕层
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = glowColor;
-                    ctx.lineWidth = lw * 2.5;
-                    ctx.stroke();
-
-                    // 主线
+                    // 清晰亮线
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
                     ctx.lineTo(p2.x, p2.y);
