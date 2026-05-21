@@ -193,7 +193,7 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     zmIn=document.getElementById('zmIn'), zmOut=document.getElementById('zmOut'),
     zmVal=document.getElementById('zmVal');
 
-var rolling=false, rafId=null, speed=5, zoom=100, arrowTimers={}, rollLastTs=0;
+var rolling=false, speed=5, zoom=100, arrowTimers={}, rollTimer=null;
 
 function openViewer(song){
   stopRoll();
@@ -233,41 +233,28 @@ document.addEventListener('keydown',function(e){
   if(e.key===' '){e.preventDefault();vRoll.click();}
 });
 
-// ===== auto scroll =====
+// ===== auto scroll (setInterval, 无帧率依赖) =====
 vRoll.addEventListener('click',function(){
-  if(vBody.scrollHeight<=vBody.clientHeight)return; // nothing to scroll
   rolling?stopRoll():startRoll();
 });
 
 function startRoll(){
   if(rolling)return;
-  rolling=true; rollLastTs=0;
+  rolling=true;
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
-  rafId=requestAnimationFrame(rollLoop);
+  rollTimer=setInterval(function(){
+    var px=speed*0.5;
+    vBody.scrollTop+=px;
+    if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3) stopRoll();
+  },50);
 }
 
 function stopRoll(){
   rolling=false;
   vRoll.textContent='▶ 自动滚动';
   vRoll.classList.remove('on');
-  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
-}
-
-// 可调整: at speed 10, ~15px/frame = 900px/s
-// at speed 1, ~1.2px/frame = 72px/s
-function rollLoop(ts){
-  if(!rolling)return;
-  if(!rollLastTs){rollLastTs=ts; rafId=requestAnimationFrame(rollLoop); return;}
-  var dt=Math.min((ts-rollLastTs)/16.67,3);
-  rollLastTs=ts;
-  var px=speed*0.15*dt;
-  vBody.scrollTop += px;
-  if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
-    stopRoll();
-    return;
-  }
-  rafId=requestAnimationFrame(rollLoop);
+  if(rollTimer){clearInterval(rollTimer);rollTimer=null;}
 }
 
 // ===== speed =====
