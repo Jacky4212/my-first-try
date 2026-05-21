@@ -684,18 +684,16 @@
         // ================================================================
         function handlePetalEvent(e) {
             if (e.type === 'touchend') e.preventDefault();
+            if (e.currentTarget._rm) return;
+            e.currentTarget._rm = true;
+
             const p = e.currentTarget;
             const rect = p.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
 
-            // 永久移除被点击的花瓣
             p.remove();
-
-            // 碎裂特效
             shatter(cx, cy);
-
-            // 30% 概率绽放玫瑰花
             if (Math.random() < 0.30) rose(cx, cy);
         }
 
@@ -726,13 +724,11 @@
                 ].join(';');
                 document.body.appendChild(el);
 
-                // Phase 1: 缓缓淡入并放大到原位
                 requestAnimationFrame(() => {
                     el.style.opacity = '1';
                     el.style.transform = 'scale(1)';
                 });
 
-                // Phase 2: 缓慢飞散并平缓淡出
                 setTimeout(() => {
                     el.style.transition = `all ${flyDur}ms ease-out`;
                     el.style.transform = [
@@ -747,72 +743,61 @@
             }
         }
 
-        // ---- 玫瑰花绘制 (贝塞尔曲线花瓣 + 螺旋排列) ----
+        // ---- 玫瑰花绘制 (水滴形贝塞尔花瓣 × 同心错层) ----
         function drawRoseShape(ctx, cx, cy, size) {
-            const total = 42;
-            for (let i = total; i >= 0; i--) {
-                const t = i / total;
-                const angle = t * Math.PI * 3.2;
-                const radius = size * 0.82 * t;
-                const pw = size * (0.04 + t * 0.32);
-                const ph = size * (0.06 + t * 0.22);
+            // 从外到内6层，每层花瓣绕中心环形排列，层间交错偏移
+            const layers = [
+                { n: 7, r: size * 0.72, w: size * 0.42, h: size * 0.52, off: 0.00 },
+                { n: 7, r: size * 0.54, w: size * 0.34, h: size * 0.44, off: 0.35 },
+                { n: 6, r: size * 0.38, w: size * 0.26, h: size * 0.38, off: 0.70 },
+                { n: 6, r: size * 0.26, w: size * 0.18, h: size * 0.30, off: 0.05 },
+                { n: 5, r: size * 0.16, w: size * 0.12, h: size * 0.22, off: 0.40 },
+                { n: 4, r: size * 0.08, w: size * 0.08, h: size * 0.14, off: 0.75 },
+            ];
+            const cols = ['#a0184a', '#b82a5a', '#d04060', '#e06080', '#ee88a0', '#f5b0c0'];
 
-                if (pw < 1 || ph < 1) continue;
+            for (let li = 0; li < layers.length; li++) {
+                const l = layers[li];
+                for (let i = 0; i < l.n; i++) {
+                    const a = (i / l.n) * Math.PI * 2 + l.off;
+                    const px = cx + Math.cos(a) * l.r;
+                    const py = cy + Math.sin(a) * l.r;
 
-                const px = cx + Math.cos(angle) * radius;
-                const py = cy + Math.sin(angle) * radius;
+                    ctx.save();
+                    ctx.translate(px, py);
+                    ctx.rotate(a + Math.PI / 2);
 
-                ctx.save();
-                ctx.translate(px, py);
-                ctx.rotate(angle + Math.PI / 2);
+                    // 水滴形花瓣: 基部窄 → 中部宽 → 顶部圆
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.bezierCurveTo(-l.w*0.2, -l.h*0.2, -l.w, -l.h*0.5, -l.w*0.6, -l.h);
+                    ctx.quadraticCurveTo(0, -l.h*1.15, l.w*0.6, -l.h);
+                    ctx.bezierCurveTo(l.w, -l.h*0.5, l.w*0.2, -l.h*0.2, 0, 0);
+                    ctx.closePath();
 
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.bezierCurveTo(-pw*0.6, -ph*0.3, -pw*0.9, -ph*0.7, 0, -ph);
-                ctx.bezierCurveTo(pw*0.9, -ph*0.7, pw*0.6, -ph*0.3, 0, 0);
-                ctx.closePath();
-
-                // 外深内浅渐变
-                const r = Math.floor(155 + (1-t) * 85);
-                const g = Math.floor(18 + t * 145);
-                const b = Math.floor(35 + t * 165);
-                ctx.fillStyle = `rgb(${r},${g},${b})`;
-                ctx.fill();
-
-                ctx.strokeStyle = `rgba(180,50,80,0.12)`;
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-
-                ctx.restore();
+                    ctx.fillStyle = cols[li];
+                    ctx.fill();
+                    ctx.restore();
+                }
             }
-            // 花心柔光
-            const grd = ctx.createRadialGradient(cx-2, cy-2, 0, cx, cy, size * 0.12);
-            grd.addColorStop(0, 'rgba(255,240,245,0.85)');
-            grd.addColorStop(0.5, 'rgba(255,210,220,0.3)');
-            grd.addColorStop(1, 'rgba(255,200,210,0)');
-            ctx.fillStyle = grd;
-            ctx.beginPath();
-            ctx.arc(cx, cy, size * 0.12, 0, Math.PI * 2);
-            ctx.fill();
         }
 
-        // ---- 绽放玫瑰花 (更长的淡入淡出) ----
+        // ---- 绽放玫瑰花 ----
         function rose(x, y) {
-            const size = 36 + Math.random() * 16;
+            const s = 36 + Math.random() * 16;
             const c = document.createElement('canvas');
-            c.width = size * 2.5;
-            c.height = size * 2.5;
+            c.width = s * 2.5;
+            c.height = s * 2.5;
             c.style.cssText = [
-                `position:fixed;left:${x-size*1.25}px;top:${y-size*1.25}px`,
-                `width:${size*2.5}px;height:${size*2.5}px`,
+                `position:fixed;left:${x-s*1.25}px;top:${y-s*1.25}px`,
+                `width:${s*2.5}px;height:${s*2.5}px`,
                 'pointer-events:none;z-index:10',
                 'opacity:0;transform:scale(0.3)',
                 'transition:opacity .7s ease, transform .7s ease',
                 'filter:drop-shadow(0 0 20px rgba(200,50,100,0.25))',
             ].join(';');
             document.body.appendChild(c);
-            const ctx = c.getContext('2d');
-            drawRoseShape(ctx, size * 1.25, size * 1.25, size);
+            drawRoseShape(c.getContext('2d'), s * 1.25, s * 1.25, s);
 
             requestAnimationFrame(() => {
                 c.style.opacity = '1';
