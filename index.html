@@ -28,7 +28,7 @@
             background-attachment: fixed;
         }
 
-        /* ===== 深海流光 ===== */
+        /* ===== 深海流韵 ===== */
         .bg-flow {
             position: fixed;
             top: 0; left: 0;
@@ -37,31 +37,38 @@
             pointer-events: none;
             overflow: hidden;
         }
-        .bg-flow::before,
+        .bg-flow::before {
+            content: '';
+            position: absolute;
+            width: 200%; height: 200%;
+            top: -50%; left: -50%;
+            border-radius: 38%;
+            background: radial-gradient(ellipse at 40% 50%, rgba(140, 100, 200, 0.06), transparent 55%);
+            animation: flowDrift1 75s ease-in-out infinite;
+        }
         .bg-flow::after {
             content: '';
             position: absolute;
-            width: 200%;
-            height: 200%;
-            top: -50%;
-            left: -50%;
-            border-radius: 40%;
-            opacity: 0.04;
-            animation: flowSpin 16s linear infinite;
+            width: 180%; height: 180%;
+            top: -40%; left: -40%;
+            border-radius: 42%;
+            background: radial-gradient(ellipse at 60% 40%, rgba(200, 120, 160, 0.05), transparent 50%);
+            animation: flowDrift2 95s ease-in-out infinite;
         }
-        .bg-flow::before {
-            background: radial-gradient(ellipse at 30% 50%, #6a5acd, transparent 60%);
-            animation-duration: 20s;
+        @keyframes flowDrift1 {
+            0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+            20%  { transform: translate(8%, -5%) rotate(35deg) scale(1.04); }
+            40%  { transform: translate(-4%, 8%) rotate(75deg) scale(0.96); }
+            60%  { transform: translate(-8%, -3%) rotate(115deg) scale(1.02); }
+            80%  { transform: translate(4%, 6%) rotate(165deg) scale(0.98); }
+            100% { transform: translate(0, 0) rotate(220deg) scale(1); }
         }
-        .bg-flow::after {
-            background: radial-gradient(ellipse at 70% 50%, #cd5c7a, transparent 60%);
-            animation-duration: 24s;
-            animation-direction: reverse;
-        }
-        @keyframes flowSpin {
-            0%   { transform: rotate(0deg) scale(1); }
-            50%  { transform: rotate(180deg) scale(1.1); }
-            100% { transform: rotate(360deg) scale(1); }
+        @keyframes flowDrift2 {
+            0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25%  { transform: translate(-6%, -8%) rotate(-45deg) scale(1.03); }
+            50%  { transform: translate(6%, 4%) rotate(-95deg) scale(0.97); }
+            75%  { transform: translate(-3%, 6%) rotate(-145deg) scale(1.01); }
+            100% { transform: translate(0, 0) rotate(-200deg) scale(1); }
         }
 
         /* ===== Canvas 星空层 ===== */
