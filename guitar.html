@@ -258,10 +258,10 @@ function stopRoll(){
 // at speed 1, ~1.2px/frame = 72px/s
 function rollLoop(ts){
   if(!rolling)return;
-  if(!rollLastTs)rollLastTs=ts;
-  var dt=Math.min((ts-rollLastTs)/16.67,3); // 归一化到60fps，上限3倍
+  if(!rollLastTs){rollLastTs=ts; rafId=requestAnimationFrame(rollLoop); return;}
+  var dt=Math.min((ts-rollLastTs)/16.67,3);
   rollLastTs=ts;
-  var px=speed*0.045*dt;
+  var px=speed*0.15*dt;
   vBody.scrollTop += px;
   if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
     stopRoll();
