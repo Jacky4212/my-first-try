@@ -692,12 +692,22 @@
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
 
-            // 原花瓣平滑消散（先取消 CSS 动画再淡出）
+            // 原花瓣平滑消散（冻结当前位置 → 取消CSS动画 → 过渡淡出）
+            const pr = p.getBoundingClientRect();
+            const pop = getComputedStyle(p).opacity;
             p.style.animation = 'none';
-            p.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
+            p.style.position = 'fixed';
+            p.style.left = pr.left + 'px';
+            p.style.top = pr.top + 'px';
+            p.style.width = pr.width + 'px';
+            p.style.height = pr.height + 'px';
+            p.style.margin = '0';
+            p.style.opacity = pop;
+            void p.offsetHeight;
+            p.style.transition = 'opacity 500ms ease-out, transform 500ms ease-out';
             p.style.opacity = '0';
-            p.style.transform = 'scale(0.3)';
-            setTimeout(() => p.remove(), 650);
+            p.style.transform = 'scale(0.2)';
+            setTimeout(() => p.remove(), 550);
 
             shatter(cx, cy);
                 }
