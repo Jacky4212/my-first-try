@@ -244,7 +244,7 @@ function startRoll(){
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
   rollTimer=setInterval(function(){
-    var px=speed*0.5;
+    var px=speed*speed*0.03 + speed*0.1;
     vBody.scrollTop+=px;
     if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3) stopRoll();
   },50);
