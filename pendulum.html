@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>单摆实验模拟器 - 虚拟物理实验室</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #1a1a2e; color: #eee; min-height: 100vh; }
+.container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 20px; }
+h1 { text-align: center; margin-bottom: 16px; font-weight: 300; letter-spacing: 2px; color: #a8d8ea; font-size: 24px; }
+
+/* ===== Tabs ===== */
+.tab-nav { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab-btn { padding: 10px 24px; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; font-weight: 500; background: #16213e; color: #8899aa; transition: all .2s; }
+.tab-btn:hover { background: #1a2a4a; color: #a8d8ea; }
+.tab-btn.active { background: #0f3460; color: #a8d8ea; box-shadow: 0 -2px 0 #a8d8ea inset; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== Sim Layout ===== */
+.sim-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+.canvas-col { flex: 1; min-width: 480px; }
+.canvas-wrapper { background: #16213e; border-radius: 12px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+canvas#pendulumCanvas { display: block; width: 100%; background: #0f3460; border-radius: 8px; cursor: grab; }
+
+/* ===== Charts ===== */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.chart-box { background: #16213e; border-radius: 10px; padding: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.chart-box .chart-title { font-size: 12px; color: #a8d8ea; font-weight: 500; margin-bottom: 4px; letter-spacing: 0.5px; }
+.chart-box canvas { display: block; width: 100%; background: #0f3460; border-radius: 6px; }
+
+/* ===== Controls ===== */
+.controls { width: 300px; display: flex; flex-direction: column; gap: 10px; }
+.panel { background: #16213e; border-radius: 12px; padding: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.panel h3 { font-size: 13px; color: #a8d8ea; margin-bottom: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+.ctrl-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.ctrl-header label { font-size: 13px; color: #ccc; }
+.ctrl-header .val { color: #a8d8ea; font-weight: 600; font-size: 13px; }
+.ctrl-input-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+input[type="range"] { flex: 1; height: 4px; -webkit-appearance: none; background: #0f3460; border-radius: 2px; outline: none; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #a8d8ea; border-radius: 50%; cursor: pointer; transition: transform .15s; }
+input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.num-input { width: 64px; padding: 4px 6px; border: 1px solid #2a4060; border-radius: 5px; background: #0a1a3a; color: #eee; font-size: 13px; font-family: 'Courier New', monospace; text-align: center; outline: none; }
+.num-input:focus { border-color: #a8d8ea; }
+.num-input.invalid { border-color: #e74c3c; }
+.arrow-group { display: flex; flex-direction: column; gap: 1px; }
+.arrow-btn { width: 22px; height: 16px; border: none; cursor: pointer; font-size: 8px; line-height: 1; display: flex; align-items: center; justify-content: center; border-radius: 3px; background: #0f3460; color: #a8d8ea; transition: background .15s; padding: 0; user-select: none; }
+.arrow-btn:hover { background: #1a4a7a; }
+.arrow-btn:active { background: #2a5a8a; }
+.ctrl-unit { font-size: 12px; color: #8899aa; margin-left: 2px; min-width: 24px; }
+.btn-group { display: flex; gap: 8px; }
+.btn { flex: 1; padding: 9px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all .2s; }
+.btn-start { background: #2ecc71; color: #fff; }
+.btn-start:hover { background: #27ae60; }
+.btn-start.running { background: #e74c3c; }
+.btn-start.running:hover { background: #c0392b; }
+.btn-reset { background: #7f8c8d; color: #fff; }
+.btn-reset:hover { background: #6c7a7a; }
+.chk-group { display: flex; gap: 12px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.chk-group label { font-size: 13px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; cursor: pointer; }
+.data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.data-item { background: #0f3460; padding: 6px 8px; border-radius: 5px; }
+.data-item .dlabel { font-size: 11px; color: #8899aa; }
+.data-item .dval { font-size: 14px; font-weight: 700; color: #fff; font-family: 'Courier New', monospace; }
+.data-item .dval.orange { color: #e67e22; }
+.data-item .dval.green { color: #1abc9c; }
+.data-item .dval.gold { color: #f1c40f; }
+
+/* ===== Intro Tab ===== */
+.intro-content { max-width: 800px; margin: 0 auto; }
+.intro-card { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.intro-card h2 { color: #a8d8ea; font-size: 18px; font-weight: 500; margin-bottom: 12px; border-left: 3px solid #a8d8ea; padding-left: 12px; }
+.intro-card p, .intro-card li { color: #ccd; font-size: 14px; line-height: 1.8; }
+.intro-card ul { padding-left: 20px; }
+.intro-card ul li { margin-bottom: 4px; }
+.formula-block { background: #0f3460; border-radius: 8px; padding: 14px 18px; margin: 10px 0; }
+.formula-block .eq { text-align: center; font-size: 17px; color: #f1c40f; font-family: 'Courier New', 'Consolas', monospace; letter-spacing: 0.3px; padding: 4px 0; }
+.formula-block .eq .sym { color: #f1c40f; }
+.formula-block .eq .op { color: #e67e22; }
+.formula-block .eq .num { color: #1abc9c; }
+.formula-block .desc { text-align: center; font-size: 12px; color: #8899aa; margin-top: 4px; font-family: 'Segoe UI', sans-serif; }
+.highlight { color: #e67e22; font-weight: 600; }
+.highlight-cyan { color: #1abc9c; font-weight: 600; }
+
+/* ===== Help Tab ===== */
+.help-content { max-width: 800px; margin: 0 auto; }
+.help-card { background: #16213e; border-radius: 12px; padding: 24px; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.help-card h2 { color: #a8d8ea; font-size: 18px; font-weight: 500; margin-bottom: 12px; border-left: 3px solid #a8d8ea; padding-left: 12px; }
+.help-card h3 { color: #a8d8ea; font-size: 14px; font-weight: 500; margin: 12px 0 6px; }
+.help-card p, .help-card li { color: #ccd; font-size: 14px; line-height: 1.8; }
+.help-card ul { padding-left: 20px; }
+.help-card ul li { margin-bottom: 4px; }
+.help-card .key { display: inline-block; background: #0f3460; padding: 1px 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; color: #a8d8ea; }
+.hint-box { background: #0f3460; border-radius: 8px; padding: 12px 16px; margin: 8px 0; border-left: 3px solid #f1c40f; }
+.hint-box .hint-title { color: #f1c40f; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.hint-box p { margin: 0; font-size: 13px; }
+
+@media (max-width: 900px) {
+  .controls { width: 100%; }
+  .canvas-col { min-width: unset; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .tab-btn { padding: 8px 14px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⏱ 单摆实验模拟器</h1>
+  <div class="tab-nav">
+    <button class="tab-btn active" data-tab="intro">📖 实验介绍</button>
+    <button class="tab-btn" data-tab="sim">🔬 单摆模拟</button>
+    <button class="tab-btn" data-tab="help">❓ 使用说明</button>
+  </div>
+
+  <!-- ===== INTRO TAB ===== -->
+  <div id="tab-intro" class="tab-content active">
+    <div class="intro-content">
+      <div class="intro-card">
+        <h2>什么是单摆？</h2>
+        <p>单摆（Simple Pendulum）是最经典的力学系统之一：一个质点（摆锤）用一根不可伸长的轻绳悬挂在固定点，在重力作用下做往复摆动。</p>
+      </div>
+      <div class="intro-card">
+        <h2>核心物理公式</h2>
+
+        <p><strong>运动方程</strong>（由牛顿第二定律 + 转动定律推导）：</p>
+        <div class="formula-block">
+          <div class="eq"><span class="op">θ"</span> = <span class="op">−</span> (<span class="sym">g</span> / <span class="sym">L</span>) <span class="op">·</span> sin(<span class="sym">θ</span>) <span class="op">−</span> <span class="sym">b</span> <span class="op">·</span> <span class="sym">θ</span>'</div>
+          <div class="desc">θ" = 角加速度 | θ' = 角速度 | θ = 摆角 | b = 阻尼系数</div>
+        </div>
+
+        <p><strong>小角近似</strong>（θ ≤ 10° 时 sin θ ≈ θ）：</p>
+        <div class="formula-block">
+          <div class="eq"><span class="op">θ"</span> = <span class="op">−</span> (<span class="sym">g</span> / <span class="sym">L</span>) <span class="op">·</span> <span class="sym">θ</span>   →   <span class="sym">T</span> = <span class="num">2π</span> <span class="op">√</span>(<span class="sym">L</span> / <span class="sym">g</span>)</div>
+          <div class="desc">周期 T 与摆长 L 的平方根成正比，与质量无关</div>
+        </div>
+
+        <p><strong>能量</strong>（取最低点势能为 0）：</p>
+        <div class="formula-block">
+          <div class="eq"><span class="sym">K</span> = <span class="num">1/2</span> <span class="sym">m</span> <span class="sym">v</span><span class="num">²</span>     <span class="sym">U</span> = <span class="sym">m</span> <span class="sym">g</span> <span class="sym">L</span> (<span class="num">1</span> <span class="op">−</span> cos <span class="sym">θ</span>)     <span class="sym">E</span> = <span class="sym">K</span> + <span class="sym">U</span></div>
+          <div class="desc">无阻尼时 E 守横；有阻尼时 E 指数衰减</div>
+        </div>
+      </div>
+      <div class="intro-card">
+        <h2>影响周期的因素</h2>
+        <ul>
+          <li><strong>摆长 L uparrow → 周期 T uparrow</strong>：摆线越长，摆动越慢</li>
+          <li><strong>重力 g uparrow → 周期 T downarrow</strong>：重力越大，恢复力越强，摆动越快</li>
+          <li><strong>摆锤质量 m</strong>：<span class="highlight">不影响周期</span>（仰利曼的发现）</li>
+          <li><strong>初始角度 θ₀</strong>：小角度时近似无关；大角度时 T 随 θ₀ 增大而增大（非线性效应）</li>
+        </ul>
+        <p style="margin-top:8px;color:#8899aa;font-size:13px;"><strong>完整周期公式：</strong><br><span style="font-family:'Courier New',monospace;color:#f1c40f;">T = 2π√(L/g) · [1 + (1/4)sin²(θ₀/2) + (9/64)sin⁴(θ₀/2) + ...]</span></p>
+      </div>
+      <div class="intro-card">
+        <h2>实际应用</h2>
+        <ul>
+          <li><strong>计时器</strong>：摆钟（惠更斯，1656 年）</li>
+          <li><strong>测量重力加速度</strong>：通过测 L 和 T 反算 g</li>
+          <li><strong>傅科摆</strong>：证明地球自转</li>
+          <li><strong>教学演示</strong>：展示简谐振动、能量转化、非线性动力学</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SIM TAB ===== -->
+  <div id="tab-sim" class="tab-content">
+    <div class="sim-grid">
+      <div class="canvas-col">
+        <div class="canvas-wrapper">
+          <canvas id="pendulumCanvas" width="560" height="420"></canvas>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-box"><div class="chart-title">θ-t 图（角度 + 角速度）</div><canvas id="chartTheta" width="240" height="120"></canvas></div>
+          <div class="chart-box"><div class="chart-title">E-t 图（能量）</div><canvas id="chartEnergy" width="240" height="120"></canvas></div>
+          <div class="chart-box"><div class="chart-title">v-t 图（线速度）</div><canvas id="chartVel" width="240" height="120"></canvas></div>
+          <div class="chart-box"><div class="chart-title">𝜃-ω 相空间</div><canvas id="chartPhase" width="240" height="120"></canvas></div>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="panel">
+          <h3>控制</h3>
+          <div class="btn-group">
+            <button class="btn btn-start" id="btnStart">▶ 启动</button>
+            <button class="btn btn-reset" id="btnReset">↻ 重置</button>
+          </div>
+          <div class="chk-group">
+            <label><input type="checkbox" id="showTrace" checked> 摆锤轨迹</label>
+            <label><input type="checkbox" id="showEnergy"> 能量条</label>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>参数</h3>
+          <div class="ctrl-group" style="margin-bottom:10px">
+            <div class="ctrl-header"><label>摆长 L</label><span class="val" id="lengthVal">2.00</span></div>
+            <input type="range" id="lenSlider" min="0.5" max="4" step="0.01" value="2">
+            <div class="ctrl-input-row">
+              <input type="text" class="num-input" id="lenInput" value="2.00" maxlength="5">
+              <div class="arrow-group"><button class="arrow-btn" data-target="lenSlider" data-dir="1">▲</button><button class="arrow-btn" data-target="lenSlider" data-dir="-1">▼</button></div>
+              <span class="ctrl-unit">m</span>
+            </div>
+          </div>
+          <div class="ctrl-group" style="margin-bottom:10px">
+            <div class="ctrl-header"><label>初始角度 θ₀</label><span class="val" id="angleVal">30.0</span></div>
+            <input type="range" id="angSlider" min="5" max="80" step="0.1" value="30">
+            <div class="ctrl-input-row">
+              <input type="text" class="num-input" id="angInput" value="30.0" maxlength="5">
+              <div class="arrow-group"><button class="arrow-btn" data-target="angSlider" data-dir="1">▲</button><button class="arrow-btn" data-target="angSlider" data-dir="-1">▼</button></div>
+              <span class="ctrl-unit">°</span>
+            </div>
+          </div>
+          <div class="ctrl-group" style="margin-bottom:10px">
+            <div class="ctrl-header"><label>重力 g</label><span class="val" id="gravityVal">9.81</span></div>
+            <input type="range" id="gravSlider" min="0.5" max="20" step="0.1" value="9.81">
+            <div class="ctrl-input-row">
+              <input type="text" class="num-input" id="gravInput" value="9.8" maxlength="5">
+              <div class="arrow-group"><button class="arrow-btn" data-target="gravSlider" data-dir="1">▲</button><button class="arrow-btn" data-target="gravSlider" data-dir="-1">▼</button></div>
+              <span class="ctrl-unit">m/s²</span>
+            </div>
+          </div>
+          <div class="ctrl-group">
+            <div class="ctrl-header"><label>阻尼系数</label><span class="val" id="dampingVal">0.00</span></div>
+            <input type="range" id="dampSlider" min="0" max="0.5" step="0.01" value="0">
+            <div class="ctrl-input-row">
+              <input type="text" class="num-input" id="dampInput" value="0.00" maxlength="5">
+              <div class="arrow-group"><button class="arrow-btn" data-target="dampSlider" data-dir="1">▲</button><button class="arrow-btn" data-target="dampSlider" data-dir="-1">▼</button></div>
+              <span class="ctrl-unit">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>实时数据</h3>
+          <div class="data-grid">
+            <div class="data-item"><div class="dlabel">角度 θ</div><div class="dval orange" id="dispAngle">0.0°</div></div>
+            <div class="data-item"><div class="dlabel">角速度 ω</div><div class="dval" id="dispOmega">0.00 rad/s</div></div>
+            <div class="data-item"><div class="dlabel">线速度 v</div><div class="dval" id="dispVel">0.00 m/s</div></div>
+            <div class="data-item"><div class="dlabel">周期 T</div><div class="dval green" id="dispPeriod">—</div></div>
+            <div class="data-item"><div class="dlabel">动能 K</div><div class="dval gold" id="dispKE">0.00 J</div></div>
+            <div class="data-item"><div class="dlabel">势能 U</div><div class="dval gold" id="dispPE">0.00 J</div></div>
+            <div class="data-item"><div class="dlabel">总能量 E</div><div class="dval gold" id="dispTE">0.00 J</div></div>
+            <div class="data-item"><div class="dlabel">已运行</div><div class="dval" id="dispTime">0.0 s</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HELP TAB ===== -->
+  <div id="tab-help" class="tab-content">
+    <div class="help-content">
+      <div class="help-card">
+        <h2>界面概览</h2>
+        <p>模拟器分为三个主标签页：</p>
+        <ul>
+          <li><strong>📖 实验介绍</strong> — 单摆的物理原理、公式和背景知识</li>
+          <li><strong>🔬 单摆模拟</strong> — 交互式模拟主界面，含动画、控件和图表</li>
+          <li><strong>❓ 使用说明</strong> — 你正在阅读的这份指南</li>
+        </ul>
+      </div>
+      <div class="help-card">
+        <h2>参数调节方式</h2>
+        <p>每个参数提供三种调节方式，可任选：</p>
+        <ul>
+          <li><strong>拖动滑块</strong> — 直观快速调整</li>
+          <li><strong>输入桶蹧入</strong> — 点击输入桶，直接输入精确数值（最多两位小数），按 <span class="key">Enter</span> 或点击空白处确认</li>
+          <li><strong>▲ ▼ 微调按钮</strong> — 点击上下箭头逐位微调，长按可连续调整</li>
+        </ul>
+        <div class="hint-box">
+          <div class="hint-title">💡 提示</div>
+          <p>输入非法数值（超出范围、非数字）时，输入桶会变红并自动还原为上次有效值。</p>
+        </div>
+      </div>
+      <div class="help-card">
+        <h2>交互操作</h2>
+        <ul>
+          <li><strong>拖搭摆锤</strong> — 在暂停状态下，直接用鼠标拖搭画布上的摆锤设置初始角度</li>
+          <li><strong>▶ 启动 / ⏸ 暂停</strong> — 控制模拟运行</li>
+          <li><strong>↻ 重置</strong> — 回到初始状态</li>
+          <li><strong>生活调参</strong> — 运行中可以随时调整摆长、重力、阻尼，即时生效</li>
+        </ul>
+      </div>
+      <div class="help-card">
+        <h2>图表解读</h2>
+        <ul>
+          <li><strong>θ-t 图</strong> — 蓝色曲线为角度随时间变化，檀色虚线为角速度。观察振幅衰减和相位关系</li>
+          <li><strong>E-t 图</strong> — 红色=动能，蓝色=势能，金色=总能量。无阻尼时总能量保持水平</li>
+          <li><strong>v-t 图</strong> — 摆锤线速度随时间变化</li>
+          <li><strong>θ-ω 相空间</strong> — 角度与角速度的关系曲线。无阻尼时呈椭圆环，有阻尼时向内螺旋</li>
+        </ul>
+      </div>
+      <div class="help-card">
+        <h2>实验建议</h2>
+        <ul>
+          <li>设阻尼 = 0，观察能量守横（总能量线保持平直）</li>
+          <li>逐渐增大初始角度（30° → 60° → 80°），观察周期变化</li>
+          <li>设较大阻尼（如 0.20），观察振幅的指数衰减</li>
+          <li>改变重力 g（模拟月球或木星环境），观察周期变化</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+// ======================== DOM REFS ========================
+var $ = function(id) { return document.getElementById(id); };
+var canvas = $('pendulumCanvas');
+var ctx = canvas.getContext('2d');
+var cW = canvas.width, cH = canvas.height;
+
+// Chart canvases
+var cTheta = $('chartTheta'), ctCtx = cTheta.getContext('2d');
+var cEnergy = $('chartEnergy'), ceCtx = cEnergy.getContext('2d');
+var cVel = $('chartVel'), cvCtx = cVel.getContext('2d');
+var cPhase = $('chartPhase'), cpCtx = cPhase.getContext('2d');
+
+// Controls
+var btnStart = $('btnStart'), btnReset = $('btnReset');
+var sL = $('lenSlider'), sA = $('angSlider'), sG = $('gravSlider'), sD = $('dampSlider');
+var iL = $('lenInput'), iA = $('angInput'), iG = $('gravInput'), iD = $('dampInput');
+var cbTrace = $('showTrace'), cbEnergy = $('showEnergy');
+
+// ======================== PARAM CONFIG ========================
+var PARAMS = {
+  len: { min: 0.5, max: 4, step: 0.01, dec: 2, slider: sL, input: iL, valEl: $('lengthVal'), unit: 'm' },
+  ang: { min: 5, max: 80, step: 0.1, dec: 1, slider: sA, input: iA, valEl: $('angleVal'), unit: '°' },
+  grav: { min: 0.5, max: 20, step: 0.1, dec: 1, slider: sG, input: iG, valEl: $('gravityVal'), unit: 'm/s²' },
+  damp: { min: 0, max: 0.5, step: 0.01, dec: 2, slider: sD, input: iD, valEl: $('dampingVal'), unit: '' },
+};
+
+// ======================== STATE ========================
+var running = false;
+var theta = 0, omega = 0, time = 0;
+var g = 9.81, L = 2, damping = 0, theta0_deg = 30;
+var lastTimestamp = null;
+var trace = [];
+var phaseData = [];
+var zeroCrossings = [];
+var lastTheta = 0;
+var frameCount = 0;
+var arrowTimers = {};
+
+// History for charts
+var hist = { t: [], theta: [], omega: [], ke: [], pe: [], te: [], v: [] };
+var MAX_TRACE = 500;
+var MAX_PHASE = 300;
+var MAX_HIST = 3000;
+
+// ======================== PARAM HELPERS ========================
+function clamp(v, mn, mx) { return v < mn ? mn : (v > mx ? mx : v); }
+
+function fmtVal(val, dec) { return Number(val).toFixed(dec); }
+
+function readParam(key) { return parseFloat(PARAMS[key].slider.value); }
+
+function writeParam(key, val) {
+  var p = PARAMS[key];
+  val = clamp(val, p.min, p.max);
+  var rounded = Math.round(val / p.step) * p.step;
+  p.slider.value = rounded;
+  p.input.value = fmtVal(rounded, p.dec);
+  p.valEl.textContent = fmtVal(rounded, p.dec);
+  return rounded;
+}
+
+function applyParamsToPhysics(resetMotion) {
+  L = readParam('len');
+  theta0_deg = readParam('ang');
+  g = readParam('grav');
+  damping = readParam('damp');
+  if (resetMotion) {
+    theta = theta0_deg * Math.PI / 180;
+    omega = 0;
+    time = 0;
+    clearHistory();
+  }
+}
+
+function clearHistory() {
+  trace.length = 0;
+  phaseData.length = 0;
+  zeroCrossings.length = 0;
+  hist.t.length = 0; hist.theta.length = 0; hist.omega.length = 0;
+  hist.ke.length = 0; hist.pe.length = 0; hist.te.length = 0; hist.v.length = 0;
+}
+
+function syncAllDisplays() {
+  for (var k in PARAMS) {
+    var p = PARAMS[k];
+    var v = parseFloat(p.slider.value);
+    p.input.value = fmtVal(v, p.dec);
+    p.valEl.textContent = fmtVal(v, p.dec);
+  }
+}
+
+// ======================== TAB SWITCHING ========================
+(function() {
+  var btns = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function() {
+      var activeBtns = document.querySelectorAll('.tab-btn.active');
+      for (var j = 0; j < activeBtns.length; j++) activeBtns[j].classList.remove('active');
+      var activeTabs = document.querySelectorAll('.tab-content.active');
+      for (var j = 0; j < activeTabs.length; j++) activeTabs[j].classList.remove('active');
+      this.classList.add('active');
+      $('tab-' + this.dataset.tab).classList.add('active');
+    });
+  }
+})();
+
+// ======================== PHYSICS (RK4) ========================
+function step(dt) {
+  if (!running) return;
+  if (dt > 0.05) dt = 0.05;
+  var f = function(th, om) { return -(g / L) * Math.sin(th) - damping * om; };
+  var k1v = f(theta, omega), k1x = omega;
+  var k2v = f(theta + 0.5*dt*k1x, omega + 0.5*dt*k1v), k2x = omega + 0.5*dt*k1v;
+  var k3v = f(theta + 0.5*dt*k2x, omega + 0.5*dt*k2v), k3x = omega + 0.5*dt*k2v;
+  var k4v = f(theta + dt*k3x, omega + dt*k3v), k4x = omega + dt*k3v;
+  theta += (dt/6)*(k1x + 2*k2x + 2*k3x + k4x);
+  omega += (dt/6)*(k1v + 2*k2v + 2*k3v + k4v);
+  time += dt;
+
+  // Trace
+  trace.push({ theta: theta, t: time });
+  if (trace.length > MAX_TRACE) trace.shift();
+  phaseData.push({ theta: theta, omega: omega });
+  if (phaseData.length > MAX_PHASE) phaseData.shift();
+
+  // Period estimation
+  if (lastTheta * theta < 0 && Math.abs(omega) > 0.05) {
+    zeroCrossings.push(time);
+    if (zeroCrossings.length > 4) zeroCrossings.shift();
+  }
+  lastTheta = theta;
+
+  // Record history (every 2 frames)
+  frameCount++;
+  if (frameCount % 2 === 0) {
+    var v = omega * L;
+    var h = L * (1 - Math.cos(theta));
+    var ke = 0.5 * v * v;
+    var pe = g * h;
+    hist.t.push(time);
+    hist.theta.push(theta);
+    hist.omega.push(omega);
+    hist.v.push(v);
+    hist.ke.push(ke);
+    hist.pe.push(pe);
+    hist.te.push(ke + pe);
+    if (hist.t.length > MAX_HIST) {
+      hist.t.shift(); hist.theta.shift(); hist.omega.shift();
+      hist.v.shift(); hist.ke.shift(); hist.pe.shift(); hist.te.shift();
+    }
+  }
+}
+
+// ======================== PENDULUM RENDERING ========================
+var PIVOT = { x: 280, y: 65 };
+var SCALE = 65;
+
+function drawPendulum() {
+  ctx.clearRect(0, 0, cW, cH);
+  // Background
+  var bg = ctx.createRadialGradient(cW/2, cH/2, 0, cW/2, cH/2, cW*0.7);
+  bg.addColorStop(0, '#1a3a6a'); bg.addColorStop(1, '#0a1a3a');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, cW, cH);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (var x = 0; x < cW; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,cH); ctx.stroke(); }
+  for (var y = 0; y < cH; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cW,y); ctx.stroke(); }
+
+  // Protractor
+  var arcR = 50;
+  ctx.strokeStyle = 'rgba(168,216,234,0.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(PIVOT.x, PIVOT.y, arcR, -Math.PI*0.75, -Math.PI*0.25); ctx.stroke();
+  for (var a = -60; a <= 60; a += 15) {
+    if (a === 0) continue;
+    var rad = a * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(PIVOT.x+(arcR-6)*Math.cos(-Math.PI/2+rad), PIVOT.y+(arcR-6)*Math.sin(-Math.PI/2+rad));
+    ctx.lineTo(PIVOT.x+(arcR+3)*Math.cos(-Math.PI/2+rad), PIVOT.y+(arcR+3)*Math.sin(-Math.PI/2+rad));
+    ctx.strokeStyle = 'rgba(168,216,234,0.2)'; ctx.stroke();
+    ctx.fillStyle = 'rgba(168,216,234,0.3)'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(a+'°', PIVOT.x+(arcR+14)*Math.cos(-Math.PI/2+rad), PIVOT.y+(arcR+14)*Math.sin(-Math.PI/2+rad)+3);
+  }
+  ctx.fillStyle = 'rgba(168,216,234,0.3)'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('0°', PIVOT.x, PIVOT.y+arcR+16);
+
+  // Pendulum geometry
+  var bobR = Math.max(7, Math.min(20, L*4.5));
+  var bobX = PIVOT.x + L*SCALE*Math.sin(theta);
+  var bobY = PIVOT.y + L*SCALE*Math.cos(theta);
+
+  // Trace
+  if (cbTrace.checked && trace.length > 1) {
+    ctx.beginPath();
+    for (var i = 0; i < trace.length; i++) {
+      var px = PIVOT.x + L*SCALE*Math.sin(trace[i].theta);
+      var py = PIVOT.y + L*SCALE*Math.cos(trace[i].theta);
+      i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle = 'rgba(231,76,60,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // String
+  ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 3;
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(PIVOT.x,PIVOT.y); ctx.lineTo(bobX,bobY); ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Pivot mount
+  ctx.fillStyle = '#667'; ctx.fillRect(PIVOT.x-18, PIVOT.y-5, 36, 10);
+  ctx.fillStyle = '#889'; ctx.beginPath(); ctx.arc(PIVOT.x,PIVOT.y,5,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#aab'; ctx.beginPath(); ctx.arc(PIVOT.x,PIVOT.y,2.5,0,Math.PI*2); ctx.fill();
+
+  // Bob with 3D effect
+  var bobGrad = ctx.createRadialGradient(bobX-bobR*0.3, bobY-bobR*0.3, bobR*0.1, bobX, bobY, bobR);
+  bobGrad.addColorStop(0,'#ff6b6b'); bobGrad.addColorStop(0.7,'#c0392b'); bobGrad.addColorStop(1,'#7a1f1a');
+  ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.arc(bobX,bobY,bobR,0,Math.PI*2); ctx.fillStyle = bobGrad; ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(bobX-bobR*0.25,bobY-bobR*0.25,bobR*0.3,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fill();
+
+  // Energy bar overlay
+  if (cbEnergy.checked) {
+    var v = omega*L, h = L*(1-Math.cos(theta));
+    var ke = 0.5*v*v, pe = g*h, te = ke+pe;
+    var maxE = Math.max(1, te);
+    var bw = 18, bx = 16, bh = cH-70, by = 55;
+    ctx.fillStyle = 'rgba(231,76,60,0.5)'; ctx.fillRect(bx, by+bh-ke/maxE*bh, bw, ke/maxE*bh);
+    ctx.fillStyle = 'rgba(52,152,219,0.5)'; ctx.fillRect(bx+bw+3, by+bh-pe/maxE*bh, bw, pe/maxE*bh);
+    ctx.fillStyle = 'rgba(241,196,15,0.5)'; ctx.fillRect(bx+2*bw+6, by+bh-Math.min(bh,te/maxE*bh), bw, Math.min(bh,te/maxE*bh));
+    ctx.fillStyle = '#aaa'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('K', bx+bw/2, by-3); ctx.fillText('U', bx+bw+3+bw/2, by-3); ctx.fillText('E', bx+2*bw+6+bw/2, by-3);
+  }
+}
+
+// ======================== DATA DISPLAY ========================
+function updateDataDisplay() {
+  var v = omega * L, h = L * (1 - Math.cos(theta));
+  var ke = 0.5 * v * v, pe = g * h, te = ke + pe;
+  $('dispAngle').textContent = (theta*180/Math.PI).toFixed(1)+'°';
+  $('dispOmega').textContent = omega.toFixed(2)+' rad/s';
+  $('dispVel').textContent = v.toFixed(3)+' m/s';
+  $('dispKE').textContent = ke.toFixed(3)+' J';
+  $('dispPE').textContent = pe.toFixed(3)+' J';
+  $('dispTE').textContent = te.toFixed(3)+' J';
+  $('dispTime').textContent = time.toFixed(1)+' s';
+  if (zeroCrossings.length >= 2) {
+    var periods = [];
+    for (var i = 1; i < zeroCrossings.length; i++) periods.push(2*(zeroCrossings[i]-zeroCrossings[i-1]));
+    var avg = periods.reduce(function(a,b){return a+b;},0)/periods.length;
+    $('dispPeriod').textContent = avg.toFixed(3)+' s';
+  } else {
+    $('dispPeriod').textContent = (2*Math.PI*Math.sqrt(L/g)).toFixed(3)+' s (理论)';
+  }
+}
+
+// ======================== CHART RENDERING ========================
+function drawSingleChart(canvasEl, ctx2, data, labels, colors, styles, sharedScale) {
+  var w = canvasEl.width, h = canvasEl.height;
+  var padT = 10, padR = 8, padB = 14, padL = 6;
+  var pw = w - padL - padR, ph = h - padT - padB;
+  ctx2.clearRect(0,0,w,h);
+  ctx2.fillStyle = '#0f3460'; ctx2.fillRect(0,0,w,h);
+
+  var xData = data[0];
+  if (!xData || xData.length < 2) {
+    ctx2.fillStyle = '#667'; ctx2.font = '11px sans-serif'; ctx2.textAlign = 'center';
+    ctx2.fillText('等待数据...', w/2, h/2+4);
+    return;
+  }
+  var xMin = xData[0], xMax = xData[xData.length-1];
+  if (xMax - xMin < 0.001) {
+    ctx2.fillStyle = '#667'; ctx2.font = '11px sans-serif'; ctx2.textAlign = 'center';
+    ctx2.fillText('等待数据...', w/2, h/2+4);
+    return;
+  }
+
+  // Compute y ranges
+  var globalYMin = Infinity, globalYMax = -Infinity;
+  var yRanges = [];
+  for (var s = 1; s < data.length; s++) {
+    var ys = data[s];
+    if (!ys || ys.length < 2) { yRanges.push(null); continue; }
+    var mn = Infinity, mx = -Infinity;
+    for (var i = 0; i < ys.length; i++) { var v = ys[i]; if (v < mn) mn = v; if (v > mx) mx = v; }
+    if (mx - mn < 0.0001) { mn -= 1; mx += 1; }
+    if (sharedScale) { if (mn < globalYMin) globalYMin = mn; if (mx > globalYMax) globalYMax = mx; }
+    yRanges.push({ min: mn, max: mx });
+  }
+  if (sharedScale && globalYMax - globalYMin < 0.001) { globalYMin -= 1; globalYMax += 1; }
+
+  // Grid
+  ctx2.strokeStyle = 'rgba(255,255,255,0.07)'; ctx2.lineWidth = 0.5;
+  for (var i = 0; i <= 3; i++) {
+    var gy = padT + (ph/3)*i;
+    ctx2.beginPath(); ctx2.moveTo(padL,gy); ctx2.lineTo(padL+pw,gy); ctx2.stroke();
+  }
+
+  // Draw each line
+  for (var s = 1; s < data.length; s++) {
+    var ys = data[s];
+    if (!ys || ys.length < 2) continue;
+    var r = yRanges[s-1];
+    if (!r) continue;
+    var yMin = sharedScale ? globalYMin : r.min;
+    var yMax = sharedScale ? globalYMax : r.max;
+    var yRange = yMax - yMin || 1;
+
+    ctx2.beginPath();
+    var n = xData.length < ys.length ? xData.length : ys.length;
+    for (var i = 0; i < n; i++) {
+      var xi = padL + (xData[i]-xMin)/(xMax-xMin)*pw;
+      var yi = padT + ph - (ys[i]-yMin)/yRange*ph;
+      i===0 ? ctx2.moveTo(xi,yi) : ctx2.lineTo(xi,yi);
+    }
+    ctx2.strokeStyle = colors[s-1];
+    ctx2.lineWidth = 1.5;
+    if (styles && styles[s-1] === 'dashed') ctx2.setLineDash([3,3]);
+    else ctx2.setLineDash([]);
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+  }
+
+  // Legend
+  var lx = padL + 4;
+  for (var i = 0; i < labels.length; i++) {
+    ctx2.fillStyle = colors[i]; ctx2.fillRect(lx, padT+2, 8, 2);
+    ctx2.fillStyle = '#99a'; ctx2.font = '8px sans-serif'; ctx2.textAlign = 'left';
+    ctx2.fillText(labels[i], lx+10, padT+6);
+    lx += ctx2.measureText(labels[i]).width + 16;
+  }
+}
+
+function drawAllCharts() {
+  // If no data yet, show empty state
+  if (hist.t.length < 2) {
+    var charts = [cTheta, cEnergy, cVel, cPhase];
+    var ctxs = [ctCtx, ceCtx, cvCtx, cpCtx];
+    for (var i = 0; i < charts.length; i++) {
+      var c = charts[i], cx = ctxs[i];
+      cx.clearRect(0,0,c.width,c.height);
+      cx.fillStyle = '#0f3460'; cx.fillRect(0,0,c.width,c.height);
+      cx.fillStyle = '#667'; cx.font = '11px sans-serif'; cx.textAlign = 'center';
+      cx.fillText('等待数据...', c.width/2, c.height/2+4);
+    }
+    return;
+  }
+
+  // θ-t chart
+  drawSingleChart(cTheta, ctCtx,
+    [hist.t, hist.theta, hist.omega],
+    ['θ','ω'], ['#3498db','#e67e22'], ['solid','dashed'], false);
+
+  // E-t chart (shared scale)
+  drawSingleChart(cEnergy, ceCtx,
+    [hist.t, hist.ke, hist.pe, hist.te],
+    ['K','U','E'], ['#e74c3c','#3498db','#f1c40f'], ['solid','solid','solid'], true);
+
+  // v-t chart
+  drawSingleChart(cVel, cvCtx,
+    [hist.t, hist.v], ['v'], ['#1abc9c'], ['solid'], true);
+
+  // Phase space
+  var pw = cPhase.width, ph = cPhase.height;
+  cpCtx.clearRect(0,0,pw,ph);
+  cpCtx.fillStyle = '#0f3460'; cpCtx.fillRect(0,0,pw,ph);
+  var maxTh = 0.1, maxOm = 0.1;
+  for (var i = 0; i < phaseData.length; i++) {
+    var p = phaseData[i];
+    if (Math.abs(p.theta) > maxTh) maxTh = Math.abs(p.theta);
+    if (Math.abs(p.omega) > maxOm) maxOm = Math.abs(p.omega);
+  }
+  var cx = pw/2, cy = ph/2;
+  var sx = pw*0.42/maxTh, sy = ph*0.42/maxOm;
+  cpCtx.strokeStyle = 'rgba(255,255,255,0.06)'; cpCtx.lineWidth = 0.5;
+  cpCtx.beginPath(); cpCtx.moveTo(cx,0); cpCtx.lineTo(cx,ph); cpCtx.stroke();
+  cpCtx.beginPath(); cpCtx.moveTo(0,cy); cpCtx.lineTo(pw,cy); cpCtx.stroke();
+  if (phaseData.length > 1) {
+    cpCtx.beginPath();
+    var n = phaseData.length < MAX_PHASE ? phaseData.length : MAX_PHASE;
+    var start = phaseData.length - n;
+    for (var i = start; i < phaseData.length; i++) {
+      var px = cx + phaseData[i].theta * sx;
+      var py = cy - phaseData[i].omega * sy;
+      i===start ? cpCtx.moveTo(px,py) : cpCtx.lineTo(px,py);
+    }
+    var hue = 180 - damping * 300;
+    if (hue < 0) hue = 0;
+    cpCtx.strokeStyle = 'hsla(' + hue + ',80%,60%,0.7)';
+    cpCtx.lineWidth = 1.5; cpCtx.stroke();
+  }
+  cpCtx.fillStyle = 'rgba(255,255,255,0.2)'; cpCtx.font = '7px sans-serif';
+  cpCtx.textAlign = 'left'; cpCtx.fillText('θ', pw-10, 8);
+  cpCtx.textAlign = 'right'; cpCtx.fillText('ω', 10, 8);
+}
+
+// ======================== MAIN DRAW ========================
+function draw() {
+  drawPendulum();
+  updateDataDisplay();
+  drawAllCharts();
+}
+
+// ======================== ANIMATION LOOP ========================
+function tick(ts) {
+  try {
+    if (running) {
+      if (lastTimestamp === null) lastTimestamp = ts;
+      var dt = (ts - lastTimestamp) / 1000;
+      lastTimestamp = ts;
+      step(dt);
+    } else {
+      lastTimestamp = ts;
+    }
+    draw();
+  } catch(e) {
+    console.error(e);
+  }
+  requestAnimationFrame(tick);
+}
+
+// ======================== INIT ========================
+function init() {
+  L = parseFloat(sL.value);
+  theta0_deg = parseFloat(sA.value);
+  g = parseFloat(sG.value);
+  damping = parseFloat(sD.value);
+  theta = theta0_deg * Math.PI / 180;
+  omega = 0; time = 0;
+  clearHistory();
+  lastTheta = theta; frameCount = 0;
+  syncAllDisplays();
+}
+
+// ======================== CONTROLS ========================
+function onSliderChange(key, doReset) {
+  return function() {
+    var p = PARAMS[key];
+    var v = parseFloat(p.slider.value);
+    p.input.value = fmtVal(v, p.dec);
+    p.valEl.textContent = fmtVal(v, p.dec);
+    if (!running) {
+      applyParamsToPhysics(doReset);
+    } else {
+      if (key === 'len') L = readParam('len');
+      else if (key === 'grav') g = readParam('grav');
+      else if (key === 'damp') damping = readParam('damp');
+    }
+  };
+}
+sL.addEventListener('input', onSliderChange('len', true));
+sA.addEventListener('input', onSliderChange('ang', true));
+sG.addEventListener('input', onSliderChange('grav', true));
+sD.addEventListener('input', onSliderChange('damp', true));
+
+// Text inputs
+function setupInput(key, doReset) {
+  var p = PARAMS[key];
+  p.input.addEventListener('focus', function() { this.select(); });
+  p.input.addEventListener('blur', function() {
+    var v = parseFloat(this.value);
+    if (isNaN(v)) {
+      this.classList.add('invalid');
+      this.value = fmtVal(parseFloat(p.slider.value), p.dec);
+      var self = this;
+      setTimeout(function() { self.classList.remove('invalid'); }, 300);
+      return;
+    }
+    this.classList.remove('invalid');
+    writeParam(key, v);
+    if (!running) {
+      applyParamsToPhysics(doReset);
+    } else {
+      if (key === 'len') L = readParam('len');
+      else if (key === 'grav') g = readParam('grav');
+      else if (key === 'damp') damping = readParam('damp');
+    }
+  });
+  p.input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { this.blur(); }
+  });
+}
+setupInput('len', true);
+setupInput('ang', true);
+setupInput('grav', true);
+setupInput('damp', true);
+
+// Arrow buttons
+(function() {
+  var btns = document.querySelectorAll('.arrow-btn');
+  var keyMap = { lenSlider: 'len', angSlider: 'ang', gravSlider: 'grav', dampSlider: 'damp' };
+  for (var i = 0; i < btns.length; i++) {
+    (function(btn) {
+      var targetId = btn.dataset.target;
+      var dir = parseInt(btn.dataset.dir);
+      var key = keyMap[targetId];
+      var p = PARAMS[key];
+
+      function doStep() {
+        var cur = parseFloat(p.slider.value);
+        var nv = clamp(cur + dir * p.step, p.min, p.max);
+        writeParam(key, nv);
+        if (!running) {
+          applyParamsToPhysics(key === 'ang');
+        } else {
+          if (key === 'len') L = readParam('len');
+          else if (key === 'grav') g = readParam('grav');
+          else if (key === 'damp') damping = readParam('damp');
+        }
+      }
+
+      btn.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        doStep();
+        var id = setInterval(doStep, 120);
+        arrowTimers[targetId + dir] = id;
+      });
+      btn.addEventListener('mouseup', function() {
+        clearInterval(arrowTimers[targetId + dir]);
+        delete arrowTimers[targetId + dir];
+      });
+      btn.addEventListener('mouseleave', function() {
+        clearInterval(arrowTimers[targetId + dir]);
+        delete arrowTimers[targetId + dir];
+      });
+      btn.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        doStep();
+        var id = setInterval(doStep, 120);
+        arrowTimers[targetId + dir + '_touch'] = id;
+      });
+      btn.addEventListener('touchend', function() {
+        clearInterval(arrowTimers[targetId + dir + '_touch']);
+        delete arrowTimers[targetId + dir + '_touch'];
+      });
+    })(btns[i]);
+  }
+})();
+
+// Start / Pause
+btnStart.addEventListener('click', function() {
+  running = !running;
+  btnStart.textContent = running ? '⏸ 暂停' : '▶ 启动';
+  if (running) { btnStart.classList.add('running'); lastTimestamp = null; }
+  else { btnStart.classList.remove('running'); }
+});
+
+// Reset
+btnReset.addEventListener('click', function() {
+  running = false;
+  btnStart.textContent = '▶ 启动';
+  btnStart.classList.remove('running');
+  init();
+  draw();
+});
+
+// ======================== DRAG ========================
+(function() {
+  var dragging = false;
+  canvas.addEventListener('mousedown', function(e) {
+    if (running) return;
+    var rect = canvas.getBoundingClientRect();
+    var s = canvas.width / rect.width;
+    var mx = (e.clientX - rect.left) * s, my = (e.clientY - rect.top) * s;
+    var dx = mx - PIVOT.x, dy = my - PIVOT.y;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    var bobR = Math.max(7, Math.min(20, L*4.5));
+    if (dist < bobR + 20) dragging = true;
+  });
+  canvas.addEventListener('mousemove', function(e) {
+    if (!dragging || running) return;
+    var rect = canvas.getBoundingClientRect();
+    var s = canvas.width / rect.width;
+    var mx = (e.clientX - rect.left) * s, my = (e.clientY - rect.top) * s;
+    var dx = mx - PIVOT.x, dy = my - PIVOT.y;
+    var nt = Math.atan2(dx, dy);
+    nt = Math.max(-85*Math.PI/180, Math.min(85*Math.PI/180, nt));
+    theta = nt; omega = 0; time = 0;
+    var deg = Math.abs(theta*180/Math.PI);
+    writeParam('ang', deg);
+    theta0_deg = parseFloat(sA.value);
+    clearHistory();
+  });
+  canvas.addEventListener('mouseup', function() { dragging = false; });
+  canvas.addEventListener('mouseleave', function() { dragging = false; });
+  // Touch
+  canvas.addEventListener('touchstart', function(e) {
+    if (running) return;
+    var t = e.touches[0]; var rect = canvas.getBoundingClientRect();
+    var s = canvas.width / rect.width;
+    var mx = (t.clientX - rect.left)*s, my = (t.clientY - rect.top)*s;
+    var dx = mx-PIVOT.x, dy = my-PIVOT.y;
+    var dist = Math.sqrt(dx*dx+dy*dy);
+    var bobR = Math.max(7, Math.min(20, L*4.5));
+    if (dist < bobR+25) dragging = true;
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchmove', function(e) {
+    if (!dragging || running) return;
+    var t = e.touches[0]; var rect = canvas.getBoundingClientRect();
+    var s = canvas.width / rect.width;
+    var mx = (t.clientX - rect.left)*s, my = (t.clientY - rect.top)*s;
+    var dx = mx-PIVOT.x, dy = my-PIVOT.y;
+    var nt = Math.atan2(dx, dy);
+    nt = Math.max(-85*Math.PI/180, Math.min(85*Math.PI/180, nt));
+    theta = nt; omega = 0; time = 0;
+    var deg = Math.abs(theta*180/Math.PI);
+    writeParam('ang', deg);
+    theta0_deg = parseFloat(sA.value);
+    clearHistory();
+    e.preventDefault();
+  }, { passive: false });
+  canvas.addEventListener('touchend', function() { dragging = false; });
+})();
+
+// ======================== START ========================
+init();
+draw();
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
