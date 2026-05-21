@@ -12,22 +12,17 @@ body{
   background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
   color:#e8e0f0
 }
-
-/* header */
 .hdr{max-width:900px;margin:0 auto;padding:30px 20px 10px}
 .hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
 .hdr a:hover{color:#f48fb1}
 .hdr h1{font-size:34px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
 .hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
-
-/* song list */
 .list{max-width:900px;margin:20px auto;padding:0 20px;display:grid;gap:14px}
 .card{
   background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border-radius:16px;
   padding:20px 24px;border:1px solid rgba(255,255,255,0.06);
-  cursor:pointer;transition:all .3s;
-  display:flex;align-items:center;gap:16px
+  cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:16px
 }
 .card:hover{
   transform:translateY(-2px);border-color:rgba(244,143,177,0.2);
@@ -36,18 +31,15 @@ body{
 .card .ico{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-radius:12px;font-size:28px}
 .card .n h3{font-size:18px;font-weight:600;color:#e0d0e8}
 .card .n p{font-size:13px;color:#8a7aaa;margin-top:2px;letter-spacing:1px}
-
 .footer{text-align:center;padding:40px 20px 20px;color:#6a5a80;font-size:13px;letter-spacing:2px}
 
-/* ========== VIEWER OVERLAY ========== */
+/* ===== VIEWER ===== */
 .vwr{display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column}
 .vwr.on{display:flex}
-.vwr .top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.8);flex-shrink:0;z-index:2}
+.vwr .top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.8);flex-shrink:0}
 .vwr .top .t{font-size:15px;font-weight:600;color:#e0d0e8;letter-spacing:1px}
 .vwr .top button{width:34px;height:34px;border:none;background:rgba(255,255,255,0.12);border-radius:50%;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .vwr .top button:hover{background:rgba(255,255,255,0.25)}
-
-/* scrollable body */
 .vwr .body{
   flex:1;overflow:auto;-webkit-overflow-scrolling:touch;
   display:flex;flex-direction:column;align-items:center
@@ -55,54 +47,68 @@ body{
 .vwr .body::-webkit-scrollbar{width:5px}
 .vwr .body::-webkit-scrollbar-track{background:transparent}
 .vwr .body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.2);border-radius:3px}
-.vwr .body img{display:block;width:100%;max-width:1000px;height:auto}
+.vwr .body img{display:block;height:auto;flex-shrink:0}
 .vwr .body .ld{color:#8a7aaa;font-size:14px;letter-spacing:2px;margin-top:50px}
 
 /* bottom bar */
 .vwr .bot{
   flex-shrink:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);
-  padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center
+  padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center
 }
-.btn-roll{
-  padding:8px 18px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
+/* auto-scroll button */
+.btr{
+  padding:7px 16px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;
   background:#2ecc71;color:#fff;white-space:nowrap
 }
-.btn-roll:hover{background:#27ae60}
-.btn-roll.on{background:#e74c3c}
-.btn-roll.on:hover{background:#c0392b}
+.btr:hover{background:#27ae60}
+.btr.on{background:#e74c3c}
+.btr.on:hover{background:#c0392b}
 
-.sgrp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.sgrp .lb{font-size:13px;color:#ccc}
-.sgrp .sv{color:#a8d8ea;font-weight:600;font-size:13px;min-width:20px;text-align:center}
-.sgrp input[type=range]{
-  width:110px;height:4px;-webkit-appearance:none;appearance:none;background:#444;border-radius:2px;outline:none
+/* === control group (reused for both speed and zoom) === */
+.cgrp{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cgrp .lb{font-size:13px;color:#ccc;white-space:nowrap}
+.cgrp .vl{color:#a8d8ea;font-weight:600;font-size:13px;min-width:20px;text-align:center}
+.cgrp input[type=range]{
+  width:90px;height:4px;-webkit-appearance:none;appearance:none;background:#444;border-radius:2px;outline:none
 }
-.sgrp input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:16px;height:16px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
+.cgrp input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
 }
-.sgrp input[type=range]::-moz-range-thumb{
-  width:16px;height:16px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
+.cgrp input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;background:#a8d8ea;border-radius:50%;cursor:pointer;border:none
 }
-.sgrp .ni{
-  width:46px;padding:4px 4px;border:1px solid #555;border-radius:5px;
-  background:#111;color:#eee;font-size:13px;font-family:'Courier New',monospace;text-align:center;outline:none
+.cgrp .ni{
+  width:40px;padding:3px 3px;border:1px solid #555;border-radius:5px;
+  background:#111;color:#eee;font-size:12px;font-family:'Courier New',monospace;text-align:center;outline:none
 }
-.sgrp .ni:focus{border-color:#a8d8ea}
-.sgrp .ni.er{border-color:#e74c3c}
+.cgrp .ni:focus{border-color:#a8d8ea}
+.cgrp .ni.er{border-color:#e74c3c}
+
+/* square icon button for zoom */
+.zbtn{
+  width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;
+  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  background:#444;color:#fff;user-select:none
+}
+.zbtn:hover{background:#666}
+.zbtn:active{background:#777}
+
 .agrp{display:inline-flex;flex-direction:column;gap:1px;vertical-align:middle}
 .agrp button{
-  width:22px;height:15px;border:none;cursor:pointer;font-size:7px;line-height:1;
+  width:20px;height:13px;border:none;cursor:pointer;font-size:6px;line-height:1;
   display:flex;align-items:center;justify-content:center;
-  border-radius:3px;background:#444;color:#a8d8ea;padding:0;user-select:none
+  border-radius:2px;background:#444;color:#a8d8ea;padding:0;user-select:none
 }
 .agrp button:hover{background:#666}
 .agrp button:active{background:#777}
+.sep{width:1px;height:24px;background:rgba(255,255,255,0.12)}
 
 @media(max-width:640px){
   .hdr h1{font-size:26px;letter-spacing:3px}
   .card{padding:14px 16px}
   .card .ico{width:42px;height:42px;font-size:22px}
-  .sgrp input[type=range]{width:85px}
+  .cgrp input[type=range]{width:70px}
+  .vwr .bot{gap:8px;padding:8px 10px}
 }
 </style>
 </head>
@@ -116,7 +122,6 @@ body{
 </div>
 
 <div class="list" id="list"></div>
-
 <div class="footer">双鱼小栈 · 吉他谱</div>
 
 <!-- Viewer -->
@@ -130,16 +135,28 @@ body{
     <img id="vImg" alt="吉他谱">
   </div>
   <div class="bot">
-    <button class="btn-roll" id="vRoll">▶ 自动滚动</button>
-    <div class="sgrp">
+    <button class="btr" id="vRoll">▶ 自动滚动</button>
+
+    <div class="sep"></div>
+
+    <div class="cgrp">
       <span class="lb">速度</span>
-      <span class="sv" id="spdVal">5</span>
+      <span class="vl" id="spdVal">5</span>
       <input type="range" id="spdRng" min="1" max="10" step="1" value="5">
       <input type="text" class="ni" id="spdInp" value="5" maxlength="2" inputmode="numeric">
       <div class="agrp">
         <button data-d="1">▲</button>
         <button data-d="-1">▼</button>
       </div>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="cgrp">
+      <span class="lb">缩放</span>
+      <button class="zbtn" id="zmOut">−</button>
+      <span class="vl" id="zmVal" style="min-width:36px">100%</span>
+      <button class="zbtn" id="zmIn">+</button>
     </div>
   </div>
 </div>
@@ -148,18 +165,16 @@ body{
 (function(){
 'use strict';
 
-// ===== songs =====
 var SONGS = [
   {id:'hourai', title:'后来', artist:'刘若英', file:'hourai.jpg'}
 ];
 
-// ===== render list =====
+// ===== render =====
 var listEl = document.getElementById('list');
 listEl.innerHTML = SONGS.map(function(s){
   return '<div class="card" data-id="'+s.id+'">'+
     '<div class="ico">🎸</div>'+
-    '<div class="n"><h3>'+s.title+'</h3><p>'+s.artist+'</p></div>'+
-    '</div>';
+    '<div class="n"><h3>'+s.title+'</h3><p>'+s.artist+'</p></div></div>';
 }).join('');
 
 // ===== viewer =====
@@ -168,34 +183,32 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     vTitle=document.getElementById('vTitle'), vClose=document.getElementById('vClose'),
     vRoll=document.getElementById('vRoll'),
     spdRng=document.getElementById('spdRng'), spdInp=document.getElementById('spdInp'),
-    spdVal=document.getElementById('spdVal');
+    spdVal=document.getElementById('spdVal'),
+    zmIn=document.getElementById('zmIn'), zmOut=document.getElementById('zmOut'),
+    zmVal=document.getElementById('zmVal');
 
-var rolling=false, rafId=null, speed=5, arrowTimers={};
+var rolling=false, rafId=null, speed=5, zoom=100, arrowTimers={};
 
 function openViewer(song){
-  rolling=false; if(rafId){cancelAnimationFrame(rafId);rafId=null;}
-  vRoll.textContent='▶ 自动滚动'; vRoll.classList.remove('on');
+  stopRoll();
+  zoom=100;
+  applyZoom();
   vImg.style.display='none';
   vLd.style.display='block'; vLd.textContent='加载中...';
-  vTitle.textContent=song.title+' — '+song.artist;
+  vTitle.textContent=song.title+' — '+(song.artist||'');
   vBody.scrollTop=0;
   vwr.classList.add('on');
-
-  vImg.onload=function(){
-    vLd.style.display='none';
-    vImg.style.display='block';
-  };
-  vImg.onerror=function(){
-    vLd.textContent='加载失败：找不到图片';
-  };
+  vImg.onload=function(){ vLd.style.display='none'; vImg.style.display='block'; };
+  vImg.onerror=function(){ vLd.textContent='加载失败'; };
   vImg.src=song.file;
 }
 
 function closeViewer(){
   vwr.classList.remove('on');
-  rolling=false;
-  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+  stopRoll();
 }
+
+vClose.addEventListener('click',closeViewer);
 
 // click song
 listEl.addEventListener('click',function(e){
@@ -204,8 +217,6 @@ listEl.addEventListener('click',function(e){
   var song=SONGS.find(function(s){return s.id===card.dataset.id});
   if(song)openViewer(song);
 });
-
-vClose.addEventListener('click',closeViewer);
 
 // keyboard
 document.addEventListener('keydown',function(e){
@@ -216,8 +227,8 @@ document.addEventListener('keydown',function(e){
 
 // ===== auto scroll =====
 vRoll.addEventListener('click',function(){
-  if(rolling)stopRoll();
-  else startRoll();
+  if(vBody.scrollHeight<=vBody.clientHeight)return; // nothing to scroll
+  rolling?stopRoll():startRoll();
 });
 
 function startRoll(){
@@ -225,7 +236,7 @@ function startRoll(){
   rolling=true;
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
-  rollLoop();
+  rafId=requestAnimationFrame(rollLoop);
 }
 
 function stopRoll(){
@@ -235,35 +246,20 @@ function stopRoll(){
   if(rafId){cancelAnimationFrame(rafId);rafId=null;}
 }
 
+// 可调整: at speed 10, ~15px/frame = 900px/s
+// at speed 1, ~1.2px/frame = 72px/s
 function rollLoop(){
   if(!rolling)return;
-  var px=speed*0.4;
-  vBody.scrollTop+=px;
-  // stop at bottom
+  var px = speed * 0.4 + speed * speed * 0.1;
+  vBody.scrollTop += px;
   if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
-    rolling=false;
-    vRoll.textContent='▶ 自动滚动';
-    vRoll.classList.remove('on');
-    rafId=null;
+    stopRoll();
     return;
   }
   rafId=requestAnimationFrame(rollLoop);
 }
 
-// pause on manual scroll
-(function(){
-  var t;
-  vBody.addEventListener('scroll',function(){
-    if(!rolling)return;
-    if(t)clearTimeout(t);
-    // briefly pause when user manually scrolls, then resume
-    stopRoll();
-    // actually, the user just wants it to be simpler - don't auto-pause
-    // let the user toggle manually
-  });
-})();
-
-// ===== speed control =====
+// ===== speed =====
 function setSpeed(v){
   if(v<1)v=1; if(v>10)v=10;
   speed=v;
@@ -272,10 +268,7 @@ function setSpeed(v){
   spdVal.textContent=v;
 }
 
-spdRng.addEventListener('input',function(){
-  setSpeed(parseInt(spdRng.value));
-});
-
+spdRng.addEventListener('input',function(){setSpeed(parseInt(spdRng.value));});
 spdInp.addEventListener('focus',function(){this.select();});
 spdInp.addEventListener('blur',function(){
   var v=parseInt(this.value);
@@ -283,28 +276,36 @@ spdInp.addEventListener('blur',function(){
   setSpeed(v);
   this.classList.remove('er');
 });
-spdInp.addEventListener('keydown',function(e){
-  if(e.key==='Enter')this.blur();
-});
+spdInp.addEventListener('keydown',function(e){if(e.key==='Enter')this.blur();});
 
-// arrow buttons
 var arrows=document.querySelectorAll('.agrp button');
 for(var i=0;i<arrows.length;i++){(function(btn){
   var d=parseInt(btn.dataset.d);
-  function step(){
-    setSpeed(speed+d);
-  }
+  function step(){setSpeed(speed+d);}
   btn.addEventListener('mousedown',function(e){
     e.preventDefault();step();
-    var id=setInterval(step,120);
-    arrowTimers['a'+d]=id;
+    var id=setInterval(step,120); arrowTimers['a'+d]=id;
   });
   btn.addEventListener('mouseup',function(){clearInterval(arrowTimers['a'+d]);delete arrowTimers['a'+d];});
   btn.addEventListener('mouseleave',function(){clearInterval(arrowTimers['a'+d]);delete arrowTimers['a'+d];});
   btn.addEventListener('touchstart',function(e){e.preventDefault();step();
-    var id=setInterval(step,120);arrowTimers['a'+d+'t']=id;});
+    var id=setInterval(step,120); arrowTimers['a'+d+'t']=id;});
   btn.addEventListener('touchend',function(){clearInterval(arrowTimers['a'+d+'t']);delete arrowTimers['a'+d+'t'];});
 })(arrows[i]);}
+
+// ===== zoom =====
+function applyZoom(){
+  vImg.style.width=zoom+'%';
+  vImg.style.maxWidth='none';
+  zmVal.textContent=zoom+'%';
+}
+
+zmIn.addEventListener('click',function(){
+  if(zoom<300){zoom=Math.min(300,zoom+25); applyZoom();}
+});
+zmOut.addEventListener('click',function(){
+  if(zoom>25){zoom=Math.max(25,zoom-25); applyZoom();}
+});
 
 })();
 </script>
