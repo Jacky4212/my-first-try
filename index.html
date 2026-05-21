@@ -689,11 +689,10 @@
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
 
-            // 隐藏当前花瓣，2s 后恢复
-            p.style.visibility = 'hidden';
-            setTimeout(() => { p.style.visibility = ''; }, 2000);
+            // 永久移除被点击的花瓣
+            p.remove();
 
-            // 碎裂（带平滑淡入→飞散淡出）
+            // 碎裂特效
             shatter(cx, cy);
 
             // 30% 概率绽放玫瑰花
@@ -713,8 +712,8 @@
                 const el = document.createElement('div');
                 const s = 3 + Math.random() * 7;
                 const a = Math.random() * Math.PI * 2;
-                const d = 15 + Math.random() * 65;
-                const flyDur = 500 + Math.random() * 400;
+                const d = 20 + Math.random() * 60;
+                const flyDur = 1000 + Math.random() * 500;
                 el.style.cssText = [
                     'position:fixed',
                     `left:${x-s/2}px;top:${y-s/2}px`,
@@ -723,76 +722,81 @@
                     `background:${colors[i % colors.length]}`,
                     'pointer-events:none;z-index:10',
                     'opacity:0;transform:scale(0.4)',
-                    'transition:opacity 180ms ease, transform 180ms ease',
+                    'transition:opacity 300ms ease, transform 300ms ease',
                 ].join(';');
                 document.body.appendChild(el);
 
-                // Phase 1: 淡入并放大到原位
+                // Phase 1: 缓缓淡入并放大到原位
                 requestAnimationFrame(() => {
                     el.style.opacity = '1';
                     el.style.transform = 'scale(1)';
                 });
 
-                // Phase 2: 飞散并淡出
+                // Phase 2: 缓慢飞散并平缓淡出
                 setTimeout(() => {
                     el.style.transition = `all ${flyDur}ms ease-out`;
                     el.style.transform = [
                         `translate(${Math.cos(a)*d}px,${Math.sin(a)*d}px)`,
                         `rotate(${Math.random()*360}deg)`,
-                        'scale(0.2)',
+                        'scale(0.15)',
                     ].join(' ');
                     el.style.opacity = '0';
-                }, 220);
+                }, 350);
 
-                setTimeout(() => el.remove(), 700 + flyDur);
+                setTimeout(() => el.remove(), 400 + flyDur);
             }
         }
 
-        // ---- 玫瑰花绘制 ----
+        // ---- 玫瑰花绘制 (贝塞尔曲线花瓣 + 螺旋排列) ----
         function drawRoseShape(ctx, cx, cy, size) {
-            const layers = [
-                { n: 10, r: size * 0.85, pw: size * 0.42, ph: size * 0.2, col: '#a0294a' },
-                { n: 9,  r: size * 0.68, pw: size * 0.36, ph: size * 0.18, col: '#c2185b' },
-                { n: 8,  r: size * 0.52, pw: size * 0.30, ph: size * 0.16, col: '#d81b60' },
-                { n: 7,  r: size * 0.38, pw: size * 0.24, ph: size * 0.14, col: '#e91e63' },
-                { n: 6,  r: size * 0.24, pw: size * 0.20, ph: size * 0.11, col: '#f06292' },
-                { n: 5,  r: size * 0.12, pw: size * 0.15, ph: size * 0.08, col: '#f48fb1' },
-            ];
-            for (let li = 0; li < layers.length; li++) {
-                const l = layers[li];
-                for (let i = 0; i < l.n; i++) {
-                    const angle = (i / l.n) * Math.PI * 2 + li * 0.35;
-                    const px = cx + Math.cos(angle) * l.r;
-                    const py = cy + Math.sin(angle) * l.r;
-                    ctx.save();
-                    ctx.translate(px, py);
-                    ctx.rotate(angle + Math.PI / 2);
-                    ctx.globalAlpha = 0.7 + li * 0.05;
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, l.pw, l.ph, 0, 0, Math.PI * 2);
-                    ctx.fillStyle = l.col;
-                    ctx.fill();
-                    ctx.globalAlpha = 0.15;
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 0.5;
-                    ctx.beginPath();
-                    ctx.moveTo(0, -l.ph);
-                    ctx.lineTo(0, l.ph);
-                    ctx.stroke();
-                    ctx.restore();
-                }
+            const total = 42;
+            for (let i = total; i >= 0; i--) {
+                const t = i / total;
+                const angle = t * Math.PI * 3.2;
+                const radius = size * 0.82 * t;
+                const pw = size * (0.04 + t * 0.32);
+                const ph = size * (0.06 + t * 0.22);
+
+                if (pw < 1 || ph < 1) continue;
+
+                const px = cx + Math.cos(angle) * radius;
+                const py = cy + Math.sin(angle) * radius;
+
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(angle + Math.PI / 2);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-pw*0.6, -ph*0.3, -pw*0.9, -ph*0.7, 0, -ph);
+                ctx.bezierCurveTo(pw*0.9, -ph*0.7, pw*0.6, -ph*0.3, 0, 0);
+                ctx.closePath();
+
+                // 外深内浅渐变
+                const r = Math.floor(155 + (1-t) * 85);
+                const g = Math.floor(18 + t * 145);
+                const b = Math.floor(35 + t * 165);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fill();
+
+                ctx.strokeStyle = `rgba(180,50,80,0.12)`;
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+
+                ctx.restore();
             }
-            ctx.globalAlpha = 1;
-            const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, size * 0.08);
-            grd.addColorStop(0, '#fce4ec');
-            grd.addColorStop(1, '#f8bbd0');
+            // 花心柔光
+            const grd = ctx.createRadialGradient(cx-2, cy-2, 0, cx, cy, size * 0.12);
+            grd.addColorStop(0, 'rgba(255,240,245,0.85)');
+            grd.addColorStop(0.5, 'rgba(255,210,220,0.3)');
+            grd.addColorStop(1, 'rgba(255,200,210,0)');
             ctx.fillStyle = grd;
             ctx.beginPath();
-            ctx.arc(cx, cy, size * 0.08, 0, Math.PI * 2);
+            ctx.arc(cx, cy, size * 0.12, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // ---- 绽放玫瑰花 ----
+        // ---- 绽放玫瑰花 (更长的淡入淡出) ----
         function rose(x, y) {
             const size = 36 + Math.random() * 16;
             const c = document.createElement('canvas');
@@ -803,8 +807,8 @@
                 `width:${size*2.5}px;height:${size*2.5}px`,
                 'pointer-events:none;z-index:10',
                 'opacity:0;transform:scale(0.3)',
-                'transition:opacity .5s ease,transform .5s ease',
-                'filter:drop-shadow(0 0 16px rgba(200,50,100,0.35))',
+                'transition:opacity .7s ease, transform .7s ease',
+                'filter:drop-shadow(0 0 20px rgba(200,50,100,0.25))',
             ].join(';');
             document.body.appendChild(c);
             const ctx = c.getContext('2d');
@@ -817,8 +821,8 @@
             setTimeout(() => {
                 c.style.opacity = '0';
                 c.style.transform = 'scale(0.3)';
-                setTimeout(() => c.remove(), 500);
-            }, 2000);
+                setTimeout(() => c.remove(), 700);
+            }, 2800);
         }
     </script>
 </body>
