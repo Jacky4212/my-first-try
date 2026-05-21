@@ -24,7 +24,7 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: -2;
-            background: linear-gradient(145deg, #0c0e2b 0%, #1a1040 30%, #0d1f3c 60%, #12103a 100%);
+            background: linear-gradient(145deg, #1a1d4e 0%, #301d5e 30%, #1d3d5e 60%, #2a1f60 100%);
             background-attachment: fixed;
         }
 
@@ -449,15 +449,25 @@
             }
 
             // ---- 2. 双鱼座星座 ----
+            // 真实形状: 西侧环状(Circlet) + 东侧鱼 + 中央结星(Alrescha)以V形绳带连接
             const pts = [
-                { x: 0.16, y: 0.58 }, { x: 0.20, y: 0.50 },
-                { x: 0.26, y: 0.44 }, { x: 0.32, y: 0.41 },
-                { x: 0.37, y: 0.44 }, { x: 0.35, y: 0.50 },
-                { x: 0.40, y: 0.53 },  // 结星
-                { x: 0.45, y: 0.56 }, { x: 0.50, y: 0.52 },
-                { x: 0.56, y: 0.49 }, { x: 0.62, y: 0.48 },
-                { x: 0.68, y: 0.51 }, { x: 0.72, y: 0.56 },
-                { x: 0.13, y: 0.64 }, { x: 0.75, y: 0.49 },
+                // 西鱼 Circlet (小环)
+                { x: 0.18, y: 0.38 },  // 0
+                { x: 0.26, y: 0.35 },  // 1
+                { x: 0.33, y: 0.38 },  // 2
+                { x: 0.31, y: 0.47 },  // 3
+                { x: 0.23, y: 0.50 },  // 4
+                { x: 0.16, y: 0.45 },  // 5
+                // 结星 Alrescha (α Psc)
+                { x: 0.41, y: 0.44 },  // 6 ★
+                // 东鱼 (斜向弧线)
+                { x: 0.49, y: 0.42 },  // 7
+                { x: 0.55, y: 0.39 },  // 8
+                { x: 0.61, y: 0.36 },  // 9
+                { x: 0.68, y: 0.38 },  // 10
+                { x: 0.73, y: 0.42 },  // 11
+                { x: 0.67, y: 0.48 },  // 12
+                { x: 0.58, y: 0.47 },  // 13
             ];
 
             let cst;
@@ -466,10 +476,13 @@
             window.addEventListener('resize', updCst);
 
             const edges = [
-                [0, 1, 0], [1, 2, 0], [2, 3, 0], [3, 4, 0], [4, 5, 0],
-                [5, 6, 2], [6, 7, 1],
+                // Circlet (group 0)
+                [0, 1, 0], [1, 2, 0], [2, 3, 0], [3, 4, 0], [4, 5, 0], [5, 0, 0],
+                // 绳带 (group 2)
+                [2, 6, 2], [6, 7, 2],
+                // 东鱼 (group 1)
                 [7, 8, 1], [8, 9, 1], [9, 10, 1], [10, 11, 1],
-                [5, 13, 0], [11, 14, 1],
+                [11, 12, 1], [12, 13, 1], [13, 7, 1],
             ];
             const grpPh = [0, 2.5, 4.2];
 
@@ -522,9 +535,9 @@
                         const color = `rgba(${r},${g},${b},${a * 0.9})`;
                         drawSparkle(s.x, s.y, s.r * bright, color, s.rot);
 
-                        // 金色闪光星 — 额外炫酷特效
-                        const glowMul = s.isGold ? 7 : 4;
-                        const glowOp = s.isGold ? 0.25 : 0.15;
+                        // 金色闪光星
+                        const glowMul = s.isGold ? 5 : 4;
+                        const glowOp = s.isGold ? 0.18 : 0.15;
 
                         // 大光晕
                         const gr = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * glowMul);
@@ -537,8 +550,8 @@
 
                         // 金色额外暖色外光晕
                         if (s.isGold) {
-                            const g2 = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 10);
-                            g2.addColorStop(0, `rgba(255, 180, 50, ${0.12 * a})`);
+                            const g2 = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 7);
+                            g2.addColorStop(0, `rgba(255, 180, 50, ${0.07 * a})`);
                             g2.addColorStop(1, `rgba(255, 180, 50, 0)`);
                             ctx.fillStyle = g2;
                             ctx.beginPath();
@@ -548,75 +561,95 @@
 
                         // 高光十字线 (漫画闪光标志)
                         ctx.beginPath();
-                        const hl = s.r * bright * (s.isGold ? 1.4 : 1.1);
+                        const hl = s.r * bright * (s.isGold ? 1.2 : 1.1);
                         ctx.moveTo(s.x - hl * 0.5, s.y - hl * 0.5);
                         ctx.lineTo(s.x + hl * 0.5, s.y + hl * 0.5);
                         ctx.moveTo(s.x - hl * 0.5, s.y + hl * 0.5);
                         ctx.lineTo(s.x + hl * 0.5, s.y - hl * 0.5);
-                        ctx.strokeStyle = `rgba(255,255,255,${s.isGold ? a * 0.5 : a * 0.2})`;
-                        ctx.lineWidth = s.isGold ? 1.0 : 0.5;
+                        ctx.strokeStyle = `rgba(255,255,255,${s.isGold ? a * 0.35 : a * 0.2})`;
+                        ctx.lineWidth = s.isGold ? 0.7 : 0.5;
                         ctx.stroke();
                     }
                 }
 
-                // --- 星座连线 ---
+                // --- 星座连线 (带光晕细节) ---
                 for (const [i, j, g] of edges) {
                     const p1 = cst[i], p2 = cst[j];
                     const breath = Math.sin(frame * 0.005 + grpPh[g] + i * 0.25) * 0.5 + 0.5;
-                    const la = 0.06 + breath * 0.20;
+                    const la = 0.08 + breath * 0.22;
+                    const isCord = g === 2;
+                    const mainColor = isCord
+                        ? `rgba(230, 200, 80, ${la})`
+                        : `rgba(160, 180, 220, ${la})`;
+                    const glowColor = isCord
+                        ? `rgba(230, 200, 80, ${la * 0.25})`
+                        : `rgba(160, 180, 220, ${la * 0.2})`;
+                    const lw = 1.2 + breath * 0.8;
+
+                    // 光晕层
                     ctx.beginPath();
                     ctx.moveTo(p1.x, p1.y);
                     ctx.lineTo(p2.x, p2.y);
-                    ctx.strokeStyle = `rgba(170, 130, 210, ${la})`;
-                    ctx.lineWidth = 0.8 + breath * 0.6;
+                    ctx.strokeStyle = glowColor;
+                    ctx.lineWidth = lw * 2.5;
+                    ctx.stroke();
+
+                    // 主线
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = mainColor;
+                    ctx.lineWidth = lw;
                     ctx.stroke();
                 }
 
-                // --- 星座星星 (全部用漫画闪光星风格) ---
+                // --- 星座星星 (仅结星金色，其余蓝白色) ---
                 for (let i = 0; i < cst.length; i++) {
                     const p = cst[i];
                     const cp = cstParams[i];
                     const isKnot = i === 6;
-                    const isExtra = i >= 13;
 
                     const tw = Math.sin(frame * cp.speed + cp.phase) * cp.depth * 0.4 + (1 - cp.depth * 0.4);
                     const a = Math.max(0.25, tw);
 
-                    const baseSize = isKnot ? 12 : isExtra ? 5 : 8;
-                    const glowR = isKnot ? 50 : isExtra ? 16 : 30;
+                    const baseSize = isKnot ? 12 : 8;
+                    const glowR = isKnot ? 45 : 24;
 
-                    // 光晕 — 金色
-                    const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                    const ga = isKnot ? 0.30 : 0.20;
-                    grd.addColorStop(0, `rgba(255, 200, 80, ${ga * a})`);
-                    grd.addColorStop(1, `rgba(255, 200, 80, 0)`);
-                    ctx.fillStyle = grd;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // 用闪光星绘制星座星 — 金色
-                    const starColor = isKnot
-                        ? `rgba(255, 215, 50, ${0.95 * a})`
-                        : `rgba(255, 200, 80, ${0.85 * a})`;
-                    const rot = frame * 0.003 + i * 1.2;
-                    drawSparkle(p.x, p.y, baseSize * a, starColor, rot);
-
-                    // 结星加亮白高光
                     if (isKnot) {
+                        // 结星 Alrescha — 金色
+                        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+                        grd.addColorStop(0, `rgba(255, 215, 60, ${0.25 * a})`);
+                        grd.addColorStop(1, `rgba(255, 215, 60, 0)`);
+                        ctx.fillStyle = grd;
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(255, 255, 220, ${0.9 * a})`;
+                        ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
                         ctx.fill();
 
-                        // 结星外圈金色光晕
-                        const g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 25);
-                        g2.addColorStop(0, `rgba(255, 220, 100, ${0.2 * a})`);
+                        drawSparkle(p.x, p.y, baseSize * a, `rgba(255, 215, 50, ${0.95 * a})`, frame * 0.003 + i * 1.2);
+
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 220, ${0.85 * a})`;
+                        ctx.fill();
+
+                        const g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 22);
+                        g2.addColorStop(0, `rgba(255, 220, 100, ${0.15 * a})`);
                         g2.addColorStop(1, `rgba(255, 220, 100, 0)`);
                         ctx.fillStyle = g2;
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, 25, 0, Math.PI * 2);
+                        ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
                         ctx.fill();
+                    } else {
+                        // 普通星座星 — 蓝白色
+                        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+                        grd.addColorStop(0, `rgba(180, 200, 240, ${0.15 * a})`);
+                        grd.addColorStop(1, `rgba(180, 200, 240, 0)`);
+                        ctx.fillStyle = grd;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        drawSparkle(p.x, p.y, baseSize * a, `rgba(180, 200, 240, ${0.85 * a})`, frame * 0.003 + i * 1.2);
                     }
                 }
 
@@ -624,7 +657,7 @@
                 const lb = cst[11];
                 const blink = Math.sin(frame * 0.006) * 0.5 + 0.5;
                 ctx.font = '12px "Segoe UI", sans-serif';
-                ctx.fillStyle = `rgba(255, 200, 100, ${0.15 + blink * 0.25})`;
+                ctx.fillStyle = `rgba(160, 180, 220, ${0.15 + blink * 0.25})`;
                 ctx.textAlign = 'left';
                 ctx.fillText('♓ Pisces', lb.x + 14, lb.y + 6);
 
