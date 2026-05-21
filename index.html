@@ -743,43 +743,51 @@
             }
         }
 
-        // ---- 玫瑰花绘制 (水滴形贝塞尔花瓣 × 同心错层) ----
-        function drawRoseShape(ctx, cx, cy, size) {
-            // 从外到内6层，每层花瓣绕中心环形排列，层间交错偏移
+        // ---- 花瓣绘制辅助 (从中心向外，宽弧重叠) ----
+        function drawPetal(ctx, size, light, main, dark) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(size * 0.5, size * 0.2, size * 0.8, size * 0.4, 0, size * 1.0);
+            ctx.bezierCurveTo(-size * 0.8, size * 0.4, -size * 0.5, size * 0.2, 0, 0);
+            ctx.closePath();
+            const grad = ctx.createRadialGradient(0, 0, 1, 0, size * 0.3, size * 0.7);
+            grad.addColorStop(0, light);
+            grad.addColorStop(0.6, main);
+            grad.addColorStop(1, dark);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        // ---- 漫画风玫瑰花 (花瓣从中心向外辐射，层叠包裹) ----
+        function drawRoseShape(ctx, cx, cy, s) {
             const layers = [
-                { n: 7, r: size * 0.72, w: size * 0.42, h: size * 0.52, off: 0.00 },
-                { n: 7, r: size * 0.54, w: size * 0.34, h: size * 0.44, off: 0.35 },
-                { n: 6, r: size * 0.38, w: size * 0.26, h: size * 0.38, off: 0.70 },
-                { n: 6, r: size * 0.26, w: size * 0.18, h: size * 0.30, off: 0.05 },
-                { n: 5, r: size * 0.16, w: size * 0.12, h: size * 0.22, off: 0.40 },
-                { n: 4, r: size * 0.08, w: size * 0.08, h: size * 0.14, off: 0.75 },
+                { size: s * 1.1, count: 5, offset: 0.0,     light: '#ff6b6b', main: '#c0392b', dark: '#7b241c' },
+                { size: s * 0.85, count: 6, offset: 0.22,    light: '#ff8a8a', main: '#e74c3c', dark: '#922b21' },
+                { size: s * 0.65, count: 7, offset: 0.39,    light: '#ffb3b3', main: '#f1948a', dark: '#a93226' },
+                { size: s * 0.45, count: 8, offset: 0.52,    light: '#ffcccc', main: '#f5b7b1', dark: '#b03a2e' },
+                { size: s * 0.30, count: 5, offset: 0.79,    light: '#ffe0e0', main: '#fadbd8', dark: '#943126' },
             ];
-            const cols = ['#a0184a', '#b82a5a', '#d04060', '#e06080', '#ee88a0', '#f5b0c0'];
-
-            for (let li = 0; li < layers.length; li++) {
-                const l = layers[li];
-                for (let i = 0; i < l.n; i++) {
-                    const a = (i / l.n) * Math.PI * 2 + l.off;
-                    const px = cx + Math.cos(a) * l.r;
-                    const py = cy + Math.sin(a) * l.r;
-
+            ctx.save();
+            ctx.translate(cx, cy);
+            for (const l of layers) {
+                const step = (Math.PI * 2) / l.count;
+                for (let i = 0; i < l.count; i++) {
                     ctx.save();
-                    ctx.translate(px, py);
-                    ctx.rotate(a + Math.PI / 2);
-
-                    // 水滴形花瓣: 基部窄 → 中部宽 → 顶部圆
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.bezierCurveTo(-l.w*0.2, -l.h*0.2, -l.w, -l.h*0.5, -l.w*0.6, -l.h);
-                    ctx.quadraticCurveTo(0, -l.h*1.15, l.w*0.6, -l.h);
-                    ctx.bezierCurveTo(l.w, -l.h*0.5, l.w*0.2, -l.h*0.2, 0, 0);
-                    ctx.closePath();
-
-                    ctx.fillStyle = cols[li];
-                    ctx.fill();
+                    ctx.rotate(l.offset + i * step);
+                    drawPetal(ctx, l.size, l.light, l.main, l.dark);
                     ctx.restore();
                 }
             }
+            // 花蕊
+            const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, s * 0.1);
+            grd.addColorStop(0, '#ffe066');
+            grd.addColorStop(0.7, '#f39c12');
+            grd.addColorStop(1, '#d35400');
+            ctx.beginPath();
+            ctx.arc(0, 0, s * 0.1, 0, Math.PI * 2);
+            ctx.fillStyle = grd;
+            ctx.fill();
+            ctx.restore();
         }
 
         // ---- 绽放玫瑰花 ----
