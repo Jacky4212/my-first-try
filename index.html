@@ -743,50 +743,75 @@
             }
         }
 
-        // ---- 花瓣绘制辅助 (从中心向外，宽弧重叠) ----
-        function drawPetal(ctx, size, light, main, dark) {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.bezierCurveTo(size * 0.5, size * 0.2, size * 0.8, size * 0.4, 0, size * 1.0);
-            ctx.bezierCurveTo(-size * 0.8, size * 0.4, -size * 0.5, size * 0.2, 0, 0);
-            ctx.closePath();
-            const grad = ctx.createRadialGradient(0, 0, 1, 0, size * 0.3, size * 0.7);
-            grad.addColorStop(0, light);
-            grad.addColorStop(0.6, main);
-            grad.addColorStop(1, dark);
-            ctx.fillStyle = grad;
-            ctx.fill();
-        }
-
-        // ---- 漫画风玫瑰花 (花瓣从中心向外辐射，层叠包裹) ----
+        // ---- 漫画风玫瑰花 (不规则层叠宽瓣，从外到内) ----
         function drawRoseShape(ctx, cx, cy, s) {
-            const layers = [
-                { size: s * 1.1, count: 5, offset: 0.0,     light: '#ff6b6b', main: '#c0392b', dark: '#7b241c' },
-                { size: s * 0.85, count: 6, offset: 0.22,    light: '#ff8a8a', main: '#e74c3c', dark: '#922b21' },
-                { size: s * 0.65, count: 7, offset: 0.39,    light: '#ffb3b3', main: '#f1948a', dark: '#a93226' },
-                { size: s * 0.45, count: 8, offset: 0.52,    light: '#ffcccc', main: '#f5b7b1', dark: '#b03a2e' },
-                { size: s * 0.30, count: 5, offset: 0.79,    light: '#ffe0e0', main: '#fadbd8', dark: '#943126' },
-            ];
             ctx.save();
             ctx.translate(cx, cy);
-            for (const l of layers) {
-                const step = (Math.PI * 2) / l.count;
-                for (let i = 0; i < l.count; i++) {
+
+            // 每片花瓣: 宽扇形贝塞尔曲线
+            function onePetal(w, h, light, main, dark) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(w*0.7,-h*0.1, w*1.15,-h*0.4, w*0.55,-h*0.92);
+                ctx.quadraticCurveTo(0,-h*1.08, -w*0.55,-h*0.92);
+                ctx.bezierCurveTo(-w*1.15,-h*0.4, -w*0.7,-h*0.1, 0, 0);
+                ctx.closePath();
+                const g = ctx.createRadialGradient(0,-h*0.15,1, 0,-h*0.3,h*0.9);
+                g.addColorStop(0, light);
+                g.addColorStop(0.5, main);
+                g.addColorStop(1, dark);
+                ctx.fillStyle = g;
+                ctx.fill();
+                ctx.strokeStyle = dark;
+                ctx.lineWidth = 0.4;
+                ctx.stroke();
+            }
+
+            // dist 偏离中心距离不同 → 外轮廓不整齐更像真花
+            // ws/hs 缩放花瓣大小，每片略有差异
+            const layers = [
+                { list: [
+                    { a:0.00,d:0.55,w:1.0,h:1.0},{a:0.85,d:0.48,w:0.9,h:0.9},
+                    {a:1.65,d:0.58,w:1.1,h:1.05},{a:2.40,d:0.46,w:0.85,h:0.85},
+                    {a:3.15,d:0.60,w:1.15,h:1.1},{a:4.00,d:0.50,w:0.95,h:0.9},
+                    {a:4.80,d:0.56,w:1.05,h:1.0},{a:5.60,d:0.46,w:0.88,h:0.85},
+                ], W:0.58, H:0.48, c:['#7b241c','#c0392b','#ff6b6b'] },
+                { list: [
+                    {a:0.35,d:0.40,w:1.0,h:1.0},{a:1.10,d:0.36,w:0.9,h:0.9},
+                    {a:1.90,d:0.42,w:1.05,h:1.0},{a:2.70,d:0.34,w:0.85,h:0.85},
+                    {a:3.50,d:0.44,w:1.1,h:1.05},{a:4.30,d:0.36,w:0.9,h:0.88},
+                    {a:5.10,d:0.40,w:1.0,h:0.95},
+                ], W:0.44, H:0.40, c:['#922b21','#e74c3c','#ff8a8a'] },
+                { list: [
+                    {a:0.15,d:0.28,w:1.0,h:1.0},{a:1.00,d:0.24,w:0.9,h:0.88},
+                    {a:1.85,d:0.30,w:1.05,h:1.0},{a:2.65,d:0.23,w:0.85,h:0.85},
+                    {a:3.50,d:0.30,w:1.0,h:0.95},{a:4.35,d:0.25,w:0.9,h:0.85},
+                ], W:0.32, H:0.30, c:['#a93226','#f1948a','#ffb3b3'] },
+                { list: [
+                    {a:0.50,d:0.18,w:1.0,h:1.0},{a:1.60,d:0.16,w:0.9,h:0.9},
+                    {a:2.70,d:0.20,w:1.0,h:1.0},{a:3.80,d:0.15,w:0.85,h:0.85},
+                    {a:4.90,d:0.18,w:0.95,h:0.9},
+                ], W:0.20, H:0.24, c:['#b03a2e','#f5b7b1','#ffcccc'] },
+            ];
+
+            for (const L of layers) {
+                for (const p of L.list) {
                     ctx.save();
-                    ctx.rotate(l.offset + i * step);
-                    drawPetal(ctx, l.size, l.light, l.main, l.dark);
+                    ctx.translate(Math.cos(p.a)*s*p.d, Math.sin(p.a)*s*p.d);
+                    ctx.rotate(p.a + Math.PI/2);
+                    onePetal(s*L.W*p.w, s*L.H*p.h, L.c[2], L.c[1], L.c[0]);
                     ctx.restore();
                 }
             }
+
             // 花蕊
-            const grd = ctx.createRadialGradient(0, 0, 1, 0, 0, s * 0.1);
-            grd.addColorStop(0, '#ffe066');
-            grd.addColorStop(0.7, '#f39c12');
-            grd.addColorStop(1, '#d35400');
-            ctx.beginPath();
-            ctx.arc(0, 0, s * 0.1, 0, Math.PI * 2);
-            ctx.fillStyle = grd;
-            ctx.fill();
+            for (let i=0;i<3;i++) {
+                const r=Math.max(s*(0.08-i*0.025),1);
+                ctx.beginPath();
+                ctx.arc(0,0,r,0,Math.PI*2);
+                ctx.fillStyle=['#d35400','#f39c12','#ffe066'][i];
+                ctx.fill();
+            }
             ctx.restore();
         }
 
