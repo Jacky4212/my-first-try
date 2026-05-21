@@ -692,7 +692,8 @@
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
 
-            // 原花瓣平滑消散
+            // 原花瓣平滑消散（先取消 CSS 动画再淡出）
+            p.style.animation = 'none';
             p.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
             p.style.opacity = '0';
             p.style.transform = 'scale(0.3)';
