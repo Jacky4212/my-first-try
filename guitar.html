@@ -193,7 +193,7 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     zmIn=document.getElementById('zmIn'), zmOut=document.getElementById('zmOut'),
     zmVal=document.getElementById('zmVal');
 
-var rolling=false, rafId=null, speed=5, zoom=100, arrowTimers={};
+var rolling=false, rafId=null, speed=5, zoom=100, arrowTimers={}, rollLastTs=0;
 
 function openViewer(song){
   stopRoll();
@@ -241,7 +241,7 @@ vRoll.addEventListener('click',function(){
 
 function startRoll(){
   if(rolling)return;
-  rolling=true;
+  rolling=true; rollLastTs=0;
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
   rafId=requestAnimationFrame(rollLoop);
@@ -256,9 +256,12 @@ function stopRoll(){
 
 // 可调整: at speed 10, ~15px/frame = 900px/s
 // at speed 1, ~1.2px/frame = 72px/s
-function rollLoop(){
+function rollLoop(ts){
   if(!rolling)return;
-  var px = speed * 0.12;
+  if(!rollLastTs)rollLastTs=ts;
+  var dt=Math.min((ts-rollLastTs)/16.67,3); // 归一化到60fps，上限3倍
+  rollLastTs=ts;
+  var px=speed*0.06*dt;
   vBody.scrollTop += px;
   if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
     stopRoll();
