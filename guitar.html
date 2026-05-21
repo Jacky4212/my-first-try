@@ -258,7 +258,7 @@ function stopRoll(){
 // at speed 1, ~1.2px/frame = 72px/s
 function rollLoop(){
   if(!rolling)return;
-  var px = speed * 0.4 + speed * speed * 0.1;
+  var px = speed * 0.3;
   vBody.scrollTop += px;
   if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
     stopRoll();
