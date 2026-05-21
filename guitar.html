@@ -261,7 +261,7 @@ function rollLoop(ts){
   if(!rollLastTs)rollLastTs=ts;
   var dt=Math.min((ts-rollLastTs)/16.67,3); // 归一化到60fps，上限3倍
   rollLastTs=ts;
-  var px=speed*0.03*dt;
+  var px=speed*0.045*dt;
   vBody.scrollTop += px;
   if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3){
     stopRoll();
