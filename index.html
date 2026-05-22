@@ -814,179 +814,292 @@
             else { _pt.id = null; setTimeout(() => ctx.clearRect(0,0,W,H), 50); }
         }
 
-        // ---- 彼岸花散落 (低概率触发: 原位现花, 再散裂) ----
+        // ---- 彼岸花 (低概率触发: 完整动画序列) ----
         function showBihuaAt(cx, cy, pw) {
-            var size = Math.min(35, Math.max(22, pw * 2.0));
-            var cs = Math.round(Math.max(90, size * 3.2));      // 画布: 粒子飞行空间
-            var hc = cs/2, fcY = hc + 4;                         // 花心在画布坐标
+            var size = Math.min(38, Math.max(25, pw * 2.2));
+            var stemLen = size * 0.55;
+            var cw = 200, ch = 340;
+            var hc = cw / 2;
 
+            // ---- 创建浮层 ----
             var wrap = document.createElement('div');
             wrap.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:32';
             var cv = document.createElement('canvas');
-            cv.width = cs; cv.height = cs;
-            cv.style.cssText = 'position:absolute;left:'+(cx-cs/2)+'px;top:'+(cy-cs/2)+'px;transform:scale(0);opacity:0;transition:transform 350ms ease-out, opacity 350ms ease-out';
+            cv.width = cw; cv.height = ch;
+            cv.style.cssText = 'position:absolute;left:'+(cx-hc)+'px;top:'+(cy-70)+'px';
             wrap.appendChild(cv);
             document.body.appendChild(wrap);
-
             var c = cv.getContext('2d');
 
+            // ---- 动画状态 ----
+            var bloomT = 0;
+            var swayPhase = 0, swaySpeed = 0;
+            var fallY = 0, fallVy = 0;
+            var phase = 'bloom';     // bloom → wait1 → swayfall → wait2 → scatter
+            var waitTimer = 0;
+            var flowerBaseAlpha = 1;
+            var stemParticles = [];
+            var petalParticles = [];
+            var stopped = false;
+
             // ---- 花瓣路径 ----
-            function petalPath(ctx, len, wid, curl) {
-                var w2=wid*0.5, m1=len*0.38, m2=len*0.70, m3=len*0.92, cx2=curl*len*0.16;
+            function tepalPath(ctx, len, wid, curl) {
+                var w2=wid*0.5, w3=wid*0.25, m1=len*0.38, m2=len*0.70, m3=len*0.92, cx2=curl*len*0.16;
                 ctx.beginPath();
                 ctx.moveTo(0,0);
-                ctx.bezierCurveTo(m1,-w2, m2,-wid, m3+cx2,-w2*0.6);
+                ctx.bezierCurveTo(m1,-w2, m2,-wid, m3+cx2,-w3);
                 ctx.quadraticCurveTo(len*1.02+cx2*0.4,0, m3*0.65+cx2,0);
-                ctx.quadraticCurveTo(len*1.02+cx2*0.4,w2*0.6, m3+cx2,w2*0.6);
+                ctx.quadraticCurveTo(len*1.02+cx2*0.4,w3, m3+cx2,w3);
                 ctx.bezierCurveTo(m2,wid, m1,w2, 0,0);
                 ctx.closePath();
             }
 
-            // ---- 画一朵小花 ----
-            function drawMini(cx2, cy2, sz, alpha) {
-                c.save(); c.globalAlpha = alpha;
-                // 6 枚花瓣
+            // ---- 一朵花 (同 bihua.html drawFlower) ----
+            function drawOneFlower(_cx, _cy, sz, rot, bt, sw) {
+                c.save();
+                c.translate(_cx, _cy);
+                c.rotate(rot + sw * 0.025);
+                var pl = sz * (0.25 + bt * 0.75);
+                var pw2 = sz * 0.10 * bt; if (pw2 < 0.5) pw2 = 0.5;
+                // 6 花瓣
                 for (var i = 0; i < 6; i++) {
                     var a = (i/6)*Math.PI*2 - Math.PI/2 + (i%2===0?0.08:-0.08);
-                    c.save(); c.translate(cx2, cy2); c.rotate(a);
-                    var gr = c.createRadialGradient(0,0,0, 0,sz*0.5,sz);
-                    gr.addColorStop(0,'rgba(195,55,75,0.92)');
-                    gr.addColorStop(0.5,'rgba(215,65,85,0.92)');
-                    gr.addColorStop(1,'rgba(140,25,42,0.7)');
+                    c.save(); c.rotate(a);
+                    var gr = c.createRadialGradient(0,0,0, 0,pl*0.5,pl);
+                    gr.addColorStop(0,'rgba(195,55,75,0.88)');
+                    gr.addColorStop(0.25,'rgba(215,65,85,0.9)');
+                    gr.addColorStop(0.6,'rgba(185,40,55,0.85)');
+                    gr.addColorStop(0.85,'rgba(155,25,42,0.75)');
+                    gr.addColorStop(1,'rgba(110,15,28,0.4)');
                     c.fillStyle = gr;
-                    petalPath(c, sz, sz*0.10, 0.5);
+                    tepalPath(c, pl, pw2, 0.5 * bt);
                     c.fill();
+                    if (bt > 0.3) { c.strokeStyle = 'rgba(255,160,180,'+(0.15*bt)+')'; c.lineWidth = 0.6; c.stroke(); }
                     c.restore();
                 }
-                // 雄蕊 (简化)
+                // 雄蕊
                 for (var i = 0; i < 6; i++) {
                     var a = (i/6)*Math.PI*2 - Math.PI/2 + (i%2===0?0.18:-0.18)+(i-3)*0.06;
-                    c.save(); c.translate(cx2, cy2); c.rotate(a);
-                    c.strokeStyle = 'rgba(200,85,105,0.5)';
-                    c.lineWidth = 0.6;
-                    c.beginPath(); c.moveTo(0,0); c.lineTo(0,-sz*1.0); c.stroke();
-                    c.fillStyle = '#b54a4a';
-                    c.beginPath(); c.arc(0,-sz*1.0,1.2,0,Math.PI*2); c.fill();
+                    c.save(); c.rotate(a);
+                    var sl = pl * 1.5 * (0.15 + bt * 0.85) * (0.82 + i * 0.04);
+                    c.strokeStyle = 'rgba(200,85,105,'+(0.4+bt*0.35)+')';
+                    c.lineWidth = 0.7;
+                    c.beginPath(); c.moveTo(0,0); c.lineTo(0,-sl); c.stroke();
+                    if (bt > 0.2) {
+                        c.fillStyle = '#b54a4a';
+                        c.beginPath(); c.arc(0,-sl,1.2,0,Math.PI*2); c.fill();
+                        c.fillStyle = 'rgba(255,200,110,'+(0.35*bt)+')';
+                        c.beginPath(); c.arc(0,-sl,0.5,0,Math.PI*2); c.fill();
+                    }
                     c.restore();
                 }
-                // 花心
-                c.fillStyle = 'rgba(150,38,55,0.4)';
-                c.beginPath(); c.arc(cx2, cy2, 2, 0, Math.PI*2); c.fill();
+                c.fillStyle = 'rgba(150,38,55,'+(0.25+bt*0.25)+')';
+                c.beginPath(); c.arc(0,0,2.5*bt,0,Math.PI*2); c.fill();
                 c.restore();
             }
 
-            // ---- 短花梗 ----
-            function drawStem(alpha) {
-                c.save(); c.globalAlpha = alpha;
+            // ---- 花梗 (同 bihua.html drawStem) ----
+            function drawStem(fx, baseY, bt, sw) {
+                var topY = baseY - stemLen;
+                var swayX = Math.sin(sw) * 4;
+                var topW = (3.0 + bt * 1.5) / 2;
+                var botW = 0.6;
+                c.save();
                 c.beginPath();
-                c.moveTo(hc-2, fcY+3);
-                c.lineTo(hc-0.8, fcY+size*0.45);
-                c.lineTo(hc+0.8, fcY+size*0.45);
-                c.lineTo(hc+2, fcY+3);
+                c.moveTo(fx+swayX-topW, topY);
+                c.quadraticCurveTo(fx+swayX-(topW+botW)*0.5, (topY+baseY)*0.5, fx+swayX-botW, baseY);
+                c.quadraticCurveTo(fx+swayX, baseY+1, fx+swayX+botW, baseY);
+                c.quadraticCurveTo(fx+swayX+(topW+botW)*0.5, (topY+baseY)*0.5, fx+swayX+topW, topY);
                 c.closePath();
-                var sg = c.createLinearGradient(hc-2,fcY+10,hc+2,fcY+10);
-                sg.addColorStop(0,'rgba(130,42,55,0.6)');
-                sg.addColorStop(0.5,'rgba(175,55,72,0.7)');
-                sg.addColorStop(1,'rgba(120,35,48,0.6)');
+                var sg = c.createLinearGradient(fx-topW, topY, fx+topW, topY);
+                sg.addColorStop(0,'rgba(130,42,55,'+(0.7*bt)+')');
+                sg.addColorStop(0.3,'rgba(185,65,80,'+(0.8*bt)+')');
+                sg.addColorStop(0.7,'rgba(165,55,72,'+(0.78*bt)+')');
+                sg.addColorStop(1,'rgba(120,35,48,'+(0.7*bt)+')');
                 c.fillStyle = sg; c.fill();
+                // 高光线
+                c.strokeStyle = 'rgba(230,140,160,'+(0.12*bt)+')';
+                c.lineWidth = 0.8;
+                c.beginPath();
+                c.moveTo(fx+swayX-topW*0.3, topY+4);
+                c.quadraticCurveTo(fx+swayX-(topW+botW)*0.25, (topY+baseY)*0.5, fx+swayX-botW*0.2, baseY-3);
+                c.stroke();
+                // 刺 (简化)
+                var thorns = [{t:0.2,s:1,sz:2.5},{t:0.4,s:-1,sz:2.0},{t:0.6,s:1,sz:1.5},{t:0.78,s:-1,sz:1.2}];
+                for (var i = 0; i < thorns.length; i++) {
+                    var d = thorns[i];
+                    var ty = topY + d.t * (baseY - topY);
+                    var lt = (ty-topY)/(baseY-topY);
+                    var sx = fx+swayX + (topW-botW)*(1-lt)*(-0.15);
+                    var tsz = d.sz * bt; if (tsz < 0.2) tsz = 0.2;
+                    c.fillStyle = 'rgba(165,55,72,'+(0.5*bt)+')';
+                    c.beginPath();
+                    c.moveTo(sx, ty);
+                    c.lineTo(sx+d.s*tsz*2, ty-tsz*0.9);
+                    c.lineTo(sx+d.s*tsz*1.2, ty+tsz*0.3);
+                    c.closePath(); c.fill();
+                }
                 c.restore();
             }
 
-            // ---- 微光晕 ----
-            var aura = c.createRadialGradient(hc, fcY-10, 0, hc, fcY-10, size*1.5);
-            aura.addColorStop(0,'rgba(200,60,80,0.06)');
-            aura.addColorStop(1,'rgba(200,60,80,0)');
-            c.fillStyle = aura;
-            c.beginPath(); c.arc(hc, fcY-10, size*1.5, 0, Math.PI*2); c.fill();
+            // ---- 主渲染 ----
+            function render() {
+                c.clearRect(0, 0, cw, ch);
+                var fx = hc + Math.sin(swayPhase) * 5;
+                var baseY = 70 + fallY;     // 花梗底部
+                var topY = baseY - stemLen;  // 花梗顶部 = 花心位置
 
-            drawMini(hc, fcY, size, 1);
-            drawStem(1);
+                // 花
+                c.save();
+                c.globalAlpha = flowerBaseAlpha;
+                // 主花在 stem top
+                drawOneFlower(fx, topY, size, 0, bloomT, swayPhase);
+                // 侧花
+                drawOneFlower(fx-14, topY+4, size*0.68, -0.25, bloomT, swayPhase+0.3);
+                // 花梗
+                drawStem(fx, baseY, bloomT, swayPhase);
+                c.restore();
 
-            // ---- 入场动画: scale 0→1 ----
-            requestAnimationFrame(function(){
-                cv.style.transform = 'scale(1)';
-                cv.style.opacity = '1';
-            });
-
-            // ---- 粒子数据 (从花区域分布) ----
-            var bihuaParticles = [];
-            var cols = ['#e74c3c','#d63031','#c0392b','#b71540','#e84393','#fd79a8','#ff7675','#d63031'];
-            var n = 22 + Math.floor(Math.random() * 14);
-            for (var i2 = 0; i2 < n; i2++) {
-                var a2 = Math.random() * Math.PI * 2;
-                var dist = Math.random() * size * 0.45;
-                var sp = 1.0 + Math.random() * 1.6;
-                var sz = Math.max(1.5, size * 0.034) + Math.random() * (size * 0.125 - size * 0.034);
-                bihuaParticles.push({
-                    x: hc + Math.cos(a2) * dist,
-                    y: fcY + Math.sin(a2) * dist - 3,
-                    vx: Math.cos(a2) * sp,
-                    vy: Math.sin(a2) * sp - 0.8,
-                    w: sz, h: sz * (1.0 + Math.random() * 0.5),
-                    rot: Math.random() * Math.PI * 2,
-                    rs: (Math.random() - 0.5) * 0.008,
-                    c: cols[i2 % cols.length],
-                    life: 1,
-                    de: 0.0018 + Math.random() * 0.002,
-                    g: 0.014 + Math.random() * 0.012,
-                    dr: 0.97 + Math.random() * 0.01,
-                });
+                // 粒子
+                if (petalParticles.length) drawParticles(c, petalParticles);
+                if (stemParticles.length) drawParticles(c, stemParticles);
             }
 
-            // ---- 第二阶段: 绽放后散裂 ----
-            var hold = 400 + Math.random() * 200;
-            setTimeout(function() {
-                cv.style.transition = 'opacity 400ms ease-out';
-                cv.style.opacity = '0';
+            // ---- 粒子绘图 ----
+            function drawParticles(ctx, ps) {
+                for (var i = 0; i < ps.length; i++) {
+                    var p = ps[i];
+                    ctx.save();
+                    ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+                    ctx.globalAlpha = Math.max(0, p.life) * flowerBaseAlpha;
+                    ctx.fillStyle = p.c;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -p.h/2);
+                    ctx.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
+                    ctx.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
+                    ctx.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
+                    ctx.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
+                    ctx.closePath(); ctx.fill();
+                    ctx.restore();
+                }
+            }
 
-                var flowerAlpha = 1;
-                var stopped = false;
+            // ---- 产生散裂粒子 ----
+            function spawnScatter() {
+                var fx = hc + Math.sin(swayPhase) * 5;
+                var baseY = 70 + fallY;
+                var topY = baseY - stemLen;
+                phase = 'scatter';
 
-                function animLoop() {
-                    if (stopped) return;
-                    c.clearRect(0, 0, cs, cs);
+                // 花瓣粒子 (从花位置散开)
+                var cols = ['#e74c3c','#d63031','#c0392b','#b71540','#e84393','#fd79a8','#ff7675','#d63031'];
+                var n = 22 + Math.floor(Math.random() * 14);
+                for (var i = 0; i < n; i++) {
+                    var a = Math.random() * Math.PI * 2;
+                    var sp = 1.0 + Math.random() * 1.6;
+                    var sz = Math.max(1.5, size*0.034) + Math.random() * (size*0.125 - size*0.034);
+                    petalParticles.push({
+                        x: fx + (Math.random()-0.5)*12,
+                        y: topY + (Math.random()-0.5)*10,
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp - 0.8,
+                        w: sz, h: sz * (1.0 + Math.random() * 0.5),
+                        rot: Math.random() * Math.PI * 2,
+                        rs: (Math.random() - 0.5) * 0.008,
+                        c: cols[i % cols.length],
+                        life: 1,
+                        de: 0.0018 + Math.random() * 0.002,
+                        g: 0.014 + Math.random() * 0.012,
+                        dr: 0.97 + Math.random() * 0.01,
+                    });
+                }
+                // 花梗粒子 (弥散)
+                var stemCols = ['#5a1a28','#6e2030','#8a2a3a','#7a2535','#9a3545','#6a2030'];
+                var m = 20 + Math.floor(Math.random() * 12);
+                for (var i = 0; i < m; i++) {
+                    var t = Math.random();
+                    var ty = topY + t * (baseY - topY);
+                    var sd2 = Math.random() * 2 - 1;
+                    stemParticles.push({
+                        x: fx + sd2 * (1 + t * 2) + (Math.random()-0.5)*3,
+                        y: ty + (Math.random()-0.5)*3,
+                        vx: sd2 * 0.3 + (Math.random()-0.5)*0.2,
+                        vy: -0.1 - Math.random() * 0.25,
+                        w: 1.5 + Math.random() * 2.5,
+                        h: (1.5 + Math.random() * 2.5) * (0.8 + Math.random() * 0.4),
+                        rot: Math.random() * Math.PI * 2,
+                        rs: (Math.random()-0.5)*0.005,
+                        c: stemCols[i % stemCols.length],
+                        life: 0.6 + Math.random() * 0.4,
+                        de: 0.001 + Math.random() * 0.0015,
+                        g: 0.002 + Math.random() * 0.003,
+                        dr: 0.98 + Math.random() * 0.01,
+                    });
+                }
+                // 统一在 tick 中更新
+            }
 
-                    // 花渐隐
-                    if (flowerAlpha > 0.01) {
-                        drawMini(hc, fcY, size, flowerAlpha);
-                        drawStem(flowerAlpha);
-                        flowerAlpha -= 0.035;
-                        if (flowerAlpha < 0) flowerAlpha = 0;
-                    }
+            function updateParticles(ps) {
+                for (var i = ps.length - 1; i >= 0; i--) {
+                    var p = ps[i];
+                    p.vx *= p.dr; p.vy *= p.dr;
+                    p.vy += p.g;
+                    p.x += p.vx; p.y += p.vy;
+                    p.rot += p.rs;
+                    p.life -= p.de;
+                    if (p.life <= 0 || p.y > ch + 40) { ps.splice(i,1); }
+                }
+            }
 
-                    // 粒子物理 + 绘制
-                    var alive = false;
-                    for (var k = bihuaParticles.length - 1; k >= 0; k--) {
-                        var p = bihuaParticles[k];
-                        p.vx *= p.dr; p.vy *= p.dr;
-                        p.vy += p.g;
-                        p.x += p.vx; p.y += p.vy;
-                        p.rot += p.rs;
-                        p.life -= p.de;
-                        if (p.life <= 0 || p.y > cs + 40) { bihuaParticles.splice(k,1); continue; }
-                        alive = true;
-                        c.save();
-                        c.translate(p.x, p.y);
-                        c.rotate(p.rot);
-                        c.globalAlpha = Math.max(0, p.life);
-                        c.fillStyle = p.c;
-                        c.beginPath();
-                        c.moveTo(0, -p.h/2);
-                        c.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
-                        c.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
-                        c.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
-                        c.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
-                        c.closePath();
-                        c.fill();
-                        c.restore();
-                    }
+            var lastT = performance.now();
 
-                    if (alive || flowerAlpha > 0.01) requestAnimationFrame(animLoop);
-                    else { stopped = true; wrap.remove(); }
+            function tick() {
+                if (stopped) return;
+                var dt = Math.min(performance.now() - lastT, 50);
+                lastT = performance.now();
+                var frameMul = dt / 16.667;
+
+                switch (phase) {
+                    case 'bloom':
+                        bloomT += (1 - bloomT) * 0.025 * frameMul;
+                        if (bloomT > 0.97) { bloomT = 1; phase = 'wait1'; waitTimer = 0; }
+                        break;
+                    case 'wait1':
+                        waitTimer += dt;
+                        if (waitTimer >= 600) { phase = 'swayfall'; swaySpeed = 0.04; }
+                        break;
+                    case 'swayfall':
+                        swayPhase += swaySpeed * frameMul;
+                        swaySpeed *= Math.pow(0.985, frameMul);
+                        fallVy += 0.03 * frameMul;
+                        fallY += fallVy;
+                        if (swaySpeed < 0.002 && fallY > 20) { phase = 'wait2'; waitTimer = 0; }
+                        break;
+                    case 'wait2':
+                        waitTimer += dt;
+                        if (waitTimer >= 600) { spawnScatter(); }
+                        break;
+                    case 'scatter':
+                        flowerBaseAlpha -= 0.02 * frameMul;
+                        if (flowerBaseAlpha < 0) flowerBaseAlpha = 0;
+                        // 更新粒子 (统一在 tick 中处理)
+                        updateParticles(petalParticles);
+                        updateParticles(stemParticles);
+                        break;
                 }
 
-                requestAnimationFrame(animLoop);
-            }, hold);
+                render();
+
+                if (phase === 'scatter' && !petalParticles.length && !stemParticles.length && flowerBaseAlpha <= 0) {
+                    stopped = true;
+                    wrap.remove();
+                    return;
+                }
+                requestAnimationFrame(tick);
+            }
+
+            // ---- 启动 ----
+            requestAnimationFrame(tick);
         }
 
     </script>
