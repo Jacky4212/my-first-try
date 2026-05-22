@@ -106,7 +106,7 @@ body{
 
 /* ===== Snake ===== */
 .snake-layout{display:flex;justify-content:center;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.canvas-wrap{flex-shrink:0}
+.canvas-wrap{display:flex;justify-content:center;width:100%}
 .canvas-wrap canvas{
   border-radius:12px;max-width:100%;height:auto;
   background:rgba(0,0,0,.25);box-shadow:0 0 30px rgba(0,0,0,.2)
@@ -143,6 +143,7 @@ body{
   border:1px solid rgba(255,255,255,.06);
   max-width:420px;font-size:14px;line-height:2.1;color:#bbb
 }
+.rules-panel.on{display:block;position:relative;z-index:15}
 .rules-panel.on{display:block}
 .rules-panel h4{color:#e0d0e8;font-size:15px;margin-bottom:4px;letter-spacing:1px}
 .rules-panel strong{color:#f48fb1}
@@ -563,6 +564,10 @@ function flappyInit(){
 }
 function flappyLoop(){
   var f=flappy;if(f.over)return;
+  // keep bird at start position until game starts
+  if(!f.started){
+    f.bird.y=200;f.bird.vy=0;
+  }
   f.frame++;
   if(f.started){
     // bird
