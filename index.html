@@ -728,8 +728,13 @@
             ghost.style.transform = 'scale(0.2)';
             setTimeout(() => ghost.remove(), 550);
 
-            shatter(cx, cy);
-                }
+            // 45% 概率触发彼岸花散落，55% 概率触发原有效果
+            if (Math.random() < 0.45) {
+                shatterBihua(cx, cy);
+            } else {
+                shatter(cx, cy);
+            }
+        }
 
         document.querySelectorAll('.p').forEach(p => {
             p.addEventListener('click', handlePetalEvent);
@@ -807,6 +812,34 @@
             }
             if (alive) _pt.id = requestAnimationFrame(_pu);
             else { _pt.id = null; setTimeout(() => ctx.clearRect(0,0,W,H), 50); }
+        }
+
+        // ---- 彼岸花散落 (低概率触发: 深红粒子, 缓降远飘) ----
+        function shatterBihua(x, y) {
+            _pc();
+            const cols = ['#e74c3c','#d63031','#c0392b','#b71540','#e84393','#fd79a8','#ff7675','#d63031'];
+            const n = 26 + Math.floor(Math.random() * 16);
+            for (let i = 0; i < n; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const sp = 1.0 + Math.random() * 1.6;
+                const sz = 5 + Math.random() * 8;
+                _pt.ps.push({
+                    x: x + (Math.random()-0.5)*24,
+                    y: y + (Math.random()-0.5)*18,
+                    vx: Math.cos(a) * sp,
+                    vy: Math.sin(a) * sp - 1.0,
+                    w: sz,
+                    h: sz * (1.0 + Math.random() * 0.5),
+                    rot: Math.random() * Math.PI * 2,
+                    rs: (Math.random() - 0.5) * 0.008,
+                    c: cols[i % cols.length],
+                    life: 1,
+                    de: 0.0018 + Math.random() * 0.002,
+                    g: 0.014 + Math.random() * 0.012,
+                    dr: 0.97 + Math.random() * 0.01,
+                });
+            }
+            if (!_pt.id) _pt.id = requestAnimationFrame(_pu);
         }
 
     </script>
