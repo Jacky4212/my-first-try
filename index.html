@@ -96,16 +96,11 @@
         }
         .p:nth-child(1)  { left: 5%;  width: 14px; height: 16px; animation: fall1 26s linear infinite; animation-delay: 0s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
         .p:nth-child(2)  { left: 15%; width: 20px; height: 22px; animation: fall2 30s linear infinite; animation-delay: 4s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .p:nth-child(3)  { left: 28%; width: 12px; height: 14px; animation: fall3 28s linear infinite; animation-delay: 7s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .p:nth-child(4)  { left: 40%; width: 22px; height: 24px; animation: fall4 32s linear infinite; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .p:nth-child(5)  { left: 52%; width: 16px; height: 18px; animation: fall1 27s linear infinite; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .p:nth-child(6)  { left: 62%; width: 20px; height: 22px; animation: fall2 33s linear infinite; animation-delay: 5s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
-        .p:nth-child(7)  { left: 75%; width: 14px; height: 16px; animation: fall3 29s linear infinite; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
-        .p:nth-child(8)  { left: 85%; width: 18px; height: 20px; animation: fall4 31s linear infinite; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
-        .p:nth-child(9)  { left: 48%; width: 16px; height: 18px; animation: fall1 35s linear infinite; animation-delay: 11s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #f06292); }
-        .p:nth-child(10) { left: 92%; width: 15px; height: 17px; animation: fall2 25s linear infinite; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
-        .p:nth-child(11) { left: 22%; width: 19px; height: 21px; animation: fall3 34s linear infinite; animation-delay: 12s; background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
-        .p:nth-child(12) { left: 68%; width: 13px; height: 15px; animation: fall4 28s linear infinite; animation-delay: 10s; background: radial-gradient(circle at 30% 30%, #f48fb1, #f06292); }
+        .p:nth-child(3)  { left: 40%; width: 22px; height: 24px; animation: fall4 32s linear infinite; animation-delay: 2s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
+        .p:nth-child(4)  { left: 52%; width: 16px; height: 18px; animation: fall1 27s linear infinite; animation-delay: 9s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #d81b60); }
+        .p:nth-child(5)  { left: 75%; width: 14px; height: 16px; animation: fall3 29s linear infinite; animation-delay: 3s;  background: radial-gradient(circle at 30% 30%, #f8bbd0, #ec407a); }
+        .p:nth-child(6)  { left: 85%; width: 18px; height: 20px; animation: fall4 31s linear infinite; animation-delay: 8s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #d81b60); }
+        .p:nth-child(7)  { left: 92%; width: 15px; height: 17px; animation: fall2 25s linear infinite; animation-delay: 6s;  background: radial-gradient(circle at 30% 30%, #f48fb1, #e91e63); }
 
         @keyframes fall1 {
             0%   { transform: translateY(-8vh) rotate(35deg) translateX(20px); opacity: 0; }
@@ -308,8 +303,7 @@
 
     <div class="petals">
         <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
-        <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
-        <div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div>
+        <div class="p"></div><div class="p"></div><div class="p"></div>
     </div>
 
     <div class="container">
@@ -752,7 +746,7 @@
             p.addEventListener('click', handlePetalEvent);
             p.addEventListener('touchend', handlePetalEvent);
             setTimeout(function(){if(p.parentNode)p.remove();}, 44000);
-        }, 2000);
+        }, 3333);
 
         // ---- 碎裂花瓣 (Canvas 物理引擎: 花瓣形/速度/重力/阻力/旋转/淡出) ----
         const _pt = { c:null, q:null, ps:[], id:null };
