@@ -844,6 +844,7 @@
             var stemParticles = [];
             var pollenPs = [];         // 花粉粒子
             var sparkle = 0;           // 雄蕊闪烁强度 0~1
+            var glowPhase = 0;         // 光晕呼吸相位
             var stopped = false;
 
             // ---- 花瓣路径 ----
@@ -954,6 +955,17 @@
 
                 drawPollen();                   // 花粉 (花后)
 
+                // 光晕呼吸 (效果2)
+                if (bloomT > 0.2) {
+                    var gi = (0.06 + Math.sin(glowPhase) * 0.03 + Math.sin(glowPhase * 0.7) * 0.015) * bloomT;
+                    var gr = c.createRadialGradient(fx, topY, 0, fx, topY, size * 2.5);
+                    gr.addColorStop(0, 'rgba(160,50,70,'+gi+')');
+                    gr.addColorStop(0.6, 'rgba(120,30,50,'+gi*0.4+')');
+                    gr.addColorStop(1, 'rgba(80,10,30,0)');
+                    c.fillStyle = gr;
+                    c.beginPath(); c.arc(fx, topY, size * 2.5, 0, Math.PI*2); c.fill();
+                }
+
                 c.save();
                 c.globalAlpha = flowerAlpha;
                 drawOneFlower(fx, topY, size, 0, bloomT);
@@ -1050,18 +1062,19 @@
                 }
             }
 
-            // ---- 花粉粒子 (效果1: 开花时飘散细小金色粒子) ----
+            // ---- 花粉粒子 (向四周飘散) ----
             function maybeSpawnPollen() {
                 if (phase === 'scatter') return;
                 if (Math.random() > 0.12) return;
                 var fx = hc, topY = topMargin;
                 for (var i = 0; i < 2; i++) {
                     var a = Math.random() * Math.PI * 2;
+                    var sp = 0.035 + Math.random() * 0.07;   // 原速30%降低
                     pollenPs.push({
                         x: fx + (Math.random() - 0.5) * size * 0.4,
                         y: topY + (Math.random() - 0.5) * size * 0.3,
-                        vx: Math.cos(a) * (0.05 + Math.random() * 0.1),
-                        vy: -(0.15 + Math.random() * 0.25),
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp,
                         life: 1,
                         de: 0.002 + Math.random() * 0.003,
                         sz: 0.6 + Math.random() * 0.8,
@@ -1082,9 +1095,12 @@
                 for (var i = 0; i < pollenPs.length; i++) {
                     var p = pollenPs[i];
                     c.save();
-                    c.globalAlpha = p.life * 0.35;
-                    c.fillStyle = '#f0c878';
+                    c.globalAlpha = p.life * 0.5;
+                    c.fillStyle = '#e09430';  // 暖琥珀金，区别于星星的金色
                     c.beginPath(); c.arc(p.x, p.y, p.sz * p.life, 0, Math.PI*2); c.fill();
+                    c.globalAlpha = p.life * 0.2;
+                    c.fillStyle = '#ffcc66';
+                    c.beginPath(); c.arc(p.x, p.y, p.sz * p.life * 0.4, 0, Math.PI*2); c.fill();
                     c.restore();
                 }
             }
@@ -1130,12 +1146,12 @@
                         var t = Math.min(1, bloomElapsed / bloomDuration);
                         bloomT = 1 - Math.pow(1 - t, 3);  // cubic ease-out
                         if (t >= 1) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
-                        maybeSpawnPollen(); updatePollen(); updateSparkle();
+                        maybeSpawnPollen(); updatePollen(); updateSparkle(); glowPhase += dt * 0.003;
                         break;
                     case 'wait':
                         waitTimer += dt;
                         if (waitTimer >= 600) { spawnScatter(); }
-                        maybeSpawnPollen(); updatePollen(); updateSparkle();
+                        maybeSpawnPollen(); updatePollen(); updateSparkle(); glowPhase += dt * 0.003;
                         break;
                     case 'scatter':
                         flowerAlpha -= 0.02 * frameMul;
