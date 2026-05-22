@@ -736,10 +736,23 @@
             }
         }
 
-        document.querySelectorAll('.p').forEach(p => {
+        document.querySelectorAll('.p').forEach(function(p) {
             p.addEventListener('click', handlePetalEvent);
             p.addEventListener('touchend', handlePetalEvent);
         });
+
+        // ---- 连续飘落: JS 持续生成新花瓣，避免一波一波 ----
+        setInterval(function() {
+            var p = document.createElement('div');
+            p.className = 'p';
+            var w = 10 + Math.random() * 14;
+            var bg = [['#f8bbd0,#ec407a'],['#f48fb1,#d81b60'],['#f8bbd0,#f06292'],['#f48fb1,#e91e63']][Math.floor(Math.random()*4)];
+            p.style.cssText = 'left:'+(Math.random()*94)+'%;width:'+w+'px;height:'+(w*(0.9+Math.random()*0.4))+'px;animation:fall'+(1+Math.floor(Math.random()*4))+' '+(22+Math.random()*16)+'s linear;background:radial-gradient(circle at 30% 30%,'+bg+')';
+            document.querySelector('.petals').appendChild(p);
+            p.addEventListener('click', handlePetalEvent);
+            p.addEventListener('touchend', handlePetalEvent);
+            setTimeout(function(){if(p.parentNode)p.remove();}, 44000);
+        }, 1200);
 
         // ---- 碎裂花瓣 (Canvas 物理引擎: 花瓣形/速度/重力/阻力/旋转/淡出) ----
         const _pt = { c:null, q:null, ps:[], id:null };
