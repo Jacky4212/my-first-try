@@ -207,6 +207,7 @@ body{
     <span>⏱ <strong id="ms-timer">0</strong></span>
     <button class="rst-btn danger" id="ms-flag-btn" onclick="msToggleFlag()">🚩 标记</button>
     <span id="ms-flag-hint" style="display:none;color:#e67e22;font-size:13px;font-weight:600">标记模式</span>
+    <span id="ms-flag-sub" style="display:none;color:#aaa;font-size:12px">点击添加方块标记或消除标记</span>
     <button class="info-btn" id="ms-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="ms-wrap"><div class="ms-grid" id="ms-grid"></div></div>
@@ -414,7 +415,7 @@ function msCheckWin(){
   document.getElementById('ms-msg').textContent='🎉 你赢了！';
   document.getElementById('ms-over').classList.add('on');
 }
-function msToggleFlag(){ms.flagMode=!ms.flagMode;document.getElementById('ms-flag-btn').style.background=ms.flagMode?'#e67e22':'#555';document.getElementById('ms-flag-hint').style.display=ms.flagMode?'':'none';}
+function msToggleFlag(){ms.flagMode=!ms.flagMode;var on=ms.flagMode;document.getElementById('ms-flag-btn').style.background=on?'#e67e22':'#555';document.getElementById('ms-flag-hint').style.display=on?'':'none';document.getElementById('ms-flag-sub').style.display=on?'':'none';}
 function msFlag(r,c){
   if(ms.over)return;
   var cell=ms.board[r][c];
