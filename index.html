@@ -842,6 +842,8 @@
             var flowerAlpha = 1;
             var particles = [];
             var stemParticles = [];
+            var pollenPs = [];         // 花粉粒子
+            var sparkle = 0;           // 雄蕊闪烁强度 0~1
             var stopped = false;
 
             // ---- 花瓣路径 ----
@@ -950,12 +952,16 @@
                 var topY = topMargin;           // 花心 = 画布中 topMargin 处
                 var baseY = topY + stemLen;     // 花梗底部
 
+                drawPollen();                   // 花粉 (花后)
+
                 c.save();
                 c.globalAlpha = flowerAlpha;
                 drawOneFlower(fx, topY, size, 0, bloomT);
                 drawOneFlower(fx-14, topY+4, size*0.68, -0.25, bloomT);
                 drawStem(fx, baseY, bloomT);
                 c.restore();
+
+                drawSparkle();                  // 雄蕊闪烁 (花前)
 
                 if (particles.length) drawParticles(particles);
                 if (stemParticles.length) drawParticles(stemParticles);
@@ -1044,6 +1050,72 @@
                 }
             }
 
+            // ---- 花粉粒子 (效果1: 开花时飘散细小金色粒子) ----
+            function maybeSpawnPollen() {
+                if (phase === 'scatter') return;
+                if (Math.random() > 0.12) return;
+                var fx = hc, topY = topMargin;
+                for (var i = 0; i < 2; i++) {
+                    var a = Math.random() * Math.PI * 2;
+                    pollenPs.push({
+                        x: fx + (Math.random() - 0.5) * size * 0.4,
+                        y: topY + (Math.random() - 0.5) * size * 0.3,
+                        vx: Math.cos(a) * (0.05 + Math.random() * 0.1),
+                        vy: -(0.15 + Math.random() * 0.25),
+                        life: 1,
+                        de: 0.002 + Math.random() * 0.003,
+                        sz: 0.6 + Math.random() * 0.8,
+                    });
+                }
+            }
+            function updatePollen() {
+                for (var i = pollenPs.length - 1; i >= 0; i--) {
+                    var p = pollenPs[i];
+                    p.x += p.vx + Math.sin(p.life * 20 + i) * 0.03;
+                    p.y += p.vy;
+                    p.life -= p.de;
+                    if (p.life <= 0) pollenPs.splice(i, 1);
+                }
+            }
+            function drawPollen() {
+                if (!pollenPs.length) return;
+                for (var i = 0; i < pollenPs.length; i++) {
+                    var p = pollenPs[i];
+                    c.save();
+                    c.globalAlpha = p.life * 0.35;
+                    c.fillStyle = '#f0c878';
+                    c.beginPath(); c.arc(p.x, p.y, p.sz * p.life, 0, Math.PI*2); c.fill();
+                    c.restore();
+                }
+            }
+
+            // ---- 雄蕊闪烁 (效果3: 蕊尖端随机闪白金微光) ----
+            function updateSparkle() {
+                if (sparkle < 0.1 && Math.random() < 0.02) sparkle = 0.5 + Math.random() * 0.5;
+                else sparkle *= 0.9;
+            }
+            function drawSparkle() {
+                if (sparkle < 0.01 || bloomT < 0.2) return;
+                var topY = topMargin, fx = hc;
+                for (var i = 0; i < 6; i++) {
+                    var a = (i/6)*Math.PI*2 - Math.PI/2 + (i%2===0?0.18:-0.18)+(i-3)*0.06;
+                    var pl = size * (0.25 + bloomT * 0.75);
+                    var sl = pl * 1.5 * (0.15 + bloomT * 0.85) * (0.82 + i * 0.04);
+                    var ex = fx + Math.sin(a) * sl;
+                    var ey = topY - Math.cos(a) * sl;
+                    c.save();
+                    var s = sparkle * 0.7;
+                    c.globalAlpha = s;
+                    var gr = c.createRadialGradient(ex, ey, 0, ex, ey, 3);
+                    gr.addColorStop(0, '#fffef0');
+                    gr.addColorStop(0.3, 'rgba(255,220,150,'+s+')');
+                    gr.addColorStop(1, 'rgba(255,200,100,0)');
+                    c.fillStyle = gr;
+                    c.beginPath(); c.arc(ex, ey, 3 + sparkle * 2, 0, Math.PI*2); c.fill();
+                    c.restore();
+                }
+            }
+
             var lastT = performance.now();
 
             function tick() {
@@ -1058,16 +1130,19 @@
                         var t = Math.min(1, bloomElapsed / bloomDuration);
                         bloomT = 1 - Math.pow(1 - t, 3);  // cubic ease-out
                         if (t >= 1) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
+                        maybeSpawnPollen(); updatePollen(); updateSparkle();
                         break;
                     case 'wait':
                         waitTimer += dt;
                         if (waitTimer >= 600) { spawnScatter(); }
+                        maybeSpawnPollen(); updatePollen(); updateSparkle();
                         break;
                     case 'scatter':
                         flowerAlpha -= 0.02 * frameMul;
                         if (flowerAlpha < 0) flowerAlpha = 0;
                         updateParticles(particles);
                         updateParticles(stemParticles);
+                        updatePollen();
                         break;
                 }
 
