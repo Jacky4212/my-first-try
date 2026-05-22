@@ -34,6 +34,7 @@ body{
 
 /* game header */
 .game-hdr{
+  position:relative;z-index:11;
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;
   background:rgba(255,255,255,.04);backdrop-filter:blur(12px);
   border-radius:14px;padding:12px 18px;margin-bottom:16px;
@@ -104,22 +105,48 @@ body{
 .ms-cell.flagged{background:rgba(100,180,255,.15)}
 
 /* ===== Snake ===== */
-.canvas-wrap{display:flex;justify-content:center}
+.snake-layout{display:flex;justify-content:center;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.canvas-wrap{flex-shrink:0}
 .canvas-wrap canvas{
   border-radius:12px;max-width:100%;height:auto;
   background:rgba(0,0,0,.25);box-shadow:0 0 30px rgba(0,0,0,.2)
 }
-.ctrl-row{display:grid;grid-template-columns:repeat(3,48px);gap:4px;justify-content:center;margin-top:12px}
+.snake-side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.ctrl-row{display:grid;grid-template-columns:repeat(3,48px);gap:4px;justify-content:center}
 .dir-btn{
   width:48px;height:48px;border:none;border-radius:10px;cursor:pointer;
   font-size:18px;display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.08);color:#b8a0cc;user-select:none;transition:background .15s
+  background:rgba(255,255,255,.08);color:#b8a0cc;user-select:none;transition:background .15s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation
 }
 .dir-btn:hover{background:rgba(255,255,255,.16)}
 .dir-btn:active{background:rgba(255,255,255,.22)}
 
 /* ===== Flappy ===== */
-.flappy-hint{text-align:center;color:#8a7aaa;font-size:14px;margin-top:8px;letter-spacing:1px}
+.flappy-hint{text-align:center;color:#f48fb1;font-size:18px;margin:12px auto 0;letter-spacing:2px;font-weight:600;background:rgba(0,0,0,0.3);padding:10px 20px;border-radius:10px;display:inline-block;width:auto;max-width:90%}
+.flappy-hint-wrap{text-align:center}
+
+/* ===== Info button + rules panel ===== */
+.info-btn{
+  width:28px;height:28px;border:none;border-radius:50%;
+  background:rgba(255,255,255,.08);color:#b8a0cc;
+  font-size:16px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;
+  margin-left:auto;transition:background .2s;
+  font-family:serif;line-height:1
+}
+.info-btn:hover{background:rgba(255,255,255,.18)}
+.rules-panel{
+  display:none;background:rgba(255,255,255,.04);
+  backdrop-filter:blur(12px);border-radius:14px;
+  padding:16px 20px;margin:12px auto 0;
+  border:1px solid rgba(255,255,255,.06);
+  max-width:420px;font-size:14px;line-height:2.1;color:#bbb
+}
+.rules-panel.on{display:block}
+.rules-panel h4{color:#e0d0e8;font-size:15px;margin-bottom:4px;letter-spacing:1px}
+.rules-panel strong{color:#f48fb1}
+.game-hint{text-align:center;font-size:13px;color:#8a7aaa;margin-top:8px;letter-spacing:1px}
 
 @media(max-width:640px){
   .hdr h1{font-size:26px;letter-spacing:3px}
@@ -156,8 +183,18 @@ body{
   <div class="game-hdr">
     <span>分数: <strong id="g2048-score">0</strong></span>
     <button class="rst-btn" onclick="g2048Init()">重新开始</button>
+    <button class="info-btn" id="g2048-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="g2048-wrap"><div class="g2048-grid" id="g2048-grid"></div></div>
+  <div class="rules-panel" id="g2048-rules">
+    <h4>🎮 2048 玩法</h4>
+    <p>棋盘共 4×4 = <strong>16 格</strong>。显示数字的是 <strong>方块</strong>，深色空白的是 <strong>空位</strong>（没有任何数字方块，<strong>不是数字0</strong>——本游戏没有 0 这个数字）</p>
+    <p>使用键盘 <strong>方向键</strong>（←↑↓→）滑动，所有方块会向该方向 <strong>移动到底</strong></p>
+    <p>两个相同数字的方块相撞会 <strong>合并</strong> 成一个（2+2→4，4+4→8…），合并后的位置留下一个空位</p>
+    <p>每次移动后会在随机空位生成一个 <strong>2</strong> 或 <strong>4</strong>，通过不断合并一路升级：2→4→8→16→32→64→128→256→512→1024→<strong>2048</strong></p>
+    <p>拼出 <strong>2048</strong> 即胜利！可继续挑战更高分</p>
+    <p>当 16 格全部占满且相邻格子均无法合并时，<strong>游戏结束</strong></p>
+  </div>
   <div class="game-overlay" id="g2048-over"><span id="g2048-msg">游戏结束</span><span class="sub">点击「重新开始」再来一局</span></div>
 </div>
 
@@ -168,8 +205,17 @@ body{
     <button class="rst-btn" onclick="msInit()">重新开始</button>
     <span>⏱ <strong id="ms-timer">0</strong></span>
     <button class="rst-btn danger" id="ms-flag-btn" onclick="msToggleFlag()">🚩 标记</button>
+    <button class="info-btn" id="ms-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="ms-wrap"><div class="ms-grid" id="ms-grid"></div></div>
+  <div class="rules-panel" id="ms-rules">
+    <h4>💣 扫雷玩法</h4>
+    <p>棋盘为 9×9 网格，隐藏了 <strong>10 颗地雷</strong></p>
+    <p>左键点击格子 <strong>揭开</strong>，右键/<strong>🚩标记按钮</strong> 标记地雷</p>
+    <p>揭开的 <strong>数字</strong> 表示周围 8 格中地雷的数量，据此推理雷的位置</p>
+    <p>数字周围如果已标够雷数，可快速双击数字揭开剩余格子</p>
+    <p>揭开所有非雷格子即为 <strong>胜利</strong>，踩到地雷则 <strong>游戏结束</strong></p>
+  </div>
   <div class="game-overlay" id="ms-over"><span id="ms-msg">游戏结束</span><span class="sub">点击「重新开始」再来一局</span></div>
 </div>
 
@@ -178,14 +224,26 @@ body{
   <div class="game-hdr">
     <span>分数: <strong id="snake-score">0</strong></span>
     <button class="rst-btn" onclick="snakeInit()">重新开始</button>
+    <button class="info-btn" id="snake-info-btn" title="玩法说明">ⓘ</button>
   </div>
-  <div class="canvas-wrap"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
-  <div class="ctrl-row" id="snake-ctrl">
-  <button class="dir-btn" data-sdir="up" style="grid-column:2;grid-row:1">▲</button>
-  <button class="dir-btn" data-sdir="left" style="grid-column:1;grid-row:2">◀</button>
-  <button class="dir-btn" data-sdir="down" style="grid-column:2;grid-row:2">▼</button>
-  <button class="dir-btn" data-sdir="right" style="grid-column:3;grid-row:2">▶</button>
-</div>
+  <div class="snake-layout">
+    <div class="canvas-wrap"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
+    <div class="snake-side">
+      <p class="game-hint" style="margin-top:0">控制方向</p>
+      <div class="ctrl-row" id="snake-ctrl">
+        <button class="dir-btn" data-sdir="up" style="grid-column:2;grid-row:1">▲</button>
+        <button class="dir-btn" data-sdir="left" style="grid-column:1;grid-row:2">◀</button>
+        <button class="dir-btn" data-sdir="down" style="grid-column:2;grid-row:2">▼</button>
+        <button class="dir-btn" data-sdir="right" style="grid-column:3;grid-row:2">▶</button>
+      </div>
+    </div>
+  </div>
+  <div class="rules-panel" id="snake-rules">
+    <h4>🐍 贪吃蛇玩法</h4>
+    <p>使用 <strong>方向键 / WASD / 右侧方向按钮</strong> 控制蛇头方向</p>
+    <p>蛇会自动前进，吃到红色 <strong>食物</strong> 会增长 1 节并加 1 分</p>
+    <p>蛇不能 <strong>掉头</strong>（不能直接反向），撞到 <strong>墙壁</strong> 或 <strong>自身</strong> 则游戏结束</p>
+  </div>
   <div class="game-overlay" id="snake-over"><span>游戏结束</span><span class="sub" id="snake-msg">得分: 0</span></div>
 </div>
 
@@ -194,9 +252,17 @@ body{
   <div class="game-hdr">
     <span>分数: <strong id="flappy-score">0</strong></span>
     <button class="rst-btn" onclick="flappyInit()">重新开始</button>
+    <button class="info-btn" id="flappy-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="canvas-wrap"><canvas id="flappy-canvas" width="400" height="500"></canvas></div>
-  <div class="flappy-hint">按 空格 / 点击画面 飞行</div>
+  <div class="flappy-hint-wrap"><div class="flappy-hint" id="flappyHint">按 空格 / 点击画面 飞行</div></div>
+  <div class="rules-panel" id="flappy-rules">
+    <h4>🐦 Flappy Bird 玩法</h4>
+    <p>按 <strong>空格键</strong> 或 <strong>点击画面</strong> 让鸟向上飞</p>
+    <p>不操作时鸟会在重力作用下 <strong>自然下落</strong></p>
+    <p>穿越绿色 <strong>管道</strong> 之间的空隙，每穿过一个得 1 分</p>
+    <p>撞到 <strong>管道</strong> 或 <strong>地面/天花板</strong> 则游戏结束</p>
+  </div>
   <div class="game-overlay" id="flappy-over"><span>游戏结束</span><span class="sub" id="flappy-msg">得分: 0</span></div>
 </div>
 
@@ -381,17 +447,17 @@ function msRender(){
 }
 
 // ======================== Snake ========================
-var snake={snake:[],food:{},dir:{x:1,y:0},ndir:{x:1,y:0},score:0,over:false,loop:null,COLS:20,ROWS:20,CELL:20};
+var snake={snake:[],food:{},dir:{x:1,y:0},ndir:{x:1,y:0},score:0,over:false,started:false,firstDir:false,loop:null,COLS:20,ROWS:20,CELL:20};
 function snakeInit(){
   var s=snake;
   if(s.loop){clearInterval(s.loop);s.loop=null;}
   s.snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
-  s.dir={x:1,y:0};s.ndir={x:1,y:0};s.score=0;s.over=false;
+  s.dir={x:1,y:0};s.ndir={x:1,y:0};s.score=0;s.over=false;s.started=false;s.firstDir=false;
   s.food=snakeFood();
   document.getElementById('snake-over').classList.remove('on');
   document.getElementById('snake-score').textContent='0';
   snakeRender();
-  s.loop=setInterval(snakeUpdate,150);
+  s.loop=setInterval(snakeUpdate,180);
 }
 function snakeFood(){
   var s=snake,pos;
@@ -401,6 +467,11 @@ function snakeFood(){
 }
 function snakeUpdate(){
   var s=snake;if(s.over)return;
+  if(!document.getElementById('panel-snake').classList.contains('active'))return;
+  if(!s.started){
+    if(!s.firstDir)return;
+    s.started=true;
+  }
   if((s.ndir.x||s.ndir.y)&&(s.ndir.x!==-s.dir.x||s.ndir.y!==-s.dir.y))s.dir={x:s.ndir.x,y:s.ndir.y};
   var head={x:s.snake[0].x+s.dir.x,y:s.snake[0].y+s.dir.y};
   if(head.x<0||head.x>=s.COLS||head.y<0||head.y>=s.ROWS||s.snake.some(function(p){return p.x===head.x&&p.y===head.y})){
@@ -435,32 +506,56 @@ function snakeRender(){
   // head
   var h=s.snake[0];
   ctx.fillStyle='#b39ddb';rr(h.x*cl+1,h.y*cl+1,cl-2,cl-2,4);ctx.fill();
+  // start hint
+  if(!s.started){
+    ctx.fillStyle='rgba(0,0,0,.5)';ctx.beginPath();
+    ctx.roundRect(c.width/2-115,c.height/2-22,230,44,10);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 16px sans-serif';ctx.textAlign='center';
+    ctx.fillText('按方向键 / 点击按钮 开始',c.width/2,c.height/2+6);
+  }
 }
 // snake direction buttons
-document.getElementById('snake-ctrl').addEventListener('click',function(e){
-  var btn=e.target.closest('.dir-btn');if(!btn)return;
-  var d=btn.dataset.sdir;
-  if(d==='up')snake.ndir={x:0,y:-1};
-  else if(d==='down')snake.ndir={x:0,y:1};
-  else if(d==='left')snake.ndir={x:-1,y:0};
-  else if(d==='right')snake.ndir={x:1,y:0};
-});
-// keyboard for snake
-document.addEventListener('keydown',function(e){
-  if(!document.getElementById('panel-snake').classList.contains('active'))return;
-  var k=e.key;
-  if(k==='ArrowUp'||k==='w'||k==='W'){e.preventDefault();snake.ndir={x:0,y:-1};}
-  else if(k==='ArrowDown'||k==='s'||k==='S'){e.preventDefault();snake.ndir={x:0,y:1};}
-  else if(k==='ArrowLeft'||k==='a'||k==='A'){e.preventDefault();snake.ndir={x:-1,y:0};}
-  else if(k==='ArrowRight'||k==='d'||k==='D'){e.preventDefault();snake.ndir={x:1,y:0};}
-});
+(function(){
+  function applySnakeDir(d){
+    var s=snake;
+    var ndir={x:0,y:0};
+    if(d==='up')ndir={x:0,y:-1};
+    else if(d==='down')ndir={x:0,y:1};
+    else if(d==='left')ndir={x:-1,y:0};
+    else if(d==='right')ndir={x:1,y:0};
+    if(!ndir.x&&!ndir.y)return;
+    s.firstDir=true;
+    // apply both dir and ndir immediately (block reverse as safety)
+    if(ndir.x!==-s.dir.x||ndir.y!==-s.dir.y){s.dir=ndir;s.ndir=ndir;}
+  }
+  document.getElementById('snake-ctrl').addEventListener('click',function(e){
+    var btn=e.target.closest('.dir-btn');if(!btn)return;
+    applySnakeDir(btn.dataset.sdir);
+  });
+  // touchstart for immediate mobile response
+  document.getElementById('snake-ctrl').addEventListener('touchstart',function(e){
+    var btn=e.target.closest('.dir-btn');if(!btn)return;
+    e.preventDefault();
+    applySnakeDir(btn.dataset.sdir);
+  },{passive:false});
+  // keyboard for snake
+  document.addEventListener('keydown',function(e){
+    if(!document.getElementById('panel-snake').classList.contains('active'))return;
+    var k=e.key;
+    if(k==='ArrowUp'||k==='w'||k==='W'){e.preventDefault();applySnakeDir('up');}
+    else if(k==='ArrowDown'||k==='s'||k==='S'){e.preventDefault();applySnakeDir('down');}
+    else if(k==='ArrowLeft'||k==='a'||k==='A'){e.preventDefault();applySnakeDir('left');}
+    else if(k==='ArrowRight'||k==='d'||k==='D'){e.preventDefault();applySnakeDir('right');}
+  });
+})();
 
 // ======================== Flappy Bird ========================
-var flappy={bird:{x:80,y:200,vy:0},pipes:[],score:0,over:false,loop:null,frame:0,W:400,H:500};
+var flappy={bird:{x:80,y:200,vy:0},pipes:[],score:0,over:false,started:false,loop:null,frame:0,W:400,H:500};
 function flappyInit(){
   var f=flappy;
   if(f.loop){cancelAnimationFrame(f.loop);f.loop=null;}
-  f.bird={x:80,y:200,vy:0};f.pipes=[];f.score=0;f.over=false;f.frame=0;
+  f.bird={x:80,y:200,vy:0};f.pipes=[];f.score=0;f.over=false;f.started=false;f.frame=0;
+  document.getElementById('flappyHint').style.display='';
   document.getElementById('flappy-over').classList.remove('on');
   document.getElementById('flappy-score').textContent='0';
   flappyRender();
@@ -469,22 +564,24 @@ function flappyInit(){
 function flappyLoop(){
   var f=flappy;if(f.over)return;
   f.frame++;
-  // bird
-  f.bird.vy+=0.45;f.bird.y+=f.bird.vy;
-  if(f.bird.y>f.H-20||f.bird.y<-10){f.over=true;flappyEnd();return;}
-  // pipes
-  if(f.frame%100===0){
-    var gapY=60+Math.random()*(f.H-200);
-    f.pipes.push({x:f.W+20,gapY:gapY,gap:150,scored:false});
-  }
-  for(var i=f.pipes.length-1;i>=0;i--){
-    var p=f.pipes[i];p.x-=2.5;
-    if(p.x+60<0){f.pipes.splice(i,1);continue;}
-    // collision
-    if(f.bird.x+12>p.x&&f.bird.x-12<p.x+50){
-      if(f.bird.y-10<p.gapY||f.bird.y+10>p.gapY+p.gap){f.over=true;flappyEnd();return;}
+  if(f.started){
+    // bird
+    f.bird.vy+=0.28;f.bird.y+=f.bird.vy;
+    if(f.bird.y>f.H-20||f.bird.y<-10){f.over=true;flappyEnd();return;}
+    // pipes
+    if(f.frame%130===0){
+      var gapY=60+Math.random()*(f.H-200);
+      f.pipes.push({x:f.W+20,gapY:gapY,gap:150,scored:false});
     }
-    if(!p.scored&&p.x+50<f.bird.x-12){p.scored=true;f.score++;document.getElementById('flappy-score').textContent=f.score;}
+    for(var i=f.pipes.length-1;i>=0;i--){
+      var p=f.pipes[i];p.x-=2.5;
+      if(p.x+60<0){f.pipes.splice(i,1);continue;}
+      // collision
+      if(f.bird.x+12>p.x&&f.bird.x-12<p.x+50){
+        if(f.bird.y-10<p.gapY||f.bird.y+10>p.gapY+p.gap){f.over=true;flappyEnd();return;}
+      }
+      if(!p.scored&&p.x+50<f.bird.x-12){p.scored=true;f.score++;document.getElementById('flappy-score').textContent=f.score;}
+    }
   }
   flappyRender();
   if(!f.over)f.loop=requestAnimationFrame(flappyLoop);
@@ -496,8 +593,10 @@ function flappyEnd(){
   flappyRender();
 }
 function flappyFlap(){
-  if(flappy.over){flappyInit();return;}
-  flappy.bird.vy=-6.5;
+  var f=flappy;
+  if(f.over){flappyInit();return;}
+  if(!f.started){f.started=true;document.getElementById('flappyHint').style.display='none';}
+  f.bird.vy=-4.8;
 }
 document.addEventListener('keydown',function(e){
   if(!document.getElementById('panel-flappy').classList.contains('active'))return;
@@ -547,6 +646,15 @@ function flappyRender(){
   ctx.fillStyle='#fff';ctx.font='bold 28px sans-serif';ctx.textAlign='center';
   ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=4;
   ctx.fillText(f.score,W/2,45);ctx.shadowBlur=0;
+  // start hint (shown before game starts)
+  if(!f.started){
+    ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();
+    ctx.roundRect(W/2-130,H/2-32,260,64,12);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 20px sans-serif';ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=4;
+    ctx.fillText('按 空格 / 点击画面 开始',W/2,H/2+7);
+    ctx.shadowBlur=0;
+  }
 }
 
 // ======================== Init ========================
@@ -554,6 +662,26 @@ g2048Init();
 msInit();
 snakeInit();
 flappyInit();
+
+// expose for HTML onclick
+window.g2048Init=g2048Init;window.msInit=msInit;window.msToggleFlag=msToggleFlag;
+window.snakeInit=snakeInit;window.flappyInit=flappyInit;
+
+// 2048 rules toggle
+document.getElementById('g2048-info-btn').addEventListener('click',function(){
+  document.getElementById('g2048-rules').classList.toggle('on');
+});
+// minesweeper rules toggle
+document.getElementById('ms-info-btn').addEventListener('click',function(){
+  document.getElementById('ms-rules').classList.toggle('on');
+});
+// snake rules toggle
+document.getElementById('snake-info-btn').addEventListener('click',function(){
+  document.getElementById('snake-rules').classList.toggle('on');
+});
+document.getElementById('flappy-info-btn').addEventListener('click',function(){
+  document.getElementById('flappy-rules').classList.toggle('on');
+});
 
 })();
 </script>

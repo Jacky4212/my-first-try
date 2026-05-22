@@ -814,32 +814,32 @@
             else { _pt.id = null; setTimeout(() => ctx.clearRect(0,0,W,H), 50); }
         }
 
-        // ---- 彼岸花 (低概率触发: 完整动画序列) ----
+        // ---- 彼岸花 (低概率触发: 自动计时多层动画) ----
         function showBihuaAt(cx, cy, pw) {
-            var size = Math.min(38, Math.max(25, pw * 2.2));
-            var stemLen = size * 0.55;
-            var cw = 200, ch = 340;
+            var size = Math.min(32, Math.max(18, pw * 1.8));
+            var stemLen = size * 2.2;
+            // 大画布确保花和粒子完整显示
+            var cw = 500, ch = 500;
             var hc = cw / 2;
+            var topMargin = Math.round(size * 1.4 + 12);  // 花心上方的余量(容纳花瓣)
 
-            // ---- 创建浮层 ----
             var wrap = document.createElement('div');
             wrap.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:32';
             var cv = document.createElement('canvas');
             cv.width = cw; cv.height = ch;
-            cv.style.cssText = 'position:absolute;left:'+(cx-hc)+'px;top:'+(cy-70)+'px';
+            // 画布居中于点击位置，花心对齐点击点
+            cv.style.cssText = 'position:absolute;left:'+(cx-hc)+'px;top:'+(cy-topMargin)+'px;width:500px;height:500px';
             wrap.appendChild(cv);
             document.body.appendChild(wrap);
             var c = cv.getContext('2d');
 
             // ---- 动画状态 ----
             var bloomT = 0;
-            var swayPhase = 0, swaySpeed = 0;
-            var fallY = 0, fallVy = 0;
-            var phase = 'bloom';     // bloom → wait1 → swayfall → wait2 → scatter
+            var phase = 'bloom';     // bloom → wait → scatter
             var waitTimer = 0;
-            var flowerBaseAlpha = 1;
+            var flowerAlpha = 1;
+            var particles = [];
             var stemParticles = [];
-            var petalParticles = [];
             var stopped = false;
 
             // ---- 花瓣路径 ----
@@ -855,10 +855,10 @@
             }
 
             // ---- 一朵花 (同 bihua.html drawFlower) ----
-            function drawOneFlower(_cx, _cy, sz, rot, bt, sw) {
+            function drawOneFlower(_cx, _cy, sz, rot, bt) {
                 c.save();
                 c.translate(_cx, _cy);
-                c.rotate(rot + sw * 0.025);
+                c.rotate(rot);
                 var pl = sz * (0.25 + bt * 0.75);
                 var pw2 = sz * 0.10 * bt; if (pw2 < 0.5) pw2 = 0.5;
                 // 6 花瓣
@@ -899,19 +899,18 @@
             }
 
             // ---- 花梗 (同 bihua.html drawStem) ----
-            function drawStem(fx, baseY, bt, sw) {
+            function drawStem(fx, baseY, bt) {
                 var topY = baseY - stemLen;
-                var swayX = Math.sin(sw) * 4;
-                var topW = (3.0 + bt * 1.5) / 2;
-                var botW = 0.6;
+                var topW = (5.0 + bt * 3.0) / 2;
+                var botW = 0.4;
                 c.save();
                 c.beginPath();
-                c.moveTo(fx+swayX-topW, topY);
-                c.quadraticCurveTo(fx+swayX-(topW+botW)*0.5, (topY+baseY)*0.5, fx+swayX-botW, baseY);
-                c.quadraticCurveTo(fx+swayX, baseY+1, fx+swayX+botW, baseY);
-                c.quadraticCurveTo(fx+swayX+(topW+botW)*0.5, (topY+baseY)*0.5, fx+swayX+topW, topY);
+                c.moveTo(fx-topW, topY);
+                c.quadraticCurveTo(fx-(topW+botW)*0.5, (topY+baseY)*0.5, fx-botW, baseY);
+                c.quadraticCurveTo(fx, baseY+1, fx+botW, baseY);
+                c.quadraticCurveTo(fx+(topW+botW)*0.5, (topY+baseY)*0.5, fx+topW, topY);
                 c.closePath();
-                var sg = c.createLinearGradient(fx-topW, topY, fx+topW, topY);
+                var sg = c.createLinearGradient(fx-topW,topY,fx+topW,topY);
                 sg.addColorStop(0,'rgba(130,42,55,'+(0.7*bt)+')');
                 sg.addColorStop(0.3,'rgba(185,65,80,'+(0.8*bt)+')');
                 sg.addColorStop(0.7,'rgba(165,55,72,'+(0.78*bt)+')');
@@ -921,16 +920,16 @@
                 c.strokeStyle = 'rgba(230,140,160,'+(0.12*bt)+')';
                 c.lineWidth = 0.8;
                 c.beginPath();
-                c.moveTo(fx+swayX-topW*0.3, topY+4);
-                c.quadraticCurveTo(fx+swayX-(topW+botW)*0.25, (topY+baseY)*0.5, fx+swayX-botW*0.2, baseY-3);
+                c.moveTo(fx-topW*0.3, topY+4);
+                c.quadraticCurveTo(fx-(topW+botW)*0.25, (topY+baseY)*0.5, fx-botW*0.2, baseY-3);
                 c.stroke();
                 // 刺 (简化)
-                var thorns = [{t:0.2,s:1,sz:2.5},{t:0.4,s:-1,sz:2.0},{t:0.6,s:1,sz:1.5},{t:0.78,s:-1,sz:1.2}];
+                var thorns = [{t:0.2,s:1,sz:3.5},{t:0.4,s:-1,sz:3.0},{t:0.6,s:1,sz:2.5},{t:0.78,s:-1,sz:2.0}];
                 for (var i = 0; i < thorns.length; i++) {
                     var d = thorns[i];
                     var ty = topY + d.t * (baseY - topY);
                     var lt = (ty-topY)/(baseY-topY);
-                    var sx = fx+swayX + (topW-botW)*(1-lt)*(-0.15);
+                    var sx = fx + (topW-botW)*(1-lt)*(-0.15);
                     var tsz = d.sz * bt; if (tsz < 0.2) tsz = 0.2;
                     c.fillStyle = 'rgba(165,55,72,'+(0.5*bt)+')';
                     c.beginPath();
@@ -945,67 +944,61 @@
             // ---- 主渲染 ----
             function render() {
                 c.clearRect(0, 0, cw, ch);
-                var fx = hc + Math.sin(swayPhase) * 5;
-                var baseY = 70 + fallY;     // 花梗底部
-                var topY = baseY - stemLen;  // 花梗顶部 = 花心位置
+                var fx = hc;
+                var topY = topMargin;           // 花心 = 画布中 topMargin 处
+                var baseY = topY + stemLen;     // 花梗底部
 
-                // 花
                 c.save();
-                c.globalAlpha = flowerBaseAlpha;
-                // 主花在 stem top
-                drawOneFlower(fx, topY, size, 0, bloomT, swayPhase);
-                // 侧花
-                drawOneFlower(fx-14, topY+4, size*0.68, -0.25, bloomT, swayPhase+0.3);
-                // 花梗
-                drawStem(fx, baseY, bloomT, swayPhase);
+                c.globalAlpha = flowerAlpha;
+                drawOneFlower(fx, topY, size, 0, bloomT);
+                drawOneFlower(fx-14, topY+4, size*0.68, -0.25, bloomT);
+                drawStem(fx, baseY, bloomT);
                 c.restore();
 
-                // 粒子
-                if (petalParticles.length) drawParticles(c, petalParticles);
-                if (stemParticles.length) drawParticles(c, stemParticles);
+                if (particles.length) drawParticles(particles);
+                if (stemParticles.length) drawParticles(stemParticles);
             }
 
             // ---- 粒子绘图 ----
-            function drawParticles(ctx, ps) {
+            function drawParticles(ps) {
                 for (var i = 0; i < ps.length; i++) {
                     var p = ps[i];
-                    ctx.save();
-                    ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-                    ctx.globalAlpha = Math.max(0, p.life) * flowerBaseAlpha;
-                    ctx.fillStyle = p.c;
-                    ctx.beginPath();
-                    ctx.moveTo(0, -p.h/2);
-                    ctx.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
-                    ctx.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
-                    ctx.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
-                    ctx.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
-                    ctx.closePath(); ctx.fill();
-                    ctx.restore();
+                    c.save();
+                    c.translate(p.x, p.y); c.rotate(p.rot);
+                    c.globalAlpha = Math.max(0, p.life);
+                    c.fillStyle = p.c;
+                    c.beginPath();
+                    c.moveTo(0, -p.h/2);
+                    c.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
+                    c.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
+                    c.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
+                    c.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
+                    c.closePath(); c.fill();
+                    c.restore();
                 }
             }
 
             // ---- 产生散裂粒子 ----
             function spawnScatter() {
-                var fx = hc + Math.sin(swayPhase) * 5;
-                var baseY = 70 + fallY;
-                var topY = baseY - stemLen;
+                var fx = hc;
+                var topY = topMargin;
+                var baseY = topY + stemLen;
                 phase = 'scatter';
 
-                // 花瓣粒子 (从花位置散开)
                 var cols = ['#e74c3c','#d63031','#c0392b','#b71540','#e84393','#fd79a8','#ff7675','#d63031'];
-                var n = 22 + Math.floor(Math.random() * 14);
+                var n = 26 + Math.floor(Math.random() * 16);
                 for (var i = 0; i < n; i++) {
                     var a = Math.random() * Math.PI * 2;
-                    var sp = 1.0 + Math.random() * 1.6;
-                    var sz = Math.max(1.5, size*0.034) + Math.random() * (size*0.125 - size*0.034);
-                    petalParticles.push({
+                    var sp = 1.0 + Math.random() * 2.0;
+                    var sz = Math.max(2.5, size * 0.06) + Math.random() * (size * 0.22 - size * 0.06);
+                    particles.push({
                         x: fx + (Math.random()-0.5)*12,
                         y: topY + (Math.random()-0.5)*10,
                         vx: Math.cos(a) * sp,
                         vy: Math.sin(a) * sp - 0.8,
-                        w: sz, h: sz * (1.0 + Math.random() * 0.5),
+                        w: sz, h: sz * (0.9 + Math.random() * 0.4),
                         rot: Math.random() * Math.PI * 2,
-                        rs: (Math.random() - 0.5) * 0.008,
+                        rs: (Math.random() - 0.5) * 0.01,
                         c: cols[i % cols.length],
                         life: 1,
                         de: 0.0018 + Math.random() * 0.002,
@@ -1013,9 +1006,8 @@
                         dr: 0.97 + Math.random() * 0.01,
                     });
                 }
-                // 花梗粒子 (弥散)
                 var stemCols = ['#5a1a28','#6e2030','#8a2a3a','#7a2535','#9a3545','#6a2030'];
-                var m = 20 + Math.floor(Math.random() * 12);
+                var m = 24 + Math.floor(Math.random() * 14);
                 for (var i = 0; i < m; i++) {
                     var t = Math.random();
                     var ty = topY + t * (baseY - topY);
@@ -1036,7 +1028,6 @@
                         dr: 0.98 + Math.random() * 0.01,
                     });
                 }
-                // 统一在 tick 中更新
             }
 
             function updateParticles(ps) {
@@ -1062,35 +1053,23 @@
                 switch (phase) {
                     case 'bloom':
                         bloomT += (1 - bloomT) * 0.025 * frameMul;
-                        if (bloomT > 0.97) { bloomT = 1; phase = 'wait1'; waitTimer = 0; }
+                        if (bloomT > 0.97) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
                         break;
-                    case 'wait1':
-                        waitTimer += dt;
-                        if (waitTimer >= 600) { phase = 'swayfall'; swaySpeed = 0.04; }
-                        break;
-                    case 'swayfall':
-                        swayPhase += swaySpeed * frameMul;
-                        swaySpeed *= Math.pow(0.985, frameMul);
-                        fallVy += 0.03 * frameMul;
-                        fallY += fallVy;
-                        if (swaySpeed < 0.002 && fallY > 20) { phase = 'wait2'; waitTimer = 0; }
-                        break;
-                    case 'wait2':
+                    case 'wait':
                         waitTimer += dt;
                         if (waitTimer >= 600) { spawnScatter(); }
                         break;
                     case 'scatter':
-                        flowerBaseAlpha -= 0.02 * frameMul;
-                        if (flowerBaseAlpha < 0) flowerBaseAlpha = 0;
-                        // 更新粒子 (统一在 tick 中处理)
-                        updateParticles(petalParticles);
+                        flowerAlpha -= 0.02 * frameMul;
+                        if (flowerAlpha < 0) flowerAlpha = 0;
+                        updateParticles(particles);
                         updateParticles(stemParticles);
                         break;
                 }
 
                 render();
 
-                if (phase === 'scatter' && !petalParticles.length && !stemParticles.length && flowerBaseAlpha <= 0) {
+                if (phase === 'scatter' && !particles.length && !stemParticles.length && flowerAlpha <= 0) {
                     stopped = true;
                     wrap.remove();
                     return;
