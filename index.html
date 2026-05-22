@@ -706,32 +706,31 @@
             const rect = p.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
-
-            // 原花瓣平滑消散（隐藏原花瓣 → 创建克隆体做过渡，避免CSS动画干扰）
-            const pop = getComputedStyle(p).opacity;
-            const bg = getComputedStyle(p).background;
             p.style.display = 'none';
-            const ghost = document.createElement('div');
-            ghost.style.cssText = [
-                'position:fixed',
-                `left:${rect.left}px;top:${rect.top}px`,
-                `width:${rect.width}px;height:${rect.height}px`,
-                'border-radius:50% 0 50% 0',
-                `background:${bg}`,
-                `opacity:${pop}`,
-                'pointer-events:none;z-index:31',
-                'transition:opacity 500ms ease-out, transform 500ms ease-out',
-            ].join(';');
-            document.body.appendChild(ghost);
-            void ghost.offsetHeight;
-            ghost.style.opacity = '0';
-            ghost.style.transform = 'scale(0.2)';
-            setTimeout(() => ghost.remove(), 550);
 
-            // 45% 概率触发彼岸花散落，55% 概率触发原有效果
+            // 45% 触发彼岸花（原位现花再散裂），55% 原有效果
             if (Math.random() < 0.45) {
-                shatterBihua(cx, cy);
+                showBihuaAt(cx, cy, rect.width);
             } else {
+                // 原花瓣平滑消散
+                const pop = getComputedStyle(p).opacity;
+                const bg = getComputedStyle(p).background;
+                const ghost = document.createElement('div');
+                ghost.style.cssText = [
+                    'position:fixed',
+                    `left:${rect.left}px;top:${rect.top}px`,
+                    `width:${rect.width}px;height:${rect.height}px`,
+                    'border-radius:50% 0 50% 0',
+                    `background:${bg}`,
+                    `opacity:${pop}`,
+                    'pointer-events:none;z-index:31',
+                    'transition:opacity 500ms ease-out, transform 500ms ease-out',
+                ].join(';');
+                document.body.appendChild(ghost);
+                void ghost.offsetHeight;
+                ghost.style.opacity = '0';
+                ghost.style.transform = 'scale(0.2)';
+                setTimeout(() => ghost.remove(), 550);
                 shatter(cx, cy);
             }
         }
@@ -814,124 +813,110 @@
             else { _pt.id = null; setTimeout(() => ctx.clearRect(0,0,W,H), 50); }
         }
 
-        // ---- 彼岸花散落 (低概率触发: 先现花, 再散裂) ----
-        function shatterBihua(x, y) {
-            // 临时浮层 — 绘制彼岸花后散落
+        // ---- 彼岸花散落 (低概率触发: 原位现花, 再散裂) ----
+        function showBihuaAt(cx, cy, pw) {
+            var size = Math.min(35, Math.max(22, pw * 2.0));  // 花大小≈花瓣2倍
+            var cs = Math.round(size * 2.2);                   // 画布边长
             var wrap = document.createElement('div');
             wrap.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:32';
             document.body.appendChild(wrap);
 
             var cv = document.createElement('canvas');
-            cv.width = 240; cv.height = 300;
-            cv.style.cssText = 'position:absolute;left:'+(x-120)+'px;top:'+(y-230)+'px;opacity:1;transition:opacity 700ms';
+            cv.width = cs; cv.height = cs;
+            cv.style.cssText = 'position:absolute;left:'+(cx-cs/2)+'px;top:'+(cy-cs/2)+'px;opacity:1;transition:opacity 600ms ease-out';
             wrap.appendChild(cv);
 
-            var cx = cv.getContext('2d');
-            var W = cv.width, H = cv.height, W2 = W/2;
+            var c = cv.getContext('2d');
+            var hc = cs/2, fcY = hc + 4;
 
-            // ---- 花瓣路径 (同 bihua.html) ----
-            function petalPath(c, len, wid, curl) {
-                var w2=wid*0.5, m1=len*0.38, m2=len*0.70, m3=len*0.92;
-                var cx2=curl*len*0.16;
-                c.beginPath();
-                c.moveTo(0,0);
-                c.bezierCurveTo(m1,-w2, m2,-wid, m3+cx2,-w2*0.6);
-                c.quadraticCurveTo(len*1.02+cx2*0.4,0, m3*0.65+cx2,0);
-                c.quadraticCurveTo(len*1.02+cx2*0.4,w2*0.6, m3+cx2,w2*0.6);
-                c.bezierCurveTo(m2,wid, m1,w2, 0,0);
-                c.closePath();
+            // ---- 花瓣路径 ----
+            function petalPath(ctx, len, wid, curl) {
+                var w2=wid*0.5, m1=len*0.38, m2=len*0.70, m3=len*0.92, cx2=curl*len*0.16;
+                ctx.beginPath();
+                ctx.moveTo(0,0);
+                ctx.bezierCurveTo(m1,-w2, m2,-wid, m3+cx2,-w2*0.6);
+                ctx.quadraticCurveTo(len*1.02+cx2*0.4,0, m3*0.65+cx2,0);
+                ctx.quadraticCurveTo(len*1.02+cx2*0.4,w2*0.6, m3+cx2,w2*0.6);
+                ctx.bezierCurveTo(m2,wid, m1,w2, 0,0);
+                ctx.closePath();
             }
 
-            // ---- 一朵花 ----
-            function drawOne(c, cx_, cy_, size, rot) {
-                c.save();
-                c.translate(cx_, cy_);
-                c.rotate(rot);
-                // 6 枚花瓣
+            // ---- 画一朵小花 ----
+            function drawMini(cx2, cy2, sz) {
+                // 花瓣
                 for (var i = 0; i < 6; i++) {
                     var a = (i/6)*Math.PI*2 - Math.PI/2 + (i%2===0?0.08:-0.08);
-                    c.save(); c.rotate(a);
-                    var gr = c.createRadialGradient(0,0,0, 0,size*0.5,size);
+                    c.save(); c.translate(cx2, cy2); c.rotate(a);
+                    var gr = c.createRadialGradient(0,0,0, 0,sz*0.5,sz);
                     gr.addColorStop(0,'rgba(195,55,75,0.92)');
-                    gr.addColorStop(0.4,'rgba(215,65,85,0.92)');
-                    gr.addColorStop(0.7,'rgba(175,38,52,0.85)');
-                    gr.addColorStop(1,'rgba(120,20,35,0.6)');
+                    gr.addColorStop(0.5,'rgba(215,65,85,0.92)');
+                    gr.addColorStop(1,'rgba(140,25,42,0.7)');
                     c.fillStyle = gr;
-                    petalPath(c, size, size*0.10, 0.5);
+                    petalPath(c, sz, sz*0.10, 0.5);
                     c.fill();
                     c.restore();
                 }
-                // 雄蕊
+                // 雄蕊 (简化)
                 for (var i = 0; i < 6; i++) {
                     var a = (i/6)*Math.PI*2 - Math.PI/2 + (i%2===0?0.18:-0.18)+(i-3)*0.06;
-                    c.save(); c.rotate(a);
-                    var sl = size*1.4;
-                    c.strokeStyle = 'rgba(200,85,105,0.55)';
-                    c.lineWidth = 0.8;
+                    c.save(); c.translate(cx2, cy2); c.rotate(a);
+                    var sl = sz * 1.0;
+                    c.strokeStyle = 'rgba(200,85,105,0.5)';
+                    c.lineWidth = 0.6;
                     c.beginPath(); c.moveTo(0,0); c.lineTo(0,-sl); c.stroke();
                     c.fillStyle = '#b54a4a';
-                    c.beginPath(); c.arc(0,-sl,1.8,0,Math.PI*2); c.fill();
-                    c.fillStyle = 'rgba(255,200,110,0.25)';
-                    c.beginPath(); c.arc(0,-sl,0.7,0,Math.PI*2); c.fill();
+                    c.beginPath(); c.arc(0,-sl,1.2,0,Math.PI*2); c.fill();
                     c.restore();
                 }
                 // 花心
                 c.fillStyle = 'rgba(150,38,55,0.4)';
-                c.beginPath(); c.arc(0,0,3,0,Math.PI*2); c.fill();
-                c.restore();
+                c.beginPath(); c.arc(cx2, cy2, 2, 0, Math.PI*2); c.fill();
             }
 
-            // ---- 绘制花簇 (2 朵) ----
-            function drawFlowers(c) {
-                // 花梗
-                c.save();
-                c.beginPath();
-                c.moveTo(W2-3, 220);
-                c.lineTo(W2-1, 50);
-                c.lineTo(W2+1, 50);
-                c.lineTo(W2+3, 220);
-                c.closePath();
-                var sg = c.createLinearGradient(W2-3,100,W2+3,100);
-                sg.addColorStop(0,'rgba(130,42,55,0.7)');
-                sg.addColorStop(0.5,'rgba(175,55,72,0.8)');
-                sg.addColorStop(1,'rgba(120,35,48,0.7)');
-                c.fillStyle = sg; c.fill();
-                c.restore();
-
-                // 主花
-                drawOne(c, W2, 45, 75, 0);
-                // 侧花
-                drawOne(c, W2-22, 58, 55, -0.25);
-            }
-
-            // ---- 微光晕 ----
-            var aura = cx.createRadialGradient(W2,50,0,W2,50,120);
-            aura.addColorStop(0,'rgba(200,60,80,0.08)');
+            // 微光晕
+            var aura = c.createRadialGradient(hc, fcY-10, 0, hc, fcY-10, size*1.5);
+            aura.addColorStop(0,'rgba(200,60,80,0.06)');
             aura.addColorStop(1,'rgba(200,60,80,0)');
-            cx.fillStyle = aura;
-            cx.beginPath(); cx.arc(W2,50,120,0,Math.PI*2); cx.fill();
+            c.fillStyle = aura;
+            c.beginPath(); c.arc(hc, fcY-10, size*1.5, 0, Math.PI*2); c.fill();
 
-            drawFlowers(cx);
+            drawMini(hc, fcY, size);
+
+            // 短花梗
+            c.save();
+            c.beginPath();
+            c.moveTo(hc-2, fcY+3);
+            c.lineTo(hc-0.8, fcY+size*0.45);
+            c.lineTo(hc+0.8, fcY+size*0.45);
+            c.lineTo(hc+2, fcY+3);
+            c.closePath();
+            var sg = c.createLinearGradient(hc-2,fcY+10,hc+2,fcY+10);
+            sg.addColorStop(0,'rgba(130,42,55,0.6)');
+            sg.addColorStop(0.5,'rgba(175,55,72,0.7)');
+            sg.addColorStop(1,'rgba(120,35,48,0.6)');
+            c.fillStyle = sg; c.fill();
+            c.restore();
 
             // ---- 停留后散裂 ----
+            var hold = 400 + Math.random() * 200;
             setTimeout(function() {
-                // 散裂粒子 (大小比例参照 bihua.html: 花75~88px / 粒子3~11px)
+                // 粒子大小按 bihua.html 比例 (花88:粒3~11 ≈ 花size:粒 size*0.034~0.125)
                 var cols = ['#e74c3c','#d63031','#c0392b','#b71540','#e84393','#fd79a8','#ff7675','#d63031'];
-                var n = 26 + Math.floor(Math.random() * 16);
-                for (var i = 0; i < n; i++) {
+                var n = 22 + Math.floor(Math.random() * 14);
+                for (var i2 = 0; i2 < n; i2++) {
                     var a2 = Math.random() * Math.PI * 2;
                     var sp = 1.0 + Math.random() * 1.6;
-                    var sz = 4 + Math.random() * 7;
+                    var sz = Math.max(1.5, size * 0.034) + Math.random() * (size * 0.125 - size * 0.034);
                     _pt.ps.push({
-                        x: x + (Math.random()-0.5)*20,
-                        y: y + (Math.random()-0.5)*15,
+                        x: cx + (Math.random()-0.5)*6,
+                        y: cy + (Math.random()-0.5)*6,
                         vx: Math.cos(a2) * sp,
-                        vy: Math.sin(a2) * sp - 1.0,
+                        vy: Math.sin(a2) * sp - 0.8,
                         w: sz,
                         h: sz * (1.0 + Math.random() * 0.5),
                         rot: Math.random() * Math.PI * 2,
                         rs: (Math.random() - 0.5) * 0.008,
-                        c: cols[i % cols.length],
+                        c: cols[i2 % cols.length],
                         life: 1,
                         de: 0.0018 + Math.random() * 0.002,
                         g: 0.014 + Math.random() * 0.012,
@@ -940,10 +925,9 @@
                 }
                 if (!_pt.id) _pt.id = requestAnimationFrame(_pu);
 
-                // 浮层淡出
                 cv.style.opacity = '0';
-                setTimeout(function() { wrap.remove(); }, 750);
-            }, 600);
+                setTimeout(function() { wrap.remove(); }, 650);
+            }, hold);
         }
 
     </script>
