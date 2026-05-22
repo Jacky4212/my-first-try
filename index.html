@@ -835,6 +835,8 @@
 
             // ---- 动画状态 ----
             var bloomT = 0;
+            var bloomElapsed = 0;
+            var bloomDuration = 1800;   // 开花动画总时长 ms
             var phase = 'bloom';     // bloom → wait → scatter
             var waitTimer = 0;
             var flowerAlpha = 1;
@@ -1052,8 +1054,10 @@
 
                 switch (phase) {
                     case 'bloom':
-                        bloomT += (1 - bloomT) * 0.025 * frameMul;
-                        if (bloomT > 0.94) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
+                        bloomElapsed += dt;
+                        var t = Math.min(1, bloomElapsed / bloomDuration);
+                        bloomT = 1 - Math.pow(1 - t, 3);  // cubic ease-out
+                        if (t >= 1) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
                         break;
                     case 'wait':
                         waitTimer += dt;
