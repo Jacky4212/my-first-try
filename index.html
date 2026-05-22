@@ -953,17 +953,15 @@
                 var topY = topMargin;           // 花心 = 画布中 topMargin 处
                 var baseY = topY + stemLen;     // 花梗底部
 
-                drawPollen();                   // 花粉 (花后)
-
-                // 光晕呼吸 (效果2)
+                // 光晕呼吸 (效果2) — 花后微光
                 if (bloomT > 0.2) {
-                    var gi = (0.06 + Math.sin(glowPhase) * 0.03 + Math.sin(glowPhase * 0.7) * 0.015) * bloomT;
-                    var gr = c.createRadialGradient(fx, topY, 0, fx, topY, size * 2.5);
-                    gr.addColorStop(0, 'rgba(160,50,70,'+gi+')');
-                    gr.addColorStop(0.6, 'rgba(120,30,50,'+gi*0.4+')');
+                    var gi = (0.12 + Math.sin(glowPhase) * 0.05 + Math.sin(glowPhase * 0.7) * 0.03) * bloomT;
+                    var gr = c.createRadialGradient(fx, topY, 0, fx, topY, size * 3);
+                    gr.addColorStop(0, 'rgba(200,60,80,'+gi+')');
+                    gr.addColorStop(0.5, 'rgba(160,40,60,'+gi*0.5+')');
                     gr.addColorStop(1, 'rgba(80,10,30,0)');
                     c.fillStyle = gr;
-                    c.beginPath(); c.arc(fx, topY, size * 2.5, 0, Math.PI*2); c.fill();
+                    c.beginPath(); c.arc(fx, topY, size * 3, 0, Math.PI*2); c.fill();
                 }
 
                 c.save();
@@ -973,6 +971,7 @@
                 drawStem(fx, baseY, bloomT);
                 c.restore();
 
+                drawPollen();                   // 花粉 (花前)
                 drawSparkle();                  // 雄蕊闪烁 (花前)
 
                 if (particles.length) drawParticles(particles);
@@ -1065,7 +1064,7 @@
             // ---- 花粉粒子 (向四周飘散) ----
             function maybeSpawnPollen() {
                 if (phase === 'scatter') return;
-                if (Math.random() > 0.12) return;
+                if (Math.random() > 0.18) return;   // ~每5帧触发一次
                 var fx = hc, topY = topMargin;
                 for (var i = 0; i < 2; i++) {
                     var a = Math.random() * Math.PI * 2;
@@ -1095,20 +1094,20 @@
                 for (var i = 0; i < pollenPs.length; i++) {
                     var p = pollenPs[i];
                     c.save();
-                    c.globalAlpha = p.life * 0.5;
-                    c.fillStyle = '#e09430';  // 暖琥珀金，区别于星星的金色
+                    c.globalAlpha = p.life * 0.7;
+                    var gr = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.sz * p.life);
+                    gr.addColorStop(0, '#ffbb44');
+                    gr.addColorStop(0.5, '#ea9030');
+                    gr.addColorStop(1, 'rgba(200,100,30,0)');
+                    c.fillStyle = gr;
                     c.beginPath(); c.arc(p.x, p.y, p.sz * p.life, 0, Math.PI*2); c.fill();
-                    c.globalAlpha = p.life * 0.2;
-                    c.fillStyle = '#ffcc66';
-                    c.beginPath(); c.arc(p.x, p.y, p.sz * p.life * 0.4, 0, Math.PI*2); c.fill();
                     c.restore();
                 }
             }
 
             // ---- 雄蕊闪烁 (效果3: 蕊尖端随机闪白金微光) ----
             function updateSparkle() {
-                if (sparkle < 0.1 && Math.random() < 0.02) sparkle = 0.5 + Math.random() * 0.5;
-                else sparkle *= 0.9;
+                sparkle = Math.max(0, 0.2 + Math.sin(glowPhase * 1.5) * 0.18);
             }
             function drawSparkle() {
                 if (sparkle < 0.01 || bloomT < 0.2) return;
