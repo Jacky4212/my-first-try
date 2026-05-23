@@ -238,6 +238,20 @@ function drawScene() {
   ctx.fillStyle = aura;
   ctx.beginPath(); ctx.arc(W2 - 10, stalkTop, 200, 0, Math.PI*2); ctx.fill();
 
+  // 摇曳暗红灵气 (画在花后面，作为背光)
+  if (state.swayActive) {
+    var gi = 0.35 + Math.sin(state.swayPhase * 2) * 0.15;
+    var pulseR = 160 + Math.sin(state.swayPhase) * 25;
+    var grd = ctx.createRadialGradient(W2-8, stalkTop, 0, W2-8, stalkTop, pulseR);
+    grd.addColorStop(0, 'rgba(180, 20, 35, ' + gi + ')');
+    grd.addColorStop(0.3, 'rgba(120, 10, 25, ' + gi * 0.6 + ')');
+    grd.addColorStop(0.7, 'rgba(60, 5, 15, ' + gi * 0.25 + ')');
+    grd.addColorStop(1, 'rgba(20, 0, 5, 0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(W2-8, stalkTop, pulseR, 0, Math.PI*2);
+    ctx.fill();
+  }
+
   // 茎 (从花心向下延伸)
   drawStem(ctx, stalkX, stalkTop, stemEnd, t, sway);
 
@@ -260,19 +274,6 @@ function drawScene() {
 
   // 散射粒子
   if (state.particles.length > 0) drawParticles();
-
-  // 摇曳暗红灵气 (脉动光晕)
-  if (state.swayActive) {
-    var gi = 0.15 + Math.sin(state.swayPhase * 2) * 0.08;
-    var pulseR = 140 + Math.sin(state.swayPhase) * 20;
-    var grd = ctx.createRadialGradient(W2-8, stalkTop, 0, W2-8, stalkTop, pulseR);
-    grd.addColorStop(0, 'rgba(140, 15, 30, ' + gi + ')');
-    grd.addColorStop(0.5, 'rgba(80, 8, 18, ' + gi * 0.5 + ')');
-    grd.addColorStop(1, 'rgba(30, 0, 5, 0)');
-    ctx.fillStyle = grd;
-    ctx.beginPath(); ctx.arc(W2-8, stalkTop, pulseR, 0, Math.PI*2);
-    ctx.fill();
-  }
 }
 
 // ======================== 粒子 (慢速缓降) ========================
