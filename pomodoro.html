@@ -59,9 +59,9 @@ body{
 .timer-ring-wrap svg{transform:rotate(-90deg)}
 .timer-ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:6}
 .timer-ring-progress{fill:none;stroke:#f48fb1;stroke-width:6;stroke-linecap:round;
-  transition:stroke-dashoffset .4s ease, stroke .4s ease}
+  transition:stroke .4s ease}
 .timer-ring-glow{fill:none;stroke:#f48fb1;stroke-width:3;stroke-linecap:round;
-  opacity:.35;filter:blur(5px);transition:stroke-dashoffset .4s ease, stroke .4s ease}
+  opacity:.35;filter:blur(5px);transition:stroke .4s ease}
 
 .timer-center{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
@@ -157,13 +157,14 @@ body{
 .btn-secondary:hover{background:rgba(255,255,255,.12)}
 
 /* ===== progress dots ===== */
-.progress-dots{display:flex;justify-content:center;gap:6px;margin-top:16px;min-height:10px}
+.progress-dots{display:flex;justify-content:center;gap:6px;margin-top:16px;min-height:28px;align-items:center}
 .progress-dots .dot{
-  width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);
-  transition:all .4s ease
+  width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.08);
+  transition:all .4s ease;flex-shrink:0
 }
-.progress-dots .dot.done{background:#f48fb1;box-shadow:0 0 8px rgba(244,143,177,.4)}
-.progress-dots .dot.current{background:#b39ddb;box-shadow:0 0 8px rgba(179,157,219,.3);transform:scale(1.3)}
+.progress-dots .dot.done{background:#f48fb1;box-shadow:0 0 10px rgba(244,143,177,.5)}
+.progress-dots .dot.current{background:#b39ddb;box-shadow:0 0 10px rgba(179,157,219,.4);transform:scale(1.2)}
+.progress-dots .dot-label{font-size:12px;color:#6a5a80;letter-spacing:1px;margin-left:8px;white-space:nowrap}
 
 /* ===== toast ===== */
 .toast{
@@ -325,6 +326,8 @@ let state = {
   timeLeft: DEFAULTS.pomo * 60,
   totalTime: DEFAULTS.pomo * 60,
   timerId: null,
+  switchTimeoutId: null,  // auto-switch timeout after completion
+  lastTickTime: 0,        // performance.now() of last tick (for accurate delta)
   pomosInSession: 0,   // completed pomos before next long break
   completedToday: 0,   // from localStorage
   streak: 0,
@@ -449,6 +452,11 @@ function updateDisplay() {
 }
 
 function switchMode(mode, quiet) {
+  // cancel any pending auto-switch
+  if (state.switchTimeoutId) {
+    clearTimeout(state.switchTimeoutId);
+    state.switchTimeoutId = null;
+  }
   if (state.running && !quiet) {
     stopTimer();
   }
@@ -475,6 +483,7 @@ function switchMode(mode, quiet) {
 
   updateDisplay();
   updateModeTabs();
+  updateProgressDots();
 }
 
 function updateModeTabs() {
@@ -483,54 +492,83 @@ function updateModeTabs() {
   });
 }
 
+function updateTitle(seconds, mode) {
+  const labels = { pomo: '专注', short: '短休', long: '长休' };
+  if (seconds > 0) {
+    document.title = `${formatTime(seconds)} ${labels[mode]} - 番茄钟`;
+  } else {
+    document.title = '番茄钟 - 双鱼小栈';
+  }
+}
+
 function stopTimer() {
+  if (state.switchTimeoutId) {
+    clearTimeout(state.switchTimeoutId);
+    state.switchTimeoutId = null;
+  }
   if (state.timerId) {
-    clearInterval(state.timerId);
+    cancelAnimationFrame(state.timerId);
     state.timerId = null;
   }
   state.running = false;
   state.paused = false;
+  updateTitle(0, state.mode);
   btnStart.textContent = '▶ 开始';
   btnStart.classList.remove('running');
 }
 
 // ======================== SOUND ========================
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+
 function playAlarm() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime);
-    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.6);
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
 
-    // second beep
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.8);
-    osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.95);
-    osc2.frequency.setValueAtTime(880, ctx.currentTime + 1.1);
-    gain2.gain.setValueAtTime(0.15, ctx.currentTime + 0.8);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.4);
-    osc2.start(ctx.currentTime + 0.8);
-    osc2.stop(ctx.currentTime + 1.4);
-  } catch(e) { /* some browsers may block audio before user interaction */ }
+    function beep(startTime, freq1, freq2) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq1, startTime);
+      osc.frequency.setValueAtTime(freq2, startTime + 0.15);
+      osc.frequency.setValueAtTime(freq1, startTime + 0.3);
+      gain.gain.setValueAtTime(0.12, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
+      osc.start(startTime);
+      osc.stop(startTime + 0.5);
+    }
+
+    beep(now, 880, 660);
+    beep(now + 0.7, 880, 660);
+  } catch(e) { /* audio not available */ }
 }
 
 // ======================== COMPLETION ========================
 function onTimerComplete() {
   playAlarm();
   showToast(state.mode === 'pomo' ? '🍅 专注完成！休息一下吧' : '☕ 休息结束，继续加油');
+
+  // BroadcastChannel 跨页面触发
+  try {
+    const bc = new BroadcastChannel('petal-channel');
+    if (state.mode === 'pomo') {
+      bc.postMessage({ type: 'pomo_complete', count: state.completedToday + 1 });
+      // 本地白色花瓣爆发
+      burstLocalPetals('white', 25);
+      // 里程碑: 每10个专注触发金色花瓣
+      if ((state.completedToday + 1) % 10 === 0) {
+        bc.postMessage({ type: 'milestone', count: state.completedToday + 1 });
+        burstLocalPetals('gold', 40);
+      }
+    }
+  } catch(e) {}
 
   if (state.mode === 'pomo') {
     state.completedToday++;
@@ -559,65 +597,73 @@ function onTimerComplete() {
     saveStats();
     updateStatsDisplay();
 
-    // auto-switch: long break or short break
+    // auto-switch: long break or short break (store ID so we can cancel if user acts)
     const shouldLong = state.pomosInSession >= state.settings.longInterval;
     if (shouldLong) {
       state.pomosInSession = 0;
-      setTimeout(() => switchMode('long'), 1200);
+      state.switchTimeoutId = setTimeout(() => { state.switchTimeoutId = null; switchMode('long'); }, 1500);
     } else {
-      setTimeout(() => switchMode('short'), 1200);
+      state.switchTimeoutId = setTimeout(() => { state.switchTimeoutId = null; switchMode('short'); }, 1500);
     }
   } else {
     // break ended → back to pomo
-    setTimeout(() => switchMode('pomo'), 1200);
+    state.switchTimeoutId = setTimeout(() => { state.switchTimeoutId = null; switchMode('pomo'); }, 1500);
   }
 }
 
 // ======================== CORE TIMER ========================
 function startTimer() {
   if (state.paused) {
-    // resume
+    // resume — reset lastTickTime to now so next tick doesn't count pause duration
     state.paused = false;
     state.running = true;
+    state.lastTickTime = performance.now();
     btnStart.textContent = '⏸ 暂停';
     btnStart.classList.add('running');
-    state.timerId = setInterval(tick, 200);
+    state.timerId = requestAnimationFrame(tick);
     return;
   }
 
   // fresh start
   state.running = true;
+  state.lastTickTime = performance.now();
   btnStart.textContent = '⏸ 暂停';
   btnStart.classList.add('running');
-  state.timerId = setInterval(tick, 200);
+  state.timerId = requestAnimationFrame(tick);
 }
 
 function togglePause() {
   if (!state.running) return;
   state.paused = !state.paused;
   if (state.paused) {
-    clearInterval(state.timerId);
+    if (state.timerId) cancelAnimationFrame(state.timerId);
     state.timerId = null;
     btnStart.textContent = '▶ 继续';
     btnStart.classList.remove('running');
   } else {
+    state.lastTickTime = performance.now();
     btnStart.textContent = '⏸ 暂停';
     btnStart.classList.add('running');
-    state.timerId = setInterval(tick, 200);
+    state.timerId = requestAnimationFrame(tick);
   }
 }
 
-function tick() {
+function tick(now) {
   if (state.paused) return;
+  if (!state.running) return;
 
-  // use smaller delta for smoothness
-  state.timeLeft = Math.max(0, state.timeLeft - 0.2);
+  // compute real elapsed seconds
+  const dt = Math.min((now - state.lastTickTime) / 1000, 1);  // cap at 1s (tab hidden)
+  state.lastTickTime = now;
+
+  state.timeLeft = Math.max(0, state.timeLeft - dt);
 
   if (state.timeLeft <= 0) {
     state.timeLeft = 0;
     updateDisplay();
     stopTimer();
     timerDisplay.textContent = '00:00';
+    updateTitle(0, state.mode);
     // flash effect
     timerDisplay.style.color = '#f1c40f';
     setTimeout(() => {
@@ -628,16 +674,26 @@ function tick() {
   }
 
   updateDisplay();
+  updateTitle(state.timeLeft, state.mode);
+  state.timerId = requestAnimationFrame(tick);
 }
 
 // ======================== PROGRESS DOTS ========================
 function updateProgressDots() {
   const total = state.settings.longInterval;
   const done = state.pomosInSession;
+  const isBreak = state.mode !== 'pomo';
   let html = '';
   for (let i = 0; i < total; i++) {
-    const cls = i < done ? 'dot done' : (i === done && state.mode === 'pomo' ? 'dot current' : 'dot');
+    const cls = i < done ? 'dot done' : (i === done && !isBreak ? 'dot current' : 'dot');
     html += '<span class="'+cls+'"></span>';
+  }
+  // text label: "专注 2/4 · 距长休还有 2 个"
+  if (isBreak) {
+    html += '<span class="dot-label">休息中 · 已完成 ' + done + '/' + total + '</span>';
+  } else {
+    const remain = total - done;
+    html += '<span class="dot-label">专注 ' + done + '/' + total + (remain > 0 ? ' · 距长休还有 ' + remain + ' 个' : ' · 即将长休') + '</span>';
   }
   progressDots.innerHTML = html;
 }
@@ -689,7 +745,6 @@ function init() {
   loadStats();
   updateStatsDisplay();
   switchMode('pomo', true);
-  updateProgressDots();
 }
 
 // ======================== EVENT LISTENERS ========================
@@ -698,16 +753,12 @@ function init() {
 modeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     if (state.running) {
-      // if timer is running in this mode, just pause; if switching modes, stop
       if (btn.dataset.mode !== state.mode) {
-        stopTimer();
         switchMode(btn.dataset.mode);
       }
-      // clicking same mode button while running does nothing (use pause)
     } else {
       switchMode(btn.dataset.mode);
     }
-    updateProgressDots();
   });
 });
 
@@ -728,7 +779,6 @@ btnStart.addEventListener('click', () => {
 btnReset.addEventListener('click', () => {
   stopTimer();
   switchMode(state.mode, true);
-  updateProgressDots();
 });
 
 // Settings
@@ -758,6 +808,88 @@ document.addEventListener('keydown', (e) => {
     togglePause();
   }
 });
+
+// ======================== LOCAL PETAL BURST ========================
+let _burstCanvas = null, _burstCtx = null, _burstParticles = [];
+let _burstRunning = false;
+
+function _ensureBurstCanvas() {
+  if (!_burstCanvas) {
+    _burstCanvas = document.createElement('canvas');
+    _burstCanvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999';
+    _burstCanvas.width = window.innerWidth;
+    _burstCanvas.height = window.innerHeight;
+    document.body.appendChild(_burstCanvas);
+    _burstCtx = _burstCanvas.getContext('2d');
+    window.addEventListener('resize', () => {
+      _burstCanvas.width = window.innerWidth;
+      _burstCanvas.height = window.innerHeight;
+    });
+  }
+}
+
+function burstLocalPetals(type, count) {
+  _ensureBurstCanvas();
+  const colors = type === 'gold'
+    ? ['#ffd700','#ffc107','#ffb300','#ffca28','#ffe082','#ffd54f','#ffd740','#ffab00']
+    : ['#ffffff','#f0f0f0','#ffeef8','#ffe0ec','#fce4ec','#fff0f5','#ffdde8'];
+  const spread = type === 'gold' ? 3.5 : 2.5;
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const sp = 0.5 + Math.random() * spread;
+    const sz = 3 + Math.random() * 5;
+    _burstParticles.push({
+      x: cx + (Math.random() - 0.5) * 80,
+      y: cy + (Math.random() - 0.5) * 60,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp - 1,
+      w: sz, h: sz * (0.8 + Math.random() * 0.4),
+      rot: Math.random() * Math.PI * 2,
+      rs: (Math.random() - 0.5) * 0.12,
+      c: colors[i % colors.length],
+      life: 1,
+      de: 0.005 + Math.random() * 0.008,
+      g: 0.04 + Math.random() * 0.03,
+      dr: 0.94 + Math.random() * 0.03,
+    });
+  }
+  if (!_burstRunning) { _burstRunning = true; requestAnimationFrame(_burstTick); }
+}
+
+function _burstTick() {
+  if (!_burstCtx) { _burstRunning = false; return; }
+  const W = _burstCanvas.width, H = _burstCanvas.height;
+  _burstCtx.clearRect(0, 0, W, H);
+  let alive = false;
+  for (let i = _burstParticles.length - 1; i >= 0; i--) {
+    const p = _burstParticles[i];
+    p.vx *= p.dr; p.vy *= p.dr;
+    p.vy += p.g;
+    p.x += p.vx; p.y += p.vy;
+    p.rot += p.rs;
+    p.life -= p.de;
+    if (p.life <= 0 || p.y > H + 50) { _burstParticles.splice(i, 1); continue; }
+    alive = true;
+    _burstCtx.save();
+    _burstCtx.translate(p.x, p.y);
+    _burstCtx.rotate(p.rot);
+    _burstCtx.globalAlpha = Math.max(0, p.life);
+    _burstCtx.fillStyle = p.c;
+    _burstCtx.beginPath();
+    _burstCtx.moveTo(0, -p.h/2);
+    _burstCtx.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
+    _burstCtx.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
+    _burstCtx.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
+    _burstCtx.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
+    _burstCtx.closePath();
+    _burstCtx.fill();
+    _burstCtx.restore();
+  }
+  if (alive) requestAnimationFrame(_burstTick);
+  else { _burstRunning = false; setTimeout(() => { if (_burstCtx) _burstCtx.clearRect(0, 0, _burstCanvas.width, _burstCanvas.height); }, 50); }
+}
 
 // ======================== START ========================
 init();

@@ -71,6 +71,35 @@
             100% { transform: translate(0, 0) rotate(-200deg) scale(1); }
         }
 
+        /* ===== 金色流光 (十二宫黄金之光) ===== */
+        .gold-beam {
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            z-index: -1;
+            pointer-events: none;
+            background: linear-gradient(
+                135deg,
+                transparent 25%,
+                transparent 36%,
+                rgba(255, 215, 0, 0.020) 43%,
+                rgba(255, 180, 60, 0.045) 48%,
+                rgba(255, 215, 0, 0.035) 50%,
+                rgba(255, 180, 60, 0.045) 52%,
+                rgba(255, 215, 0, 0.020) 57%,
+                transparent 64%,
+                transparent 75%
+            );
+            animation: goldSweep 14s ease-in-out infinite;
+        }
+        @keyframes goldSweep {
+            0%   { transform: translate(-8%, -8%) rotate(0deg) scale(1); }
+            25%  { transform: translate(5%, -3%) rotate(2deg) scale(1.02); }
+            50%  { transform: translate(10%, 8%) rotate(4deg) scale(0.98); }
+            75%  { transform: translate(3%, 5%) rotate(1deg) scale(1.01); }
+            100% { transform: translate(-8%, -8%) rotate(0deg) scale(1); }
+        }
+
         /* ===== Canvas 星空层 ===== */
         #star-canvas {
             position: fixed;
@@ -298,6 +327,7 @@
 <body>
 
     <div class="bg-gradient"></div>
+    <div class="gold-beam"></div>
     <div class="bg-flow"></div>
     <canvas id="star-canvas"></canvas>
 
@@ -702,8 +732,12 @@
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
 
-            // 45% 触发彼岸花（原位现花再散裂），55% 原有效果
-            if (Math.random() < 0.45) {
+            // 15% 皇家魔宫玫瑰，30% 彼岸花，55% 碎裂
+            var _pRoll = Math.random();
+            if (_pRoll < 0.15) {
+                p.style.display = 'none';
+                showRoseBloomAt(cx, cy, rect.width);
+            } else if (_pRoll < 0.45) {
                 p.style.display = 'none';
                 showBihuaAt(cx, cy, rect.width);
             } else {
@@ -1182,6 +1216,255 @@
             // ---- 启动 ----
             requestAnimationFrame(tick);
         }
+
+        // ---- 皇家魔宫玫瑰 (三层绽放: 红/白/金) ----
+        function showRoseBloomAt(cx, cy, pw) {
+            var size = Math.min(40, Math.max(22, pw * 2.2)) * 0.85;
+            var cw = 500, ch = 650;
+            var hc = cw / 2;
+            var topMargin = Math.max(160, Math.round(size * 1.6 + 12));
+
+            var wrap = document.createElement('div');
+            wrap.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:32';
+            var cv = document.createElement('canvas');
+            cv.width = cw; cv.height = ch;
+            cv.style.cssText = 'position:absolute;left:'+(cx-hc)+'px;top:'+(cy-topMargin)+'px;width:500px;height:650px';
+            wrap.appendChild(cv);
+            document.body.appendChild(wrap);
+            var c = cv.getContext('2d');
+
+            // ---- animation state ----
+            var bloomT = 0, bloomElapsed = 0, bloomDuration = 2000;
+            var phase = 'bloom', waitTimer = 0;
+            var flowerAlpha = 1, particles = [], glowPhase = 0, stopped = false;
+
+            // ---- rose petal path (水滴形) ----
+            function rosePetal(ctx, len, wid, curl) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(-wid*0.4, len*0.2, -wid*0.85, len*0.45, -wid*0.28, len*0.88);
+                ctx.quadraticCurveTo(0, len*1.04, wid*0.28, len*0.88);
+                ctx.bezierCurveTo(wid*0.85, len*0.45, wid*0.4, len*0.2, 0, 0);
+                ctx.closePath();
+            }
+
+            // ---- 绘制一层花瓣 ----
+            function drawPetalLayer(_cx, _cy, sz, rotOff, bt, count, scale, gradStops) {
+                c.save();
+                c.translate(_cx, _cy);
+                var pl = sz * scale * (0.25 + bt * 0.75);
+                var pw2 = Math.max(0.5, sz * scale * 0.1 * bt);
+                for (var i = 0; i < count; i++) {
+                    var a = (i / count) * Math.PI * 2 + rotOff;
+                    c.save(); c.rotate(a);
+                    var gr = c.createRadialGradient(0, 0, 0, 0, pl * 0.5, pl);
+                    for (var j = 0; j < gradStops.length; j++) {
+                        gr.addColorStop(gradStops[j][0], gradStops[j][1]);
+                    }
+                    c.fillStyle = gr;
+                    rosePetal(c, pl, pw2, bt * 0.5);
+                    c.fill();
+                    c.restore();
+                }
+                c.restore();
+            }
+
+            // ---- 主渲染 ----
+            function render() {
+                c.clearRect(0, 0, cw, ch);
+                var fx = hc, topY = topMargin;
+
+                // 光晕
+                if (bloomT > 0.2) {
+                    var gi = (0.15 + Math.sin(glowPhase) * 0.06 + Math.sin(glowPhase * 0.7) * 0.04) * bloomT;
+                    var gr = c.createRadialGradient(fx, topY, 0, fx, topY, size * 3.5);
+                    gr.addColorStop(0, 'rgba(220, 60, 80, '+gi+')');
+                    gr.addColorStop(0.5, 'rgba(180, 40, 60, '+gi*0.5+')');
+                    gr.addColorStop(1, 'rgba(80, 10, 30, 0)');
+                    c.fillStyle = gr;
+                    c.beginPath(); c.arc(fx, topY, size * 3.5, 0, Math.PI * 2); c.fill();
+                }
+
+                c.save();
+                c.globalAlpha = flowerAlpha;
+
+                // 外层 — 深红 (8瓣)
+                drawPetalLayer(fx, topY, size, 0, bloomT, 8, 1.0, [
+                    [0, 'rgba(180, 35, 55, 0.9)'], [0.3, 'rgba(210, 55, 75, 0.92)'],
+                    [0.6, 'rgba(190, 40, 60, 0.85)'], [1, 'rgba(140, 20, 40, 0.5)']
+                ]);
+                // 中层 — 白粉 (7瓣, 偏移)
+                drawPetalLayer(fx, topY, size, Math.PI / 7, bloomT, 7, 0.72, [
+                    [0, 'rgba(255, 230, 235, 0.92)'], [0.3, 'rgba(255, 210, 220, 0.9)'],
+                    [0.6, 'rgba(255, 190, 205, 0.85)'], [1, 'rgba(220, 160, 175, 0.4)']
+                ]);
+                // 中心 — 金色 (5瓣)
+                drawPetalLayer(fx, topY, size, 0, bloomT, 5, 0.42, [
+                    [0, 'rgba(255, 215, 50, 0.95)'], [0.3, 'rgba(255, 195, 30, 0.9)'],
+                    [0.6, 'rgba(255, 180, 20, 0.85)'], [1, 'rgba(200, 140, 10, 0.4)']
+                ]);
+
+                c.restore();
+
+                if (particles.length) drawParticles(particles);
+            }
+
+            function drawParticles(ps) {
+                for (var i = 0; i < ps.length; i++) {
+                    var p = ps[i];
+                    c.save();
+                    c.translate(p.x, p.y); c.rotate(p.rot);
+                    c.globalAlpha = Math.max(0, p.life);
+                    c.fillStyle = p.c;
+                    c.beginPath();
+                    c.moveTo(0, -p.h/2);
+                    c.quadraticCurveTo(p.w/2, -p.h/4, p.w/2, 0);
+                    c.quadraticCurveTo(p.w/2, p.h/4, 0, p.h/2);
+                    c.quadraticCurveTo(-p.w/2, p.h/4, -p.w/2, 0);
+                    c.quadraticCurveTo(-p.w/2, -p.h/4, 0, -p.h/2);
+                    c.closePath(); c.fill();
+                    c.restore();
+                }
+            }
+
+            function spawnScatter() {
+                var fx = hc, topY = topMargin;
+                phase = 'scatter';
+                var cols = ['#c0392b','#e74c3c','#d63031','#b71540','#e84393','#ff7675','#ffd700','#ffc107',
+                             '#ffe082','#ffffff','#ffeef8','#fce4ec'];
+                var n = 30 + Math.floor(Math.random() * 20);
+                for (var i = 0; i < n; i++) {
+                    var a = Math.random() * Math.PI * 2;
+                    var sp = 1.0 + Math.random() * 2.5;
+                    var sz = Math.max(2.5, size * 0.06) + Math.random() * (size * 0.2 - size * 0.06);
+                    particles.push({
+                        x: fx + (Math.random() - 0.5) * 14,
+                        y: topY + (Math.random() - 0.5) * 12,
+                        vx: Math.cos(a) * sp,
+                        vy: Math.sin(a) * sp - 0.8,
+                        w: sz, h: sz * (0.9 + Math.random() * 0.4),
+                        rot: Math.random() * Math.PI * 2,
+                        rs: (Math.random() - 0.5) * 0.012,
+                        c: cols[i % cols.length],
+                        life: 1,
+                        de: 0.0018 + Math.random() * 0.002,
+                        g: 0.014 + Math.random() * 0.012,
+                        dr: 0.97 + Math.random() * 0.01,
+                    });
+                }
+            }
+
+            function updateParticles(ps) {
+                for (var i = ps.length - 1; i >= 0; i--) {
+                    var p = ps[i];
+                    p.vx *= p.dr; p.vy *= p.dr;
+                    p.vy += p.g;
+                    p.x += p.vx; p.y += p.vy;
+                    p.rot += p.rs;
+                    p.life -= p.de;
+                    if (p.life <= 0 || p.y > ch + 40) { ps.splice(i,1); }
+                }
+            }
+
+            var lastT = performance.now();
+
+            function tick() {
+                if (stopped) return;
+                var dt = Math.min(performance.now() - lastT, 50);
+                lastT = performance.now();
+                var frameMul = dt / 16.667;
+
+                switch (phase) {
+                    case 'bloom':
+                        bloomElapsed += dt;
+                        var t = Math.min(1, bloomElapsed / bloomDuration);
+                        bloomT = 1 - Math.pow(1 - t, 3);
+                        if (t >= 1) { bloomT = 1; phase = 'wait'; waitTimer = 0; }
+                        glowPhase += dt * 0.003;
+                        break;
+                    case 'wait':
+                        waitTimer += dt;
+                        if (waitTimer >= 600) { spawnScatter(); }
+                        glowPhase += dt * 0.003;
+                        break;
+                    case 'scatter':
+                        flowerAlpha -= 0.02 * frameMul;
+                        if (flowerAlpha < 0) flowerAlpha = 0;
+                        updateParticles(particles);
+                        break;
+                }
+
+                render();
+
+                if (phase === 'scatter' && !particles.length && flowerAlpha <= 0) {
+                    stopped = true;
+                    wrap.remove();
+                    return;
+                }
+                requestAnimationFrame(tick);
+            }
+
+            requestAnimationFrame(tick);
+        }
+
+        // ---- 白色花瓣雨 (番茄钟完成触发, 从天而降) ----
+        function burstWhitePetals() {
+            _pc();
+            var cols = ['#ffffff','#f0f0f0','#ffeef8','#ffe0ec','#fce4ec','#fff0f5','#ffdde8','#fce4ec'];
+            var n = 30 + Math.floor(Math.random() * 20);
+            for (var i = 0; i < n; i++) {
+                var a = -Math.PI/2 + (Math.random()-0.5) * Math.PI * 0.6;
+                var sp = 0.3 + Math.random() * 1.8;
+                var sz = 3 + Math.random() * 6;
+                _pt.ps.push({
+                    x: Math.random() * _pt.c.width, y: -20 - Math.random() * 40,
+                    vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 1.0,
+                    w: sz, h: sz * (0.8 + Math.random() * 0.4),
+                    rot: Math.random() * Math.PI * 2,
+                    rs: (Math.random() - 0.5) * 0.15,
+                    c: cols[i % cols.length],
+                    life: 1, de: 0.003 + Math.random() * 0.005,
+                    g: 0.02 + Math.random() * 0.02, dr: 0.96 + Math.random() * 0.02,
+                });
+            }
+            if (!_pt.id) _pt.id = requestAnimationFrame(_pu);
+        }
+
+        // ---- 金色花瓣雨 (里程碑触发) ----
+        function burstGoldPetals() {
+            _pc();
+            var cols = ['#ffd700','#ffc107','#ffb300','#ffca28','#ffe082','#ffd54f','#ffd740','#ffab00'];
+            var n = 50 + Math.floor(Math.random() * 30);
+            for (var i = 0; i < n; i++) {
+                var a = -Math.PI/2 + (Math.random()-0.5) * Math.PI * 0.8;
+                var sp = 0.5 + Math.random() * 2.2;
+                var sz = 4 + Math.random() * 7;
+                _pt.ps.push({
+                    x: Math.random() * _pt.c.width, y: -20 - Math.random() * 60,
+                    vx: Math.cos(a) * sp, vy: Math.sin(a) * sp + 1.2,
+                    w: sz, h: sz * (0.8 + Math.random() * 0.4),
+                    rot: Math.random() * Math.PI * 2,
+                    rs: (Math.random() - 0.5) * 0.18,
+                    c: cols[i % cols.length],
+                    life: 1, de: 0.003 + Math.random() * 0.005,
+                    g: 0.025 + Math.random() * 0.025, dr: 0.95 + Math.random() * 0.02,
+                });
+            }
+            if (!_pt.id) _pt.id = requestAnimationFrame(_pu);
+        }
+
+        // ---- BroadcastChannel 跨页面通信 ----
+        try {
+            var _bc = new BroadcastChannel('petal-channel');
+            _bc.onmessage = function(e) {
+                if (e.data.type === 'pomo_complete') {
+                    burstWhitePetals();
+                    if (e.data.count && e.data.count % 10 === 0) {
+                        burstGoldPetals();
+                    }
+                }
+            };
+        } catch(e) {}
 
     </script>
 </body>
