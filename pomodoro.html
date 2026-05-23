@@ -561,11 +561,11 @@ function onTimerComplete() {
     if (state.mode === 'pomo') {
       bc.postMessage({ type: 'pomo_complete', count: state.completedToday + 1 });
       // 本地白色花瓣爆发
-      burstLocalPetals('white', 25);
+      burstLocalPetals('white', 6);
       // 里程碑: 每10个专注触发金色花瓣
       if ((state.completedToday + 1) % 10 === 0) {
         bc.postMessage({ type: 'milestone', count: state.completedToday + 1 });
-        burstLocalPetals('gold', 40);
+        burstLocalPetals('gold', 10);
       }
     }
   } catch(e) {}
