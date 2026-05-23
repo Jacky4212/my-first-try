@@ -413,7 +413,12 @@ document.getElementById('btnSway').addEventListener('click', function() {
   }
 });
 document.getElementById('btnScatter').addEventListener('click', function() {
-  if (!state.scattered) spawnScatter();
+  if (!state.scattered) {
+    state.swayActive = false;
+    document.getElementById('btnSway').textContent = '🌬 摇曳';
+    document.getElementById('btnSway').style.background = '#2c3e50';
+    spawnScatter();
+  }
 });
 document.getElementById('btnReset').addEventListener('click', function() {
   state.targetBloom = 1; state.bloomT = 1;
