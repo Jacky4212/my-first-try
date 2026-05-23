@@ -112,7 +112,7 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
   // 雄蕊 — 金焰摇曳 (3根)
   var stamenCount = 3;
   for (var i = 0; i < stamenCount; i++) {
-    var a = (i / stamenCount) * Math.PI - Math.PI/2 + (i-1)*0.15;
+    var a = (i / stamenCount) * Math.PI * 2 - Math.PI/2 + (i-1)*0.15;
     ctx.save(); ctx.rotate(a);
     var flicker = Math.sin(state.time * 0.05 + i * 1.8) * 0.035;
     ctx.rotate(flicker);
@@ -402,11 +402,11 @@ function startAnimLoop() {
     } else state.bloomT = state.targetBloom;
 
     if (Math.abs(state.fadeAlpha - state.targetFade) > 0.005) {
-      state.fadeAlpha += (state.targetFade - state.fadeAlpha) * 0.025;
+      state.fadeAlpha += (state.targetFade - state.fadeAlpha) * 0.045;
     } else state.fadeAlpha = state.targetFade;
 
     if (state.swayActive) {
-      state.swayPhase += 0.03;
+      state.swayPhase += 0.012;
     } else if (state.swaySpeed > 0.001) {
       state.swayPhase += state.swaySpeed;
       state.swaySpeed *= 0.985;
@@ -424,7 +424,8 @@ startAnimLoop();
 // ======================== 交互 ========================
 
 document.getElementById('btnBloom').addEventListener('click', function() {
-  state.targetBloom = 1; state.fadeAlpha = 1; state.targetFade = 1;
+  state.targetBloom = 1; state.bloomT = 0;
+  state.fadeAlpha = 1; state.targetFade = 1;
   state.scattered = false;
   var btn = document.getElementById('btnSway');
   if (!state.swayActive) { btn.textContent = '🌬 摇曳'; btn.style.background = '#2c3e50'; btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
