@@ -109,19 +109,32 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
     ctx.restore();
   }
 
-  // 雄蕊
+  // 雄蕊 — 金焰摇曳
   for (var i = 0; i < 6; i++) {
     var a = (i / 6) * Math.PI * 2 - Math.PI/2 + (i%2===0?0.18:-0.18) + (i-3)*0.06;
     ctx.save(); ctx.rotate(a);
+    // 每根雄蕊独立微摆 (金焰跃动感)
+    var flicker = Math.sin(state.time * 0.05 + i * 1.8) * 0.035;
+    ctx.rotate(flicker);
     var sl2 = sl * (0.82 + i * 0.04);
-    ctx.strokeStyle = 'rgba(200,85,105,' + (0.4 + bloomT * 0.35) + ')';
-    ctx.lineWidth = 0.9;
+    // 金焰花丝 (暖金渐变)
+    ctx.strokeStyle = 'rgba(255, 190, 50, ' + (0.5 + bloomT * 0.4) + ')';
+    ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-sl2); ctx.stroke();
     if (bloomT > 0.2) {
-      ctx.fillStyle = '#b54a4a';
-      ctx.beginPath(); ctx.arc(0,-sl2,2,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,200,110,' + (0.35 * bloomT) + ')';
-      ctx.beginPath(); ctx.arc(0,-sl2,0.8,0,Math.PI*2); ctx.fill();
+      // 金焰花药 — 火焰状光晕
+      var flameSize = 3.5 + Math.sin(state.time * 0.08 + i * 1.5) * 1.2;
+      var flameAlpha = 0.6 + Math.sin(state.time * 0.1 + i * 2.0) * 0.2;
+      var grd = ctx.createRadialGradient(0, -sl2, 0, 0, -sl2, flameSize * 2.5);
+      grd.addColorStop(0, 'rgba(255, 235, 110, ' + flameAlpha + ')');
+      grd.addColorStop(0.3, 'rgba(255, 200, 60, ' + flameAlpha * 0.6 + ')');
+      grd.addColorStop(0.7, 'rgba(255, 150, 25, ' + flameAlpha * 0.3 + ')');
+      grd.addColorStop(1, 'rgba(200, 80, 10, 0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(0, -sl2, flameSize * 2.5, 0, Math.PI * 2); ctx.fill();
+      // 焰心高光
+      ctx.fillStyle = 'rgba(255, 255, 230, 0.85)';
+      ctx.beginPath(); ctx.arc(0, -sl2, 1.5, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
   }
@@ -209,6 +222,7 @@ var state = {
   swayActive: false,
   scattered: false,
   particles: [], particleLoop: null,
+  time: 0,
 };
 
 function drawScene() {
@@ -389,6 +403,8 @@ function startAnimLoop() {
       state.swaySpeed *= 0.985;
       if (state.swaySpeed < 0.001) state.swaySpeed = 0;
     }
+
+    state.time++;
 
     drawScene();
     animLoop = requestAnimationFrame(tick);
