@@ -74,30 +74,39 @@
         /* ===== 金色流光 (十二宫黄金之光) ===== */
         .gold-beam {
             position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .gold-beam::before {
+            content: '';
+            position: absolute;
             top: -50%; left: -50%;
             width: 200%; height: 200%;
-            z-index: -1;
-            pointer-events: none;
             background: linear-gradient(
                 135deg,
-                transparent 25%,
-                transparent 36%,
-                rgba(255, 215, 0, 0.020) 43%,
-                rgba(255, 180, 60, 0.045) 48%,
-                rgba(255, 215, 0, 0.035) 50%,
-                rgba(255, 180, 60, 0.045) 52%,
-                rgba(255, 215, 0, 0.020) 57%,
-                transparent 64%,
-                transparent 75%
+                transparent 35%,
+                transparent 42%,
+                rgba(255, 215, 0, 0.06) 45%,
+                rgba(255, 200, 80, 0.15) 47%,
+                rgba(255, 215, 0, 0.12) 49%,
+                rgba(255, 180, 60, 0.18) 50%,
+                rgba(255, 215, 0, 0.12) 51%,
+                rgba(255, 200, 80, 0.15) 53%,
+                rgba(255, 215, 0, 0.06) 55%,
+                transparent 58%,
+                transparent 65%
             );
-            animation: goldSweep 14s ease-in-out infinite;
+            animation: goldSweep 12s ease-in-out infinite;
         }
         @keyframes goldSweep {
-            0%   { transform: translate(-8%, -8%) rotate(0deg) scale(1); }
-            25%  { transform: translate(5%, -3%) rotate(2deg) scale(1.02); }
-            50%  { transform: translate(10%, 8%) rotate(4deg) scale(0.98); }
-            75%  { transform: translate(3%, 5%) rotate(1deg) scale(1.01); }
-            100% { transform: translate(-8%, -8%) rotate(0deg) scale(1); }
+            0%   { transform: translate(-10%, -10%) rotate(-3deg); }
+            25%  { transform: translate(5%, -5%) rotate(1deg); }
+            50%  { transform: translate(12%, 8%) rotate(5deg); }
+            75%  { transform: translate(3%, 4%) rotate(2deg); }
+            100% { transform: translate(-10%, -10%) rotate(-3deg); }
         }
 
         /* ===== Canvas 星空层 ===== */
@@ -327,8 +336,8 @@
 <body>
 
     <div class="bg-gradient"></div>
-    <div class="gold-beam"></div>
     <div class="bg-flow"></div>
+    <div class="gold-beam"></div>
     <canvas id="star-canvas"></canvas>
 
     <div class="petals">
