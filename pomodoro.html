@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>番茄钟 - 双鱼小栈</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  min-height:100vh;
+  background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
+  color:#e8e0f0
+}
+.hdr{max-width:700px;margin:0 auto;padding:30px 20px 10px}
+.hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
+.hdr a:hover{color:#f48fb1}
+.hdr h1{
+  font-size:34px;font-weight:700;letter-spacing:4px;
+  background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
+}
+.hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
+.hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
+
+/* ===== main card ===== */
+.main-card{
+  max-width:560px;margin:24px auto;padding:0 20px 40px;
+  position:relative;z-index:2
+}
+.card-inner{
+  background:rgba(255,255,255,.05);backdrop-filter:blur(16px);
+  border-radius:28px;border:1px solid rgba(255,255,255,.06);
+  padding:36px 32px 32px;text-align:center
+}
+
+/* ===== mode tabs ===== */
+.mode-tabs{
+  display:flex;justify-content:center;gap:6px;
+  background:rgba(0,0,0,.18);border-radius:50px;padding:4px;
+  margin-bottom:32px;max-width:380px;margin-left:auto;margin-right:auto
+}
+.mode-btn{
+  flex:1;padding:9px 12px;border:none;border-radius:50px;
+  font-size:14px;font-weight:600;cursor:pointer;
+  transition:all .3s ease;letter-spacing:1px;
+  background:transparent;color:#8a7aaa
+}
+.mode-btn:hover{color:#c0b0d0}
+.mode-btn.active{
+  background:linear-gradient(135deg,rgba(120,80,180,.5),rgba(200,60,120,.35));
+  color:#e8d8f0;box-shadow:0 4px 16px rgba(150,80,180,.2)
+}
+
+/* ===== timer ring ===== */
+.timer-ring-wrap{
+  position:relative;width:300px;height:300px;margin:0 auto 24px
+}
+.timer-ring-wrap svg{transform:rotate(-90deg)}
+.timer-ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:6}
+.timer-ring-progress{fill:none;stroke:#f48fb1;stroke-width:6;stroke-linecap:round;
+  transition:stroke-dashoffset .4s ease, stroke .4s ease}
+.timer-ring-glow{fill:none;stroke:#f48fb1;stroke-width:3;stroke-linecap:round;
+  opacity:.35;filter:blur(5px);transition:stroke-dashoffset .4s ease, stroke .4s ease}
+
+.timer-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none
+}
+.timer-display{
+  font-size:72px;font-weight:300;letter-spacing:6px;color:#f0e8ff;
+  font-variant-numeric:tabular-nums;font-family:'Segoe UI','Courier New',monospace;
+  line-height:1;margin-bottom:4px;transition:color .4s ease
+}
+.timer-state-label{
+  font-size:13px;color:#8a7aaa;letter-spacing:3px;font-weight:500;
+  transition:color .4s ease;text-transform:uppercase
+}
+
+/* ===== controls ===== */
+.timer-controls{display:flex;justify-content:center;align-items:center;gap:12px;margin-top:4px}
+.btn{padding:12px 40px;border:none;border-radius:50px;cursor:pointer;
+  font-size:16px;font-weight:600;letter-spacing:2px;transition:all .25s ease}
+.btn-primary{
+  background:linear-gradient(135deg,#f48fb1,#d81b60);
+  color:#fff;box-shadow:0 4px 20px rgba(216,27,96,.25)
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(216,27,96,.35)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary.running{background:linear-gradient(135deg,#ff8a65,#e64a19);box-shadow:0 4px 20px rgba(230,74,25,.25)}
+.btn-primary.running:hover{box-shadow:0 6px 28px rgba(230,74,25,.35)}
+.btn-icon{
+  width:44px;height:44px;border:none;border-radius:50%;cursor:pointer;
+  font-size:18px;display:flex;align-items:center;justify-content:center;
+  transition:all .25s ease;background:rgba(255,255,255,.06);color:#8a7aaa
+}
+.btn-icon:hover{background:rgba(255,255,255,.12);color:#e8d8f0;transform:translateY(-2px)}
+
+/* ===== session info ===== */
+.session-info{
+  margin-top:28px;padding-top:20px;
+  border-top:1px solid rgba(255,255,255,.04);
+  display:flex;justify-content:center;gap:32px
+}
+.session-info-item{text-align:center}
+.session-info-item .num{
+  font-size:22px;font-weight:700;color:#e8d8f0;
+  font-variant-numeric:tabular-nums
+}
+.session-info-item .lbl{font-size:11px;color:#6a5a80;letter-spacing:1px;margin-top:2px;text-transform:uppercase}
+
+/* ===== settings modal ===== */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;
+  padding:20px
+}
+.modal-overlay.on{display:flex}
+.modal-card{
+  background:rgba(30,25,55,.92);backdrop-filter:blur(20px);
+  border-radius:24px;border:1px solid rgba(255,255,255,.08);
+  padding:32px;width:100%;max-width:400px;animation:fadeUp .3s ease
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-card .modal-hdr{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:28px
+}
+.modal-card .modal-hdr h2{font-size:20px;font-weight:600;letter-spacing:2px;color:#e0d0e8}
+.modal-card .modal-close{
+  width:32px;height:32px;border:none;border-radius:50%;cursor:pointer;
+  background:rgba(255,255,255,.06);color:#8a7aaa;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:all .2s
+}
+.modal-card .modal-close:hover{background:rgba(255,255,255,.12);color:#e8d8f0}
+.setting-group{margin-bottom:20px}
+.setting-group:last-child{margin-bottom:0}
+.setting-group label{display:block;font-size:12px;color:#8a7aaa;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.setting-row{display:flex;gap:10px}
+.setting-item{flex:1}
+.setting-item .si-label{font-size:12px;color:#6a5a80;margin-bottom:4px}
+.setting-item .si-input-wrap{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(0,0,0,.25);border-radius:10px;padding:4px
+}
+.setting-item .si-input-wrap input{
+  width:100%;padding:8px 6px;border:none;background:transparent;
+  color:#e8d8f0;font-size:16px;font-weight:600;text-align:center;
+  font-family:'Courier New',monospace;outline:none
+}
+.setting-item .si-input-wrap input:focus{color:#f48fb1}
+.setting-item .si-input-wrap .si-unit{font-size:12px;color:#6a5a80;padding-right:8px}
+.modal-actions{margin-top:24px;display:flex;gap:10px}
+.modal-actions .btn{flex:1;padding:12px}
+.btn-secondary{
+  background:rgba(255,255,255,.06);color:#b8a0cc;border:1px solid rgba(255,255,255,.06)
+}
+.btn-secondary:hover{background:rgba(255,255,255,.12)}
+
+/* ===== progress dots ===== */
+.progress-dots{display:flex;justify-content:center;gap:6px;margin-top:16px;min-height:10px}
+.progress-dots .dot{
+  width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);
+  transition:all .4s ease
+}
+.progress-dots .dot.done{background:#f48fb1;box-shadow:0 0 8px rgba(244,143,177,.4)}
+.progress-dots .dot.current{background:#b39ddb;box-shadow:0 0 8px rgba(179,157,219,.3);transform:scale(1.3)}
+
+/* ===== toast ===== */
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:rgba(30,25,55,.92);backdrop-filter:blur(16px);
+  padding:12px 24px;border-radius:14px;border:1px solid rgba(255,255,255,.08);
+  color:#e8d8f0;font-size:14px;letter-spacing:1px;
+  opacity:0;transition:all .4s ease;z-index:900;
+  pointer-events:none;white-space:nowrap
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== responsive ===== */
+@media(max-width:640px){
+  .hdr h1{font-size:26px;letter-spacing:3px}
+  .card-inner{padding:24px 16px 28px;border-radius:20px}
+  .timer-ring-wrap{width:240px;height:240px}
+  .timer-display{font-size:56px;letter-spacing:4px}
+  .mode-tabs{max-width:100%}
+  .mode-btn{font-size:13px;padding:8px 10px}
+  .btn{padding:10px 32px;font-size:15px}
+  .session-info{gap:20px}
+  .session-info-item .num{font-size:18px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <a href="index.html">← 返回首页</a>
+  <h1>番茄钟</h1>
+  <p>专注当下，每次只做一件事</p>
+  <div class="div"></div>
+</div>
+
+<div class="main-card">
+  <div class="card-inner">
+
+    <!-- mode tabs -->
+    <div class="mode-tabs" id="modeTabs">
+      <button class="mode-btn active" data-mode="pomo">🍅 专注</button>
+      <button class="mode-btn" data-mode="short">☕ 短休</button>
+      <button class="mode-btn" data-mode="long">🌿 长休</button>
+    </div>
+
+    <!-- timer ring -->
+    <div class="timer-ring-wrap">
+      <svg width="100%" height="100%" viewBox="0 0 300 300">
+        <circle class="timer-ring-bg" cx="150" cy="150" r="130"/>
+        <circle class="timer-ring-glow" id="ringGlow" cx="150" cy="150" r="130"
+          stroke-dasharray="816.8" stroke-dashoffset="0"/>
+        <circle class="timer-ring-progress" id="ringProgress" cx="150" cy="150" r="130"
+          stroke-dasharray="816.8" stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-state-label" id="stateLabel">专注时间</div>
+      </div>
+    </div>
+
+    <!-- controls -->
+    <div class="timer-controls">
+      <button class="btn-icon" id="btnReset" title="重置">↻</button>
+      <button class="btn btn-primary" id="btnStart">▶ 开始</button>
+      <button class="btn-icon" id="btnSettings" title="设置">⚙</button>
+    </div>
+
+    <!-- progress dots -->
+    <div class="progress-dots" id="progressDots"></div>
+
+    <!-- session info -->
+    <div class="session-info">
+      <div class="session-info-item">
+        <div class="num" id="todayCount">0</div>
+        <div class="lbl">今日专注</div>
+      </div>
+      <div class="session-info-item">
+        <div class="num" id="streakCount">0</div>
+        <div class="lbl">连续天数</div>
+      </div>
+      <div class="session-info-item">
+        <div class="num" id="totalCount">0</div>
+        <div class="lbl">累计专注</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- settings modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card">
+    <div class="modal-hdr">
+      <h2>⚙ 设置</h2>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="setting-group">
+      <label>时长（分钟）</label>
+      <div class="setting-row">
+        <div class="setting-item">
+          <div class="si-label">专注</div>
+          <div class="si-input-wrap">
+            <input type="number" id="setPomo" min="1" max="120" value="25">
+            <span class="si-unit">分</span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="si-label">短休</div>
+          <div class="si-input-wrap">
+            <input type="number" id="setShort" min="1" max="30" value="5">
+            <span class="si-unit">分</span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="si-label">长休</div>
+          <div class="si-input-wrap">
+            <input type="number" id="setLong" min="1" max="60" value="15">
+            <span class="si-unit">分</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="setting-group">
+      <label>长休间隔</label>
+      <div class="setting-row">
+        <div class="setting-item">
+          <div class="si-input-wrap">
+            <input type="number" id="setLongInterval" min="1" max="10" value="4">
+            <span class="si-unit">个专注后</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalCancel">取消</button>
+      <button class="btn btn-primary" id="modalSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ======================== DEFAULTS ========================
+const DEFAULTS = {
+  pomo: 25, short: 5, long: 15,
+  longInterval: 4,  // every N pomos → long break
+};
+
+// ======================== STATE ========================
+let state = {
+  mode: 'pomo',        // pomo | short | long
+  running: false,
+  paused: false,
+  timeLeft: DEFAULTS.pomo * 60,
+  totalTime: DEFAULTS.pomo * 60,
+  timerId: null,
+  pomosInSession: 0,   // completed pomos before next long break
+  completedToday: 0,   // from localStorage
+  streak: 0,
+  totalAll: 0,
+  settings: { ...DEFAULTS },
+};
+
+// ======================== DOM REFS ========================
+const $ = id => document.getElementById(id);
+const timerDisplay = $('timerDisplay');
+const stateLabel = $('stateLabel');
+const ringProgress = $('ringProgress');
+const ringGlow = $('ringGlow');
+const btnStart = $('btnStart');
+const btnReset = $('btnReset');
+const btnSettings = $('btnSettings');
+const todayCount = $('todayCount');
+const streakCount = $('streakCount');
+const totalCount = $('totalCount');
+const progressDots = $('progressDots');
+const toast = $('toast');
+const settingsModal = $('settingsModal');
+const modalClose = $('modalClose');
+const modalCancel = $('modalCancel');
+const modalSave = $('modalSave');
+const setPomo = $('setPomo');
+const setShort = $('setShort');
+const setLong = $('setLong');
+const setLongInterval = $('setLongInterval');
+const modeBtns = document.querySelectorAll('.mode-btn');
+const CIRCUMFERENCE = 2 * Math.PI * 130; // ≈ 816.8
+
+// ======================== COLORS ========================
+const MODE_COLORS = {
+  pomo: { main: '#f48fb1', label: '专注时间', btn: '▶ 开始' },
+  short: { main: '#81d4fa', label: '休息一下', btn: '▶ 开始' },
+  long: { main: '#b39ddb', label: '长休息', btn: '▶ 开始' },
+};
+
+// ======================== LOCAL STORAGE ========================
+function loadStats() {
+  try {
+    const raw = localStorage.getItem('pomodoro_stats');
+    if (raw) {
+      const data = JSON.parse(raw);
+      state.totalAll = data.totalAll || 0;
+      state.streak = data.streak || 0;
+      // check if stored date is today
+      const today = new Date().toDateString();
+      if (data.date === today) {
+        state.completedToday = data.completedToday || 0;
+      } else {
+        state.completedToday = 0;
+        // check if yesterday (streak logic)
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (data.date !== yesterday) {
+          state.streak = 0;
+        }
+      }
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function saveStats() {
+  try {
+    const data = {
+      date: new Date().toDateString(),
+      completedToday: state.completedToday,
+      streak: state.streak,
+      totalAll: state.totalAll,
+    };
+    localStorage.setItem('pomodoro_stats', JSON.stringify(data));
+  } catch(e) { /* ignore */ }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('pomodoro_settings');
+    if (raw) {
+      const s = JSON.parse(raw);
+      state.settings = { ...DEFAULTS, ...s };
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem('pomodoro_settings', JSON.stringify(state.settings));
+  } catch(e) { /* ignore */ }
+}
+
+function updateStatsDisplay() {
+  todayCount.textContent = state.completedToday;
+  streakCount.textContent = state.streak;
+  totalCount.textContent = state.totalAll;
+}
+
+// ======================== RING ========================
+function updateRing(progress) {
+  // progress: 0 → full circle, 1 → empty
+  const offset = CIRCUMFERENCE * Math.min(1, Math.max(0, progress));
+  ringProgress.setAttribute('stroke-dashoffset', offset);
+  ringGlow.setAttribute('stroke-dashoffset', offset);
+}
+
+function setRingColor(color) {
+  ringProgress.setAttribute('stroke', color);
+  ringGlow.setAttribute('stroke', color);
+}
+
+// ======================== TIMER ========================
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+}
+
+function updateDisplay() {
+  timerDisplay.textContent = formatTime(state.timeLeft);
+  const progress = state.totalTime > 0 ? 1 - state.timeLeft / state.totalTime : 0;
+  updateRing(progress);
+}
+
+function switchMode(mode, quiet) {
+  if (state.running && !quiet) {
+    stopTimer();
+  }
+  state.mode = mode;
+  state.running = false;
+  state.paused = false;
+
+  const durations = {
+    pomo: state.settings.pomo,
+    short: state.settings.short,
+    long: state.settings.long,
+  };
+  state.totalTime = durations[mode] * 60;
+  state.timeLeft = state.totalTime;
+
+  const colors = MODE_COLORS[mode];
+  setRingColor(colors.main);
+  timerDisplay.style.color = colors.main;
+  stateLabel.textContent = colors.label;
+  stateLabel.style.color = colors.main;
+
+  btnStart.textContent = '▶ 开始';
+  btnStart.classList.remove('running');
+
+  updateDisplay();
+  updateModeTabs();
+}
+
+function updateModeTabs() {
+  modeBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.mode);
+  });
+}
+
+function stopTimer() {
+  if (state.timerId) {
+    clearInterval(state.timerId);
+    state.timerId = null;
+  }
+  state.running = false;
+  state.paused = false;
+  btnStart.textContent = '▶ 开始';
+  btnStart.classList.remove('running');
+}
+
+// ======================== SOUND ========================
+function playAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.6);
+
+    // second beep
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, ctx.currentTime + 0.8);
+    osc2.frequency.setValueAtTime(660, ctx.currentTime + 0.95);
+    osc2.frequency.setValueAtTime(880, ctx.currentTime + 1.1);
+    gain2.gain.setValueAtTime(0.15, ctx.currentTime + 0.8);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.4);
+    osc2.start(ctx.currentTime + 0.8);
+    osc2.stop(ctx.currentTime + 1.4);
+  } catch(e) { /* some browsers may block audio before user interaction */ }
+}
+
+// ======================== COMPLETION ========================
+function onTimerComplete() {
+  playAlarm();
+  showToast(state.mode === 'pomo' ? '🍅 专注完成！休息一下吧' : '☕ 休息结束，继续加油');
+
+  if (state.mode === 'pomo') {
+    state.completedToday++;
+    state.totalAll++;
+    state.pomosInSession++;
+
+    // streak: check consecutive days
+    const today = new Date().toDateString();
+    try {
+      const raw = localStorage.getItem('pomodoro_stats');
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.date !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          if (data.date === yesterday) {
+            state.streak++;
+          } else {
+            state.streak = 1;
+          }
+        }
+      } else {
+        state.streak = 1;
+      }
+    } catch(e) { state.streak = 1; }
+
+    saveStats();
+    updateStatsDisplay();
+
+    // auto-switch: long break or short break
+    const shouldLong = state.pomosInSession >= state.settings.longInterval;
+    if (shouldLong) {
+      state.pomosInSession = 0;
+      setTimeout(() => switchMode('long'), 1200);
+    } else {
+      setTimeout(() => switchMode('short'), 1200);
+    }
+  } else {
+    // break ended → back to pomo
+    setTimeout(() => switchMode('pomo'), 1200);
+  }
+}
+
+// ======================== CORE TIMER ========================
+function startTimer() {
+  if (state.paused) {
+    // resume
+    state.paused = false;
+    state.running = true;
+    btnStart.textContent = '⏸ 暂停';
+    btnStart.classList.add('running');
+    state.timerId = setInterval(tick, 200);
+    return;
+  }
+
+  // fresh start
+  state.running = true;
+  btnStart.textContent = '⏸ 暂停';
+  btnStart.classList.add('running');
+  state.timerId = setInterval(tick, 200);
+}
+
+function togglePause() {
+  if (!state.running) return;
+  state.paused = !state.paused;
+  if (state.paused) {
+    clearInterval(state.timerId);
+    state.timerId = null;
+    btnStart.textContent = '▶ 继续';
+    btnStart.classList.remove('running');
+  } else {
+    btnStart.textContent = '⏸ 暂停';
+    btnStart.classList.add('running');
+    state.timerId = setInterval(tick, 200);
+  }
+}
+
+function tick() {
+  if (state.paused) return;
+
+  // use smaller delta for smoothness
+  state.timeLeft = Math.max(0, state.timeLeft - 0.2);
+
+  if (state.timeLeft <= 0) {
+    state.timeLeft = 0;
+    updateDisplay();
+    stopTimer();
+    timerDisplay.textContent = '00:00';
+    // flash effect
+    timerDisplay.style.color = '#f1c40f';
+    setTimeout(() => {
+      timerDisplay.style.color = MODE_COLORS[state.mode].main;
+    }, 600);
+    onTimerComplete();
+    return;
+  }
+
+  updateDisplay();
+}
+
+// ======================== PROGRESS DOTS ========================
+function updateProgressDots() {
+  const total = state.settings.longInterval;
+  const done = state.pomosInSession;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const cls = i < done ? 'dot done' : (i === done && state.mode === 'pomo' ? 'dot current' : 'dot');
+    html += '<span class="'+cls+'"></span>';
+  }
+  progressDots.innerHTML = html;
+}
+
+// ======================== TOAST ========================
+let toastTimer = null;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ======================== SETTINGS ========================
+function openSettings() {
+  setPomo.value = state.settings.pomo;
+  setShort.value = state.settings.short;
+  setLong.value = state.settings.long;
+  setLongInterval.value = state.settings.longInterval;
+  settingsModal.classList.add('on');
+}
+
+function closeSettings() {
+  settingsModal.classList.remove('on');
+}
+
+function saveSettingsHandler() {
+  const pomo = parseInt(setPomo.value) || DEFAULTS.pomo;
+  const short = parseInt(setShort.value) || DEFAULTS.short;
+  const long = parseInt(setLong.value) || DEFAULTS.long;
+  const interval = parseInt(setLongInterval.value) || DEFAULTS.longInterval;
+
+  state.settings.pomo = Math.max(1, Math.min(120, pomo));
+  state.settings.short = Math.max(1, Math.min(30, short));
+  state.settings.long = Math.max(1, Math.min(60, long));
+  state.settings.longInterval = Math.max(1, Math.min(10, interval));
+
+  saveSettings();
+  closeSettings();
+  showToast('设置已保存');
+
+  // reapply current mode
+  switchMode(state.mode, true);
+}
+
+// ======================== INIT ========================
+function init() {
+  loadSettings();
+  loadStats();
+  updateStatsDisplay();
+  switchMode('pomo', true);
+  updateProgressDots();
+}
+
+// ======================== EVENT LISTENERS ========================
+
+// Mode tabs
+modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (state.running) {
+      // if timer is running in this mode, just pause; if switching modes, stop
+      if (btn.dataset.mode !== state.mode) {
+        stopTimer();
+        switchMode(btn.dataset.mode);
+      }
+      // clicking same mode button while running does nothing (use pause)
+    } else {
+      switchMode(btn.dataset.mode);
+    }
+    updateProgressDots();
+  });
+});
+
+// Start / Pause
+btnStart.addEventListener('click', () => {
+  if (state.running) {
+    togglePause();
+  } else {
+    // if time is 0 (completed), reset first
+    if (state.timeLeft <= 0) {
+      switchMode(state.mode, true);
+    }
+    startTimer();
+  }
+});
+
+// Reset
+btnReset.addEventListener('click', () => {
+  stopTimer();
+  switchMode(state.mode, true);
+  updateProgressDots();
+});
+
+// Settings
+btnSettings.addEventListener('click', openSettings);
+modalClose.addEventListener('click', closeSettings);
+modalCancel.addEventListener('click', closeSettings);
+modalSave.addEventListener('click', saveSettingsHandler);
+settingsModal.addEventListener('click', (e) => {
+  if (e.target === settingsModal) closeSettings();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (settingsModal.classList.contains('on')) {
+    if (e.key === 'Escape') closeSettings();
+    if (e.key === 'Enter') saveSettingsHandler();
+    return;
+  }
+  if (e.key === ' ' || e.key === 'Space') {
+    e.preventDefault();
+    btnStart.click();
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    btnReset.click();
+  }
+  if (e.key === 'Escape' && state.running) {
+    togglePause();
+  }
+});
+
+// ======================== START ========================
+init();
+
+})();
+</script>
+</body>
+</html>
