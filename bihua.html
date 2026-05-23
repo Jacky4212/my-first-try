@@ -112,7 +112,7 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
   // 雄蕊 — 金焰摇曳 (3根)
   var stamenCount = 3;
   for (var i = 0; i < stamenCount; i++) {
-    var a = [-2.2, 0.3, 2.5][i];
+    var a = stamenAngles[i];
     ctx.save(); ctx.rotate(a);
     var flicker = Math.sin(state.time * 0.05 + i * 1.8) * 0.035;
     ctx.rotate(flicker);
@@ -224,6 +224,13 @@ var state = {
   particles: [], particleLoop: null,
   time: 0,
 };
+
+// 花蕊每次刷新自然随机角度
+var stamenAngles = [
+  -2.2 + (Math.random() - 0.5) * 1.0,
+  0.3 + (Math.random() - 0.5) * 1.0,
+  2.5 + (Math.random() - 0.5) * 1.0
+];
 
 function drawScene() {
   ctx.clearRect(0,0,W,H);
