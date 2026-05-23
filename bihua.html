@@ -109,20 +109,20 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
     ctx.restore();
   }
 
-  // 雄蕊 — 金焰摇曳
-  for (var i = 0; i < 6; i++) {
-    var a = (i / 6) * Math.PI * 2 - Math.PI/2 + (i%2===0?0.18:-0.18) + (i-3)*0.06;
+  // 雄蕊 — 金焰摇曳 (3根)
+  var stamenCount = 3;
+  for (var i = 0; i < stamenCount; i++) {
+    var a = (i / stamenCount) * Math.PI - Math.PI/2 + (i-1)*0.15;
     ctx.save(); ctx.rotate(a);
-    // 每根雄蕊独立微摆 (金焰跃动感)
     var flicker = Math.sin(state.time * 0.05 + i * 1.8) * 0.035;
     ctx.rotate(flicker);
     var sl2 = sl * (0.82 + i * 0.04);
-    // 金焰花丝 (暖金渐变)
-    ctx.strokeStyle = 'rgba(255, 190, 50, ' + (0.5 + bloomT * 0.4) + ')';
-    ctx.lineWidth = 1.2;
+    // 花丝 (暗红)
+    ctx.strokeStyle = 'rgba(200,85,105,' + (0.4 + bloomT * 0.35) + ')';
+    ctx.lineWidth = 0.9;
     ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-sl2); ctx.stroke();
     if (bloomT > 0.2) {
-      // 金焰花药 — 火焰状光晕
+      // 花药 — 金焰
       var flameSize = 3.5 + Math.sin(state.time * 0.08 + i * 1.5) * 1.2;
       var flameAlpha = 0.6 + Math.sin(state.time * 0.1 + i * 2.0) * 0.2;
       var grd = ctx.createRadialGradient(0, -sl2, 0, 0, -sl2, flameSize * 2.5);
@@ -132,7 +132,6 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
       grd.addColorStop(1, 'rgba(200, 80, 10, 0)');
       ctx.fillStyle = grd;
       ctx.beginPath(); ctx.arc(0, -sl2, flameSize * 2.5, 0, Math.PI * 2); ctx.fill();
-      // 焰心高光
       ctx.fillStyle = 'rgba(255, 255, 230, 0.85)';
       ctx.beginPath(); ctx.arc(0, -sl2, 1.5, 0, Math.PI * 2); ctx.fill();
     }
@@ -218,6 +217,7 @@ function drawStem(ctx, x, y1, y2, bloomT, swayOff) {
 
 var state = {
   bloomT: 1, targetBloom: 1,
+  fadeAlpha: 1, targetFade: 1,
   swayPhase: 0, swaySpeed: 0,
   swayActive: false,
   scattered: false,
@@ -266,6 +266,9 @@ function drawScene() {
     ctx.fill();
   }
 
+  ctx.save();
+  ctx.globalAlpha = state.fadeAlpha;
+
   // 茎 (从花心向下延伸)
   drawStem(ctx, stalkX, stalkTop, stemEnd, t, sway);
 
@@ -286,6 +289,8 @@ function drawScene() {
     ctx.restore();
   }
 
+  ctx.restore();
+
   // 散射粒子
   if (state.particles.length > 0) drawParticles();
 }
@@ -295,7 +300,7 @@ function drawScene() {
 function spawnScatter() {
   if (state.scattered) return;
   state.scattered = true;
-  state.targetBloom = 0;
+  state.targetFade = 0;
 
   var cx = W2 - 8, cy = 280;
   var stalkY1 = 280, stalkY2 = 585;
@@ -396,6 +401,10 @@ function startAnimLoop() {
       state.bloomT += (state.targetBloom - state.bloomT) * 0.025;
     } else state.bloomT = state.targetBloom;
 
+    if (Math.abs(state.fadeAlpha - state.targetFade) > 0.005) {
+      state.fadeAlpha += (state.targetFade - state.fadeAlpha) * 0.025;
+    } else state.fadeAlpha = state.targetFade;
+
     if (state.swayActive) {
       state.swayPhase += 0.03;
     } else if (state.swaySpeed > 0.001) {
@@ -415,9 +424,13 @@ startAnimLoop();
 // ======================== 交互 ========================
 
 document.getElementById('btnBloom').addEventListener('click', function() {
-  state.targetBloom = 1; state.scattered = false;
+  state.targetBloom = 1; state.fadeAlpha = 1; state.targetFade = 1;
+  state.scattered = false;
+  var btn = document.getElementById('btnSway');
+  if (!state.swayActive) { btn.textContent = '🌬 摇曳'; btn.style.background = '#2c3e50'; btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
 });
 document.getElementById('btnSway').addEventListener('click', function() {
+  if (state.scattered) return;
   state.swayActive = !state.swayActive;
   var btn = document.getElementById('btnSway');
   if (state.swayActive) {
@@ -431,19 +444,23 @@ document.getElementById('btnSway').addEventListener('click', function() {
 document.getElementById('btnScatter').addEventListener('click', function() {
   if (!state.scattered) {
     state.swayActive = false;
-    document.getElementById('btnSway').textContent = '🌬 摇曳';
-    document.getElementById('btnSway').style.background = '#2c3e50';
+    var btn = document.getElementById('btnSway');
+    btn.textContent = '🌬 摇曳';
+    btn.style.background = '#2c3e50';
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
     spawnScatter();
   }
 });
 document.getElementById('btnReset').addEventListener('click', function() {
   state.targetBloom = 1; state.bloomT = 1;
+  state.fadeAlpha = 1; state.targetFade = 1;
   state.swayPhase = 0; state.swaySpeed = 0;
   state.swayActive = false;
   state.scattered = false; state.particles = [];
   if (state.particleLoop) { cancelAnimationFrame(state.particleLoop); state.particleLoop = null; }
-  document.getElementById('btnSway').textContent = '🌬 摇曳';
-  document.getElementById('btnSway').style.background = '#2c3e50';
+  var btn = document.getElementById('btnSway');
+  btn.textContent = '🌬 摇曳'; btn.style.background = '#2c3e50';
+  btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
   drawScene();
 });
 
