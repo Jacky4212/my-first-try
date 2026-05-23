@@ -109,21 +109,21 @@ function drawFlower(ctx, cx, cy, size, rot, bloomT, swayOff) {
     ctx.restore();
   }
 
-  // 雄蕊 — 金焰摇曳 (3根)
-  var stamenCount = 3;
-  for (var i = 0; i < stamenCount; i++) {
-    var a = stamenAngles[i];
-    ctx.save(); ctx.rotate(a);
-    var flicker = Math.sin(state.time * 0.05 + i * 1.8) * 0.035;
-    ctx.rotate(flicker);
-    var sl2 = sl * (0.82 + i * 0.04);
-    // 花丝 (暗红)
+  // 雄蕊 — 自然曲线发散
+  for (var i = 0; i < stamenParams.length; i++) {
+    var p = stamenParams[i];
+    var flicker = Math.sin(state.time * p.fSpeed + i * 2.3) * p.fAmp;
+    ctx.save(); ctx.rotate(p.angle + flicker);
+    var sl2 = sl * p.lenFac;
+    // 花丝 (暗红自然弯曲)
     ctx.strokeStyle = 'rgba(200,85,105,' + (0.4 + bloomT * 0.35) + ')';
-    ctx.lineWidth = 0.9;
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-sl2); ctx.stroke();
+    ctx.lineWidth = p.lw;
+    ctx.beginPath(); ctx.moveTo(p.offX, 0);
+    ctx.quadraticCurveTo(p.curve * 8, -sl2 * 0.5, p.curve * 4, -sl2);
+    ctx.stroke();
     if (bloomT > 0.2) {
       // 花药 — 金焰
-      var flameSize = 3.5 + Math.sin(state.time * 0.08 + i * 1.5) * 1.2;
+      var flameSize = p.fSize + Math.sin(state.time * 0.09 + i * 1.7) * 0.9;
       var flameAlpha = 0.6 + Math.sin(state.time * 0.1 + i * 2.0) * 0.2;
       var grd = ctx.createRadialGradient(0, -sl2, 0, 0, -sl2, flameSize * 2.5);
       grd.addColorStop(0, 'rgba(255, 235, 110, ' + flameAlpha + ')');
@@ -218,6 +218,7 @@ function drawStem(ctx, x, y1, y2, bloomT, swayOff) {
 var state = {
   bloomT: 1, targetBloom: 1,
   fadeAlpha: 1, targetFade: 1,
+  glowIntensity: 0, targetGlow: 0,
   swayPhase: 0, swaySpeed: 0,
   swayActive: false,
   scattered: false,
@@ -225,12 +226,22 @@ var state = {
   time: 0,
 };
 
-// 花蕊每次刷新自然随机角度
-var stamenAngles = [
-  -2.2 + (Math.random() - 0.5) * 1.0,
-  0.3 + (Math.random() - 0.5) * 1.0,
-  2.5 + (Math.random() - 0.5) * 1.0
-];
+// 花蕊参数 (每次刷新随机生成)
+var stamenParams = [];
+(function(){
+  for (var i = 0; i < 3; i++) {
+    stamenParams.push({
+      angle: (i - 1) * 0.7 + (Math.random() - 0.5) * 1.0,
+      lenFac: 0.80 + Math.random() * 0.30,
+      curve: (Math.random() - 0.5) * 0.5,
+      lw: 0.65 + Math.random() * 0.45,
+      offX: (Math.random() - 0.5) * 2.0,
+      fSpeed: 0.035 + Math.random() * 0.03,
+      fAmp: 0.02 + Math.random() * 0.025,
+      fSize: 2.8 + Math.random() * 1.6,
+    });
+  }
+})();
 
 function drawScene() {
   ctx.clearRect(0,0,W,H);
@@ -260,8 +271,8 @@ function drawScene() {
   ctx.beginPath(); ctx.arc(W2 - 10, stalkTop, 200, 0, Math.PI*2); ctx.fill();
 
   // 摇曳暗红灵气 (画在花后面，作为背光)
-  if (state.swayActive) {
-    var gi = 0.35 + Math.sin(state.swayPhase * 2) * 0.15;
+  if (state.glowIntensity > 0.01) {
+    var gi = state.glowIntensity * (0.35 + Math.sin(state.swayPhase * 2) * 0.15);
     var pulseR = 160 + Math.sin(state.swayPhase) * 25;
     var grd = ctx.createRadialGradient(W2-8, stalkTop, 0, W2-8, stalkTop, pulseR);
     grd.addColorStop(0, 'rgba(180, 20, 35, ' + gi + ')');
@@ -412,6 +423,10 @@ function startAnimLoop() {
       state.fadeAlpha += (state.targetFade - state.fadeAlpha) * 0.045;
     } else state.fadeAlpha = state.targetFade;
 
+    if (Math.abs(state.glowIntensity - state.targetGlow) > 0.005) {
+      state.glowIntensity += (state.targetGlow - state.glowIntensity) * 0.035;
+    } else state.glowIntensity = state.targetGlow;
+
     if (state.swayActive) {
       state.swayPhase += 0.005;
     } else if (state.swaySpeed > 0.001) {
@@ -440,6 +455,7 @@ document.getElementById('btnBloom').addEventListener('click', function() {
 document.getElementById('btnSway').addEventListener('click', function() {
   if (state.scattered) return;
   state.swayActive = !state.swayActive;
+  state.targetGlow = state.swayActive ? 1 : 0;
   var btn = document.getElementById('btnSway');
   if (state.swayActive) {
     btn.textContent = '🌬 摇曳中';
@@ -451,7 +467,7 @@ document.getElementById('btnSway').addEventListener('click', function() {
 });
 document.getElementById('btnScatter').addEventListener('click', function() {
   if (!state.scattered) {
-    state.swayActive = false;
+    state.swayActive = false; state.targetGlow = 0;
     var btn = document.getElementById('btnSway');
     btn.textContent = '🌬 摇曳';
     btn.style.background = '#2c3e50';
@@ -462,6 +478,7 @@ document.getElementById('btnScatter').addEventListener('click', function() {
 document.getElementById('btnReset').addEventListener('click', function() {
   state.targetBloom = 1; state.bloomT = 1;
   state.fadeAlpha = 1; state.targetFade = 1;
+  state.glowIntensity = 0; state.targetGlow = 0;
   state.swayPhase = 0; state.swaySpeed = 0;
   state.swayActive = false;
   state.scattered = false; state.particles = [];
