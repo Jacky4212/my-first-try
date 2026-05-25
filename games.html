@@ -177,6 +177,7 @@ body{
   <button class="tab-btn" data-panel="ms">扫雷</button>
   <button class="tab-btn" data-panel="snake">贪吃蛇</button>
   <button class="tab-btn" data-panel="flappy">Flappy Bird</button>
+  <button class="tab-btn" data-panel="tank">坦克大战</button>
 </div>
 
 <!-- ============ 2048 ============ -->
@@ -267,6 +268,38 @@ body{
     <p>撞到 <strong>管道</strong> 或 <strong>地面/天花板</strong> 则游戏结束</p>
   </div>
   <div class="game-overlay" id="flappy-over"><span>游戏结束</span><span class="sub" id="flappy-msg">得分: 0</span></div>
+</div>
+
+<!-- ============ 坦克大战 ============ -->
+<div class="game-panel" id="panel-tank">
+  <div class="game-hdr">
+    <span>🏆 消灭: <strong id="tank-kills">0</strong>/<strong id="tank-total">10</strong></span>
+    <span>❤️ <strong id="tank-lives">3</strong></span>
+    <button class="rst-btn" onclick="tankInit()">重新开始</button>
+    <button class="info-btn" id="tank-info-btn" title="玩法说明">ⓘ</button>
+  </div>
+  <div class="snake-layout">
+    <div class="canvas-wrap"><canvas id="tank-canvas" width="416" height="416"></canvas></div>
+    <div class="snake-side">
+      <p class="game-hint" style="margin-top:0">移动 / 射击</p>
+      <div class="ctrl-row" id="tank-ctrl">
+        <button class="dir-btn" data-tdir="up" style="grid-column:2;grid-row:1">▲</button>
+        <button class="dir-btn" data-tdir="left" style="grid-column:1;grid-row:2">◀</button>
+        <button class="dir-btn" data-tdir="down" style="grid-column:2;grid-row:2">▼</button>
+        <button class="dir-btn" data-tdir="right" style="grid-column:3;grid-row:2">▶</button>
+      </div>
+      <button class="rst-btn" id="tank-fire-btn" style="margin-top:2px;font-size:15px;padding:8px 32px">🔥 开火</button>
+    </div>
+  </div>
+  <div class="rules-panel" id="tank-rules">
+    <h4>🎮 坦克大战 玩法</h4>
+    <p>使用 <strong>WASD / 方向键 / 方向按钮</strong> 移动坦克</p>
+    <p>按 <strong>空格键 / 🔥开火按钮</strong> 发射子弹</p>
+    <p>摧毁所有 <strong>敌方坦克</strong>（红色）即为胜利！保护基地（⭐）不被摧毁</p>
+    <p>棕色 <strong>砖墙</strong> 可被子弹摧毁，灰色 <strong>钢墙</strong> 不可摧毁</p>
+    <p>共有 10 辆敌军坦克，每辆 1 分。你有 <strong>3 条命</strong></p>
+  </div>
+  <div class="game-overlay" id="tank-over"><span id="tank-msg">游戏结束</span><span class="sub" id="tank-sub">点击「重新开始」再来一局</span></div>
 </div>
 
 <script>
@@ -664,15 +697,290 @@ function flappyRender(){
   }
 }
 
+// ======================== Tank Battle ========================
+var tk={
+  COLS:13,ROWS:13,TS:32,map:[],player:null,enemies:[],bullets:[],explosions:[],
+  score:0,lives:3,totalEnemies:10,spawned:0,maxAlive:4,
+  over:false,won:false,frame:0,loop:null,keys:{},spawnTimer:0
+};
+var TK_MAP=[
+  [0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,1,1,0,0,0,0,0,1,1,0,0],
+  [0,0,2,0,0,0,0,0,0,0,2,0,0],
+  [2,0,0,0,0,1,1,1,0,0,0,0,2],
+  [1,0,0,0,0,1,1,1,0,0,0,0,1],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [1,0,0,0,0,1,1,1,0,0,0,0,1],
+  [2,0,0,0,0,1,1,1,0,0,0,0,2],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,1,0,0,0,0,0,0],
+  [0,0,0,0,0,0,5,0,0,0,0,0,0]
+];
+function tankInit(){
+  var t=tk;
+  if(t.loop){cancelAnimationFrame(t.loop);t.loop=null;}
+  t.map=TK_MAP.map(function(r){return r.slice()});
+  t.player={x:6*t.TS+2,y:10*t.TS+2,size:28,dir:0,speed:2,alive:true,cooldown:0};
+  t.enemies=[];t.bullets=[];t.explosions=[];
+  t.score=0;t.lives=3;t.spawned=0;t.over=false;t.won=false;t.frame=0;t.spawnTimer=60;
+  document.getElementById('tank-over').classList.remove('on');
+  document.getElementById('tank-kills').textContent='0';
+  document.getElementById('tank-total').textContent=t.totalEnemies;
+  document.getElementById('tank-lives').textContent='3';
+  t.loop=requestAnimationFrame(tankLoop);
+}
+function tankLoop(){
+  var t=tk;
+  if(!t.over) t.loop=requestAnimationFrame(tankLoop);
+  if(!document.getElementById('panel-tank').classList.contains('active')) return;
+  t.frame++;
+  tankUpdate();
+  tankRender();
+}
+function tankUpdate(){
+  var t=tk;if(t.over)return;
+  // Player movement
+  if(t.player.alive){
+    t.player.cooldown--;
+    var px=0,py=0;
+    if(t.keys['ArrowUp']||t.keys['w']||t.keys['W']||t.keys['dpd_up'])py=-1;else if(t.keys['ArrowDown']||t.keys['s']||t.keys['S']||t.keys['dpd_down'])py=1;
+    else if(t.keys['ArrowLeft']||t.keys['a']||t.keys['A']||t.keys['dpd_left'])px=-1;else if(t.keys['ArrowRight']||t.keys['d']||t.keys['D']||t.keys['dpd_right'])px=1;
+    if(px||py){
+      if(py===-1)t.player.dir=0;else if(px===1)t.player.dir=1;else if(py===1)t.player.dir=2;else if(px===-1)t.player.dir=3;
+      if(tankCanMove(t.player.x+px*t.player.speed,t.player.y,t.player.size,t.player))t.player.x+=px*t.player.speed;
+      if(tankCanMove(t.player.x,t.player.y+py*t.player.speed,t.player.size,t.player))t.player.y+=py*t.player.speed;
+    }
+  }
+  // Enemies
+  tankUpdateEnemies();
+  tankUpdateBullets();
+  tankUpdateExplosions();
+  // Spawn
+  t.spawnTimer--;
+  if(t.spawnTimer<=0&&t.spawned<t.totalEnemies){
+    var alive=0;for(var i=0;i<t.enemies.length;i++)if(t.enemies[i].alive)alive++;
+    if(alive<t.maxAlive){tankSpawnEnemy();t.spawnTimer=90+Math.floor(Math.random()*60);}
+    else t.spawnTimer=10;
+  }
+  // Win
+  if(t.spawned>=t.totalEnemies){
+    var any=false;for(var i=0;i<t.enemies.length;i++)if(t.enemies[i].alive){any=true;break;}
+    if(!any&&!t.over){t.won=true;t.over=true;document.getElementById('tank-msg').textContent='🎉 胜利！';document.getElementById('tank-sub').textContent='消灭了所有敌军！';document.getElementById('tank-over').classList.add('on');}
+  }
+}
+function tankSpawnEnemy(){
+  var t=tk,sp=[[0,0],[6,0],[12,0]],sh=sp.slice().sort(function(){return Math.random()-.5});
+  for(var s=0;s<sh.length;s++){
+    var sx=sh[s][0]*t.TS+2,sy=sh[s][1]*t.TS+2,occ=false;
+    if(t.player.alive&&tankRectOverlap(sx,sy,28,28,t.player.x,t.player.y,t.player.size,t.player.size))occ=true;
+    if(!occ)for(var i=0;i<t.enemies.length;i++)if(t.enemies[i].alive&&tankRectOverlap(sx,sy,28,28,t.enemies[i].x,t.enemies[i].y,t.enemies[i].size,t.enemies[i].size)){occ=true;break;}
+    if(!occ){
+      t.enemies.push({x:sx,y:sy,size:28,dir:2,speed:0.8,alive:true,cooldown:30+Math.floor(Math.random()*60),changeTimer:90+Math.floor(Math.random()*90),stuck:0});
+      t.spawned++;tankAddExplosion(sx+14,sy-4,10,8);return;
+    }
+  }
+  t.spawnTimer=10;
+}
+function tankUpdateEnemies(){
+  var t=tk;
+  for(var i=0;i<t.enemies.length;i++){
+    var e=t.enemies[i];if(!e.alive)continue;
+    e.cooldown--;
+    if(e.cooldown<=0){tankShoot(e);e.cooldown=40+Math.floor(Math.random()*80);}
+    e.changeTimer--;
+    if(e.changeTimer<=0){e.dir=Math.floor(Math.random()*4);e.changeTimer=60+Math.floor(Math.random()*120);}
+    var dx=[0,1,0,-1][e.dir],dy=[-1,0,1,0][e.dir],nx=e.x+dx,ny=e.y+dy;
+    if(tankCanMove(nx,ny,e.size,e)){e.x=nx;e.y=ny;e.stuck=0;}
+    else{e.stuck++;if(e.stuck>5){e.dir=Math.floor(Math.random()*4);e.changeTimer=30+Math.floor(Math.random()*60);e.stuck=0;}}
+    if(e.stuck>0&&e.stuck%15===0)e.dir=Math.floor(Math.random()*4);
+  }
+}
+function tankUpdateBullets(){
+  var t=tk;
+  for(var i=t.bullets.length-1;i>=0;i--){
+    var b=t.bullets[i];if(!b.alive){t.bullets.splice(i,1);continue;}
+    var dx=[0,1,0,-1][b.dir],dy=[-1,0,1,0][b.dir];
+    b.x+=dx*b.speed;b.y+=dy*b.speed;
+    if(b.x<-4||b.x>t.COLS*t.TS+4||b.y<-4||b.y>t.ROWS*t.TS+4){b.alive=false;continue;}
+    // Wall collision
+    var minC=Math.max(0,Math.floor((b.x-3)/t.TS)),maxC=Math.min(t.COLS-1,Math.floor((b.x+3)/t.TS));
+    var minR=Math.max(0,Math.floor((b.y-3)/t.TS)),maxR=Math.min(t.ROWS-1,Math.floor((b.y+3)/t.TS));
+    var hw=false;
+    for(var rr=minR;rr<=maxR&&!hw;rr++)for(var cc=minC;cc<=maxC&&!hw;cc++){
+      var tl=t.map[rr][cc];
+      if(tl===1){t.map[rr][cc]=0;hw=true;tankAddExplosion(cc*t.TS+t.TS/2,rr*t.TS+t.TS/2,14,8);}
+      else if(tl===2){hw=true;tankAddExplosion(cc*t.TS+t.TS/2,rr*t.TS+t.TS/2,10,5);}
+      else if(tl===5){t.map[rr][cc]=0;b.alive=false;tankAddExplosion(cc*t.TS+t.TS/2,rr*t.TS+t.TS/2,30,25);tankGameOver('基地被摧毁！');return;}
+    }
+    if(hw){b.alive=false;continue;}
+    // Tank collision
+    var hit=false;
+    if(b.fromPlayer){
+      for(var j=0;j<t.enemies.length;j++){
+        var e=t.enemies[j];if(!e.alive)continue;
+        if(tankRectOverlap(b.x-3,b.y-3,6,6,e.x,e.y,e.size,e.size)){
+          e.alive=false;b.alive=false;hit=true;t.score++;
+          document.getElementById('tank-kills').textContent=t.score;
+          tankAddExplosion(e.x+e.size/2,e.y+e.size/2,28,20);break;
+        }
+      }
+    }else{
+      var p=t.player;
+      if(p.alive&&tankRectOverlap(b.x-3,b.y-3,6,6,p.x,p.y,p.size,p.size)){
+        b.alive=false;hit=true;p.alive=false;t.lives--;
+        document.getElementById('tank-lives').textContent=t.lives;
+        tankAddExplosion(p.x+p.size/2,p.y+p.size/2,28,20);
+        if(t.lives<=0){tankGameOver('生命用尽！');return;}
+        else setTimeout(function(){if(!tk.over){tk.player.x=6*tk.TS+2;tk.player.y=10*tk.TS+2;tk.player.dir=0;tk.player.alive=true;}},800);
+      }
+    }
+    if(hit)continue;
+  }
+}
+function tankShoot(from){
+  var t=tk,dx=[0,1,0,-1][from.dir],dy=[-1,0,1,0][from.dir];
+  var bx=from.x+from.size/2+dx*(from.size/2+2),by=from.y+from.size/2+dy*(from.size/2+2);
+  if(from===t.player){var cnt=0;for(var i=0;i<t.bullets.length;i++)if(t.bullets[i].fromPlayer&&t.bullets[i].alive)cnt++;if(cnt>=1)return;}
+  t.bullets.push({x:bx-2,y:by-2,dir:from.dir,speed:from===t.player?5:3,alive:true,fromPlayer:from===t.player});
+}
+function tankCanMove(x,y,size,tank){
+  var t=tk;
+  if(x<0||x+size>t.COLS*t.TS||y<0||y+size>t.ROWS*t.TS)return false;
+  var minC=Math.max(0,Math.floor(x/t.TS)),maxC=Math.min(t.COLS-1,Math.floor((x+size-1)/t.TS));
+  var minR=Math.max(0,Math.floor(y/t.TS)),maxR=Math.min(t.ROWS-1,Math.floor((y+size-1)/t.TS));
+  for(var r=minR;r<=maxR;r++)for(var c=minC;c<=maxC;c++){var tl=t.map[r][c];if(tl===1||tl===2||tl===5)return false;}
+  var all=[];
+  if(t.player&&t.player.alive&&t.player!==tank)all.push(t.player);
+  for(var i=0;i<t.enemies.length;i++)if(t.enemies[i].alive&&t.enemies[i]!==tank)all.push(t.enemies[i]);
+  for(var i=0;i<all.length;i++){var o=all[i];if(tankRectOverlap(x,y,size,size,o.x,o.y,o.size,o.size))return false;}
+  return true;
+}
+function tankRectOverlap(x1,y1,w1,h1,x2,y2,w2,h2){return x1<x2+w2&&x1+w1>x2&&y1<y2+h2&&y1+h1>y2;}
+function tankAddExplosion(x,y,rad,frames){tk.explosions.push({x:x,y:y,radius:rad,maxFrames:frames,frame:0});}
+function tankUpdateExplosions(){for(var i=tk.explosions.length-1;i>=0;i--){tk.explosions[i].frame++;if(tk.explosions[i].frame>=tk.explosions[i].maxFrames)tk.explosions.splice(i,1);}}
+function tankGameOver(msg){tk.over=true;document.getElementById('tank-msg').textContent='💥 '+(msg||'游戏结束');document.getElementById('tank-sub').textContent='点击「重新开始」再来一局';document.getElementById('tank-over').classList.add('on');}
+function tankRender(){
+  var c=document.getElementById('tank-canvas'),ctx=c.getContext('2d'),t=tk,TS=t.TS;
+  ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,c.width,c.height);
+  // Map
+  for(var r=0;r<t.ROWS;r++)for(var col=0;col<t.COLS;col++){
+    var x=col*TS,y=r*TS,tl=t.map[r][col];
+    if(tl===1){ // brick
+      ctx.fillStyle='#c47a4a';ctx.fillRect(x+1,y+1,TS-2,TS-2);
+      ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=.5;
+      ctx.beginPath();ctx.moveTo(x+1,y+TS/2);ctx.lineTo(x+TS-1,y+TS/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+TS/2,y+1);ctx.lineTo(x+TS/2,y+TS/2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+TS/4,y+TS/2);ctx.lineTo(x+TS/4,y+TS-1);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+3*TS/4,y+TS/2);ctx.lineTo(x+3*TS/4,y+TS-1);ctx.stroke();
+      ctx.fillStyle='rgba(255,255,200,.08)';ctx.fillRect(x+2,y+2,TS-4,4);
+    }else if(tl===2){ // steel
+      ctx.fillStyle='#8a9aaa';ctx.fillRect(x+1,y+1,TS-2,TS-2);
+      ctx.fillStyle='#9aabb8';ctx.fillRect(x+2,y+2,TS-4,TS-4);
+      ctx.fillStyle='#7a8a9a';ctx.fillRect(x+4,y+4,TS-8,TS-8);
+      ctx.fillStyle='rgba(255,255,255,.15)';
+      var rv=TS/4;ctx.beginPath();ctx.arc(x+rv,y+rv,2,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+TS-rv,y+rv,2,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+rv,y+TS-rv,2,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+TS-rv,y+TS-rv,2,0,Math.PI*2);ctx.fill();
+    }else if(tl===5){ // base
+      ctx.fillStyle='#ffd700';ctx.fillRect(x+4,y+6,TS-8,TS-10);
+      ctx.fillStyle='#ff6b35';ctx.beginPath();ctx.moveTo(x+TS/2,y+2);ctx.lineTo(x+TS/2-6,y+12);ctx.lineTo(x+TS/2+6,y+12);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='14px sans-serif';ctx.textAlign='center';
+      ctx.fillText('⭐',x+TS/2,y+TS-4);
+    }
+  }
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.5;
+  for(var i=0;i<=t.COLS;i++){ctx.beginPath();ctx.moveTo(i*TS,0);ctx.lineTo(i*TS,t.ROWS*TS);ctx.stroke();}
+  for(var i=0;i<=t.ROWS;i++){ctx.beginPath();ctx.moveTo(0,i*TS);ctx.lineTo(t.COLS*TS,i*TS);ctx.stroke();}
+  // Explosions
+  for(var i=0;i<t.explosions.length;i++){
+    var ex=t.explosions[i],pr=ex.frame/ex.maxFrames,r=ex.radius*(.3+.7*pr),al=1-pr;
+    ctx.beginPath();ctx.arc(ex.x,ex.y,r,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,200,50,'+al*.8+')';ctx.fill();
+    ctx.beginPath();ctx.arc(ex.x,ex.y,r*.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,100,30,'+al+')';ctx.fill();
+  }
+  // Bullets
+  for(var i=0;i<t.bullets.length;i++){
+    var b=t.bullets[i];if(!b.alive)continue;
+    ctx.beginPath();ctx.arc(b.x,b.y,3,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();
+    ctx.beginPath();ctx.arc(b.x,b.y,5,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,200,.3)';ctx.fill();
+  }
+  // Enemy tanks
+  for(var i=0;i<t.enemies.length;i++){var e=t.enemies[i];if(e.alive)tankDrawTank(ctx,e.x,e.y,e.size,e.dir,false);}
+  // Player tank
+  if(t.player&&t.player.alive)tankDrawTank(ctx,t.player.x,t.player.y,t.player.size,t.player.dir,true);
+}
+function tankDrawTank(ctx,x,y,size,dir,isPlayer){
+  var cx=x+size/2,cy=y+size/2;
+  var bc=isPlayer?'rgba(80,200,100,.9)':'rgba(220,70,70,.9)';
+  var tc=isPlayer?'rgba(50,150,70,.95)':'rgba(160,40,40,.95)';
+  var uc=isPlayer?'rgba(70,220,110,.95)':'rgba(240,80,80,.95)';
+  var lc=isPlayer?'#4caf50':'#d32f2f';
+  // Tracks (sides)
+  ctx.fillStyle=tc;
+  if(dir===0||dir===2){ctx.beginPath();ctx.roundRect(x+1,y+2,6,size-4,2);ctx.fill();ctx.beginPath();ctx.roundRect(x+size-7,y+2,6,size-4,2);ctx.fill();}
+  else{ctx.beginPath();ctx.roundRect(x+2,y+1,size-4,6,2);ctx.fill();ctx.beginPath();ctx.roundRect(x+2,y+size-7,size-4,6,2);ctx.fill();}
+  // Body
+  ctx.fillStyle=bc;ctx.beginPath();ctx.roundRect(x+5,y+5,size-10,size-10,3);ctx.fill();
+  // Turret
+  ctx.fillStyle=uc;ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
+  // Barrel
+  ctx.strokeStyle=lc;ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,cy);
+  var bl=size/2+4;
+  if(dir===0)ctx.lineTo(cx,cy-bl);else if(dir===1)ctx.lineTo(cx+bl,cy);else if(dir===2)ctx.lineTo(cx,cy+bl);else ctx.lineTo(cx-bl,cy);
+  ctx.stroke();ctx.lineCap='butt';
+  // Tread marks
+  ctx.strokeStyle=isPlayer?'rgba(50,180,70,.5)':'rgba(200,50,50,.5)';ctx.lineWidth=1;
+  for(var i=0;i<5;i++){var tp=3+(size-6)*i/4;
+    if(dir===0||dir===2){ctx.beginPath();ctx.moveTo(x+2,tp+2);ctx.lineTo(x+6,tp+2);ctx.stroke();ctx.beginPath();ctx.moveTo(x+size-6,tp+2);ctx.lineTo(x+size-2,tp+2);ctx.stroke();}
+    else{ctx.beginPath();ctx.moveTo(tp+2,y+2);ctx.lineTo(tp+2,y+6);ctx.stroke();ctx.beginPath();ctx.moveTo(tp+2,y+size-6);ctx.lineTo(tp+2,y+size-2);ctx.stroke();}
+  }
+}
+// Tank keyboard
+document.addEventListener('keydown',function(e){
+  var k=e.key;tk.keys[k]=true;
+  if((k===' '||k==='Space')&&document.getElementById('panel-tank').classList.contains('active')){e.preventDefault();tankPlayerShoot();}
+});
+document.addEventListener('keyup',function(e){tk.keys[e.key]=false;});
+function tankPlayerShoot(){
+  if(!document.getElementById('panel-tank').classList.contains('active'))return;
+  var t=tk;if(t.over||!t.player.alive)return;
+  tankShoot(t.player);
+}
+// Tank buttons
+(function(){
+  var bm={up:'dpd_up',down:'dpd_down',left:'dpd_left',right:'dpd_right'},ctrl=document.getElementById('tank-ctrl');
+  function setKey(dir,v){var k=bm[dir];if(k)tk.keys[k]=v;}
+  ctrl.addEventListener('mousedown',function(e){var b=e.target.closest('.dir-btn');if(!b)return;e.preventDefault();setKey(b.dataset.tdir,true);});
+  ctrl.addEventListener('mouseup',function(e){var b=e.target.closest('.dir-btn');if(!b)return;setKey(b.dataset.tdir,false);});
+  ctrl.addEventListener('mouseleave',function(){for(var k in bm)tk.keys[bm[k]]=false;});
+  ctrl.addEventListener('touchstart',function(e){var b=e.target.closest('.dir-btn');if(!b)return;e.preventDefault();setKey(b.dataset.tdir,true);},{passive:false});
+  ctrl.addEventListener('touchend',function(e){var b=e.target.closest('.dir-btn');if(!b)return;e.preventDefault();setKey(b.dataset.tdir,false);},{passive:false});
+  ctrl.addEventListener('touchcancel',function(){for(var k in bm)tk.keys[bm[k]]=false;});
+  document.getElementById('tank-fire-btn').addEventListener('click',tankPlayerShoot);
+  document.getElementById('tank-fire-btn').addEventListener('touchstart',function(e){e.preventDefault();tankPlayerShoot();},{passive:false});
+})();
+// Tank rules toggle
+setTimeout(function(){
+  document.getElementById('tank-info-btn').addEventListener('click',function(){document.getElementById('tank-rules').classList.toggle('on');});
+},0);
+
 // ======================== Init ========================
 g2048Init();
 msInit();
 snakeInit();
 flappyInit();
+tankInit();
 
 // expose for HTML onclick
 window.g2048Init=g2048Init;window.msInit=msInit;window.msToggleFlag=msToggleFlag;
-window.snakeInit=snakeInit;window.flappyInit=flappyInit;
+window.snakeInit=snakeInit;window.flappyInit=flappyInit;window.tankInit=tankInit;
 
 // 2048 rules toggle
 document.getElementById('g2048-info-btn').addEventListener('click',function(){
