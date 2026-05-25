@@ -491,12 +491,8 @@ function snakeUpdate(){
 function snakeRender(){
   var c=document.getElementById('snake-canvas'),ctx=c.getContext('2d'),s=snake,cl=s.CELL;
   ctx.clearRect(0,0,c.width,c.height);
-  // cell bg checkerboard
-  for(var y=0;y<s.ROWS;y++)for(var x=0;x<s.COLS;x++){
-    if((x+y)%2===0){ctx.fillStyle='rgba(255,255,255,.03)';ctx.fillRect(x*cl,y*cl,cl,cl);}
-  }
   // grid
-  ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=0.8;
+  ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=0.6;
   for(var x=0;x<=s.COLS;x++){ctx.beginPath();ctx.moveTo(x*cl,0);ctx.lineTo(x*cl,s.ROWS*cl);ctx.stroke();}
   for(var y=0;y<=s.ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*cl);ctx.lineTo(s.COLS*cl,y*cl);ctx.stroke();}
   // food
