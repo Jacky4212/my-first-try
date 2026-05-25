@@ -18,7 +18,60 @@ body{
 .hdr h1{font-size:34px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
 .hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
-.list{max-width:900px;margin:20px auto;padding:0 20px;display:grid;gap:14px}
+.srch{max-width:900px;margin:0 auto;padding:0 20px 10px;position:relative}
+.srch input{
+  width:100%;padding:10px 16px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  background:rgba(255,255,255,0.06);color:#e0d0e8;font-size:14px;outline:none;
+  backdrop-filter:blur(10px);transition:border-color .3s
+}
+.srch input::placeholder{color:#5a4a70}
+.srch input:focus{border-color:rgba(244,143,177,0.3)}
+.srch .clr{position:absolute;right:28px;top:50%;transform:translateY(-50%);border:none;background:none;color:#6a5a80;font-size:16px;cursor:pointer;display:none;padding:4px}
+.srch .clr.on{display:block}
+.srch .clr:hover{color:#f48fb1}
+
+.star{
+  display:inline-block;cursor:pointer;user-select:none;font-size:17px;
+  margin-left:5px;vertical-align:middle;line-height:1;transition:transform .2s
+}
+.star:hover{transform:scale(1.35)}
+.star.on{color:#f48fb1;text-shadow:0 0 10px rgba(244,143,177,0.5)}
+
+.capo-badge{
+  font-size:11px;color:#a8d8ea;background:rgba(168,216,234,0.12);
+  padding:2px 10px;border-radius:20px;white-space:nowrap;margin-left:auto;flex-shrink:0;
+  cursor:pointer;transition:all .3s;min-width:46px;text-align:center;line-height:1.7
+}
+.capo-badge:hover{background:rgba(168,216,234,0.2)}
+.capo-badge.none{color:#5a4a70;background:transparent}
+.capo-badge.none:hover{background:rgba(255,255,255,0.06)}
+.card .n{flex:1;min-width:0}
+.card .n h3{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.metro{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.metro-btn{
+  width:32px;height:32px;border:none;border-radius:50%;font-size:14px;cursor:pointer;
+  background:#444;color:#fff;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0
+}
+.metro-btn:hover{background:#666}
+.metro-btn.on{background:#a8d8ea;color:#1a1d4e}
+.metro-btn.on:hover{background:#81d4fa}
+.metro-sel{
+  padding:2px 4px;border:1px solid #555;border-radius:5px;
+  background:#111;color:#eee;font-size:12px;outline:none;cursor:pointer;font-family:inherit
+}
+.metro-sel:focus{border-color:#a8d8ea}
+.bdots{display:inline-flex;gap:3px;align-items:center}
+.bdot{
+  width:7px;height:7px;border-radius:50%;background:#555;
+  transition:background .06s,transform .06s;flex-shrink:0
+}
+.bdot.on{background:#a8d8ea;transform:scale(1.4)}
+.bdot.acc{width:9px;height:9px}
+.bdot.acc.on{background:#f48fb1;box-shadow:0 0 6px rgba(244,143,177,0.6)}
+
+.list{max-width:900px;margin:12px auto;padding:0 20px;display:grid;gap:14px}
 .card{
   background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border-radius:16px;
   padding:20px 24px;border:1px solid rgba(255,255,255,0.06);
@@ -121,6 +174,8 @@ body{
   <div class="div"></div>
 </div>
 
+<div class="srch"><input type="text" id="sInp" placeholder="搜索歌曲或艺人..." autocomplete="off"><button class="clr" id="sClr">✕</button></div>
+
 <div class="list" id="list"></div>
 <div class="footer">双鱼小栈 · 吉他谱</div>
 
@@ -158,6 +213,31 @@ body{
       <span class="vl" id="zmVal" style="min-width:36px">25%</span>
       <button class="zbtn" id="zmIn">+</button>
     </div>
+
+    <div class="sep"></div>
+
+    <div class="cgrp metro">
+      <button class="metro-btn" id="mBtn" title="快捷键 M">▶</button>
+      <span class="lb">BPM</span>
+      <input type="range" id="mBpm" min="40" max="240" value="120" step="1" style="width:70px">
+      <span class="vl" id="mBpmV" style="min-width:28px">120</span>
+      <span class="bdots" id="mDots"></span>
+      <select class="metro-sel" id="mTime">
+        <option value="2">2/4</option>
+        <option value="3">3/4</option>
+        <option value="4" selected>4/4</option>
+        <option value="6">6/8</option>
+      </select>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="cgrp">
+      <span class="lb">变调夹</span>
+      <button class="zbtn" id="cDown">−</button>
+      <span class="vl" id="cVal" style="min-width:16px">0</span>
+      <button class="zbtn" id="cUp">+</button>
+    </div>
   </div>
 </div>
 
@@ -173,17 +253,30 @@ var SONGS = [
   {id:'coldday', title:'最冷一天',          artist:'张国荣', file:'coldday.jpg', size:'143 KB'},
 ];
 
-// ===== render =====
-var listEl = document.getElementById('list');
-listEl.innerHTML = SONGS.map(function(s){
-  var info = s.size;
-  if (s.artist) info = s.artist + ' · ' + info;
-  return '<div class="card" data-id="'+s.id+'">'+
-    '<div class="ico">🎸</div>'+
-    '<div class="n"><h3>'+s.title+'</h3><p>'+info+'</p></div></div>';
-}).join('');
+// ===== localStorage meta (favorites + capo) =====
+var STORE = 'guitar-meta';
+function loadMeta(){
+  try{ return JSON.parse(localStorage.getItem(STORE)) || {}; }catch(e){ return {}; }
+}
+function saveMeta(m){
+  try{ localStorage.setItem(STORE, JSON.stringify(m)); }catch(e){}
+}
+function getMeta(id){
+  var m = loadMeta();
+  return m[id] || {fav:false, capo:0};
+}
+function setMeta(id, u){
+  var m = loadMeta();
+  m[id] = m[id] || {fav:false, capo:0};
+  for(var k in u) m[id][k] = u[k];
+  saveMeta(m);
+}
 
-// ===== viewer =====
+// ===== DOM refs =====
+var listEl = document.getElementById('list');
+var sInp = document.getElementById('sInp');
+var sClr = document.getElementById('sClr');
+
 var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     vImg=document.getElementById('vImg'), vLd=document.getElementById('vLd'),
     vTitle=document.getElementById('vTitle'), vClose=document.getElementById('vClose'),
@@ -191,65 +284,145 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
     spdRng=document.getElementById('spdRng'), spdInp=document.getElementById('spdInp'),
     spdVal=document.getElementById('spdVal'),
     zmIn=document.getElementById('zmIn'), zmOut=document.getElementById('zmOut'),
-    zmVal=document.getElementById('zmVal');
+    zmVal=document.getElementById('zmVal'),
+    cVal=document.getElementById('cVal'), cUp=document.getElementById('cUp'), cDown=document.getElementById('cDown'),
+    mBtn=document.getElementById('mBtn'), mBpm=document.getElementById('mBpm'),
+    mBpmV=document.getElementById('mBpmV'), mDots=document.getElementById('mDots'),
+    mTime=document.getElementById('mTime');
 
 var rolling=false, speed=4, zoom=25, arrowTimers={}, rollTimer=null, rollAcc=0;
+var currentSongId = null;
+var filterText = '';
 
+// ===== Render list =====
+function renderList(filter){
+  var data = SONGS;
+  if(filter){
+    var lf = filter.toLowerCase();
+    data = data.filter(function(s){
+      return s.title.toLowerCase().indexOf(lf) !== -1 ||
+             (s.artist && s.artist.toLowerCase().indexOf(lf) !== -1);
+    });
+  }
+  var meta = loadMeta();
+  var sorted = data.slice().sort(function(a,b){
+    var fa = meta[a.id] && meta[a.id].fav ? 1 : 0;
+    var fb = meta[b.id] && meta[b.id].fav ? 1 : 0;
+    return fb - fa;
+  });
+
+  if(!sorted.length){
+    listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6a5a80;font-size:14px;letter-spacing:2px">没有找到匹配的歌曲</div>';
+    return;
+  }
+
+  listEl.innerHTML = sorted.map(function(s){
+    var sm = meta[s.id] || {fav:false, capo:0};
+    var info = s.size;
+    if(s.artist) info = s.artist + ' · ' + info;
+    var starCls = sm.fav ? 'star on' : 'star';
+    var starCh = sm.fav ? '★' : '☆';
+    var capoText = sm.capo > 0 ? 'Capo '+sm.capo : '无';
+    var capoCls = sm.capo > 0 ? 'capo-badge' : 'capo-badge none';
+    return '<div class="card" data-id="'+s.id+'">'+
+      '<div class="ico">🎸</div>'+
+      '<div class="n"><h3>'+s.title+' <span class="'+starCls+'" data-id="'+s.id+'">'+starCh+'</span></h3><p>'+info+'</p></div>'+
+      '<span class="'+capoCls+'" data-id="'+s.id+'">'+capoText+'</span></div>';
+  }).join('');
+}
+
+renderList('');
+
+// ===== Search =====
+sInp.addEventListener('input', function(){
+  filterText = this.value;
+  sClr.classList.toggle('on', filterText.length > 0);
+  renderList(filterText);
+});
+sClr.addEventListener('click', function(){
+  sInp.value = '';
+  filterText = '';
+  sClr.classList.remove('on');
+  renderList('');
+  sInp.focus();
+});
+
+// ===== Click delegation =====
+listEl.addEventListener('click', function(e){
+  // star toggle
+  if(e.target.classList.contains('star')){
+    e.stopPropagation();
+    var id = e.target.dataset.id;
+    var sm = getMeta(id);
+    setMeta(id, {fav: !sm.fav});
+    renderList(filterText);
+    return;
+  }
+  // capo cycle on card
+  if(e.target.classList.contains('capo-badge')){
+    e.stopPropagation();
+    var id = e.target.dataset.id;
+    var sm = getMeta(id);
+    setMeta(id, {capo: sm.capo >= 7 ? 0 : sm.capo + 1});
+    renderList(filterText);
+    return;
+  }
+  // open song
+  var card = e.target.closest('.card');
+  if(!card) return;
+  var song = SONGS.find(function(s){ return s.id === card.dataset.id; });
+  if(song) openViewer(song);
+});
+
+// ===== Viewer =====
 function openViewer(song){
   stopRoll();
+  stopMetro();
   zoom=25;
   applyZoom();
   vLd.style.display='block'; vLd.textContent='加载中...';
   vTitle.textContent=song.title+' — '+(song.artist||'');
   vBody.scrollTop=0;
   vwr.classList.add('on');
+  currentSongId = song.id;
 
-  // 超时兜底：1秒后隐藏加载提示，图片会逐步显示
+  var sm = getMeta(song.id);
+  cVal.textContent = sm.capo;
+
   var ldTimer = setTimeout(function(){ vLd.style.display='none'; }, 1000);
   vImg.onload=function(){ clearTimeout(ldTimer); vLd.style.display='none'; };
-  vImg.onerror=function(){ clearTimeout(ldTimer); vLd.textContent='加载失败'; };
-  vImg.src=song.file;
+  vImg.onerror=function(){ clearTimeout(ldTimer); vLd.textContent='加载失败，点击图片重试'; };
+  vImg.src = song.file;
 }
-
 function closeViewer(){
   vwr.classList.remove('on');
   stopRoll();
+  stopMetro();
+  currentSongId = null;
 }
-
-vClose.addEventListener('click',closeViewer);
-
-// click song
-listEl.addEventListener('click',function(e){
-  var card=e.target.closest('.card');
-  if(!card)return;
-  var song=SONGS.find(function(s){return s.id===card.dataset.id});
-  if(song)openViewer(song);
-});
+vClose.addEventListener('click', closeViewer);
 
 // keyboard
-document.addEventListener('keydown',function(e){
-  if(!vwr.classList.contains('on'))return;
-  if(e.key==='Escape')closeViewer();
-  if(e.key===' '){e.preventDefault();vRoll.click();}
+document.addEventListener('keydown', function(e){
+  if(!vwr.classList.contains('on')) return;
+  if(e.key === 'Escape') closeViewer();
+  if(e.key === ' ') { e.preventDefault(); vRoll.click(); }
+  if(e.key === 'm' || e.key === 'M') { e.preventDefault(); mBtn.click(); }
 });
 
-// ===== auto scroll (setInterval, 无帧率依赖) =====
-vRoll.addEventListener('click',function(){
-  rolling?stopRoll():startRoll();
-});
-
+// ===== auto scroll =====
+vRoll.addEventListener('click', function(){ rolling ? stopRoll() : startRoll(); });
 function startRoll(){
-  if(rolling)return;
+  if(rolling) return;
   rolling=true; rollAcc=0;
   vRoll.textContent='⏸ 暂停';
   vRoll.classList.add('on');
   rollTimer=setInterval(function(){
     rollAcc+=speed*speed*0.03 + speed*0.1;
     if(rollAcc>=1){vBody.scrollTop+=Math.floor(rollAcc); rollAcc%=1;}
-    if(vBody.scrollTop+vBody.clientHeight>=vBody.scrollHeight-3) stopRoll();
+    if(vBody.scrollTop+vBody.clientHeight >= vBody.scrollHeight-3) stopRoll();
   },50);
 }
-
 function stopRoll(){
   rolling=false;
   vRoll.textContent='▶ 自动滚动';
@@ -266,7 +439,6 @@ function setSpeed(v){
   spdInp.value=v.toFixed(1);
   spdVal.textContent=v.toFixed(1);
 }
-
 spdRng.addEventListener('input',function(){setSpeed(parseFloat(spdRng.value));});
 spdInp.addEventListener('focus',function(){this.select();});
 spdInp.addEventListener('blur',function(){
@@ -298,12 +470,107 @@ function applyZoom(){
   vImg.style.maxWidth='none';
   zmVal.textContent=zoom+'%';
 }
-
 zmIn.addEventListener('click',function(){
   if(zoom<300){zoom=Math.min(300,zoom+25); applyZoom();}
 });
 zmOut.addEventListener('click',function(){
   if(zoom>25){zoom=Math.max(25,zoom-25); applyZoom();}
+});
+
+// ===== Capo (viewer) =====
+function updateCapo(delta){
+  if(!currentSongId) return;
+  var sm = getMeta(currentSongId);
+  var n = Math.max(0, Math.min(7, sm.capo + delta));
+  setMeta(currentSongId, {capo: n});
+  cVal.textContent = n;
+  renderList(filterText);
+}
+cUp.addEventListener('click', function(){ updateCapo(1); });
+cDown.addEventListener('click', function(){ updateCapo(-1); });
+
+// ===== Metronome (Web Audio API lookahead scheduler) =====
+var mCtx = null, mPlay = false, mBeat = 0, mNext = 0, mTimer = null;
+var mBpmV_ = 120, mBeats = 4;
+
+function initMCtx(){
+  if(!mCtx) mCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(mCtx.state === 'suspended') mCtx.resume();
+}
+function mClick(t, acc){
+  var o = mCtx.createOscillator(), g = mCtx.createGain();
+  o.connect(g); g.connect(mCtx.destination);
+  o.frequency.value = acc ? 1200 : 800;
+  o.type = 'sine';
+  g.gain.setValueAtTime(acc ? 0.45 : 0.22, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+  o.start(t); o.stop(t + 0.05);
+}
+function mUpdDots(i){
+  var ds = mDots.querySelectorAll('.bdot');
+  for(var j=0;j<ds.length;j++) ds[j].classList.toggle('on', j===i);
+}
+function mSched(){
+  if(!mPlay) return;
+  var inv = 60 / mBpmV_;
+  while(mNext < mCtx.currentTime + 0.1){
+    mClick(mNext, mBeat === 0);
+    mUpdDots(mBeat);
+    mNext += inv;
+    mBeat = (mBeat + 1) % mBeats;
+  }
+  mTimer = setTimeout(mSched, 25);
+}
+function startMetro(){
+  initMCtx();
+  mPlay = true;
+  mBeats = parseInt(mTime.value);
+  mBeat = 0;
+  mNext = mCtx.currentTime + 0.05;
+  mBtn.textContent = '⏸';
+  mBtn.classList.add('on');
+  mSched();
+}
+function stopMetro(){
+  mPlay = false;
+  if(mTimer){ clearTimeout(mTimer); mTimer = null; }
+  mBtn.textContent = '▶';
+  mBtn.classList.remove('on');
+  var ds = mDots.querySelectorAll('.bdot');
+  for(var j=0;j<ds.length;j++) ds[j].classList.remove('on');
+}
+mBtn.addEventListener('click', function(){ mPlay ? stopMetro() : startMetro(); });
+mBpm.addEventListener('input', function(){
+  mBpmV_ = parseInt(mBpm.value);
+  mBpmV.textContent = mBpmV_;
+});
+mTime.addEventListener('change', function(){
+  mBeats = parseInt(mTime.value);
+  mDots.innerHTML = '';
+  for(var i=0;i<mBeats;i++){
+    var d = document.createElement('span');
+    d.className = 'bdot' + (i===0 ? ' acc' : '');
+    mDots.appendChild(d);
+  }
+});
+(function initBeatDots(){
+  for(var i=0;i<4;i++){
+    var d = document.createElement('span');
+    d.className = 'bdot' + (i===0 ? ' acc' : '');
+    mDots.appendChild(d);
+  }
+})();
+
+// ===== img retry on click =====
+vImg.addEventListener('click', function(){
+  if(vLd.textContent.indexOf('重试') !== -1 && currentSongId){
+    var s = SONGS.find(function(x){ return x.id === currentSongId; });
+    if(s){
+      vLd.style.display = 'block'; vLd.textContent = '加载中...';
+      vImg.src = s.file;
+      setTimeout(function(){ vLd.style.display = 'none'; }, 1000);
+    }
+  }
 });
 
 })();
