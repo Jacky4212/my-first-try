@@ -32,10 +32,26 @@ body{
 
 .star{
   display:inline-block;cursor:pointer;user-select:none;font-size:17px;
-  margin-left:5px;vertical-align:middle;line-height:1;transition:transform .2s
+  margin-left:5px;vertical-align:middle;line-height:1;transition:all .3s
 }
-.star:hover{transform:scale(1.35)}
-.star.on{color:#f48fb1;text-shadow:0 0 10px rgba(244,143,177,0.5)}
+.star:hover{transform:scale(1.4)}
+.star.on{color:#f48fb1;font-size:20px;text-shadow:0 0 14px rgba(244,143,177,0.6)}
+.star.pop{animation:starPop .4s ease}
+@keyframes starPop{
+  0%{transform:scale(1)}
+  40%{transform:scale(1.6);color:#ffe0ec}
+  100%{transform:scale(1)}
+}
+.card.fav{
+  border-color:rgba(244,143,177,0.25);
+  background:rgba(244,143,177,0.06);
+  box-shadow:0 0 20px rgba(244,143,177,0.06)
+}
+.card.fav:hover{
+  border-color:rgba(244,143,177,0.35);
+  background:rgba(244,143,177,0.09);
+  box-shadow:0 8px 30px rgba(244,143,177,0.1)
+}
 
 .capo-badge{
   font-size:11px;color:#a8d8ea;background:rgba(168,216,234,0.12);
@@ -324,7 +340,8 @@ function renderList(filter){
     var starCh = sm.fav ? '★' : '☆';
     var capoText = sm.capo > 0 ? 'Capo '+sm.capo : '无';
     var capoCls = sm.capo > 0 ? 'capo-badge' : 'capo-badge none';
-    return '<div class="card" data-id="'+s.id+'">'+
+    var cardFav = sm.fav ? ' fav' : '';
+    return '<div class="card'+cardFav+'" data-id="'+s.id+'">'+
       '<div class="ico">🎸</div>'+
       '<div class="n"><h3>'+s.title+' <span class="'+starCls+'" data-id="'+s.id+'">'+starCh+'</span></h3><p>'+info+'</p></div>'+
       '<span class="'+capoCls+'" data-id="'+s.id+'">'+capoText+'</span></div>';
@@ -354,7 +371,11 @@ listEl.addEventListener('click', function(e){
     e.stopPropagation();
     var id = e.target.dataset.id;
     var sm = getMeta(id);
-    setMeta(id, {fav: !sm.fav});
+    var newFav = !sm.fav;
+    setMeta(id, {fav: newFav});
+    // pop animation
+    e.target.classList.add('pop');
+    setTimeout(function(){ e.target.classList.remove('pop'); }, 400);
     renderList(filterText);
     return;
   }
