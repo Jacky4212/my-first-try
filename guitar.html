@@ -172,6 +172,16 @@ body{
 .agrp button:active{background:#777}
 .sep{width:1px;height:24px;background:rgba(255,255,255,0.12)}
 
+.fav-fil{display:flex;gap:8px;max-width:900px;margin:0 auto;padding:0 20px 12px}
+.fav-fil button{
+  padding:5px 16px;border:1px solid rgba(255,255,255,0.08);border-radius:20px;
+  background:rgba(255,255,255,0.04);color:#8a7aaa;font-size:13px;cursor:pointer;
+  transition:all .3s;letter-spacing:1px;font-family:inherit
+}
+.fav-fil button:hover{border-color:rgba(244,143,177,0.2);color:#b8a0cc}
+.fav-fil button.on{background:rgba(244,143,177,0.12);border-color:rgba(244,143,177,0.25);color:#f48fb1}
+.fav-fil .cnt{font-size:11px;margin-left:3px;opacity:0.6}
+
 @media(max-width:640px){
   .hdr h1{font-size:26px;letter-spacing:3px}
   .card{padding:14px 16px}
@@ -191,6 +201,11 @@ body{
 </div>
 
 <div class="srch"><input type="text" id="sInp" placeholder="搜索歌曲或艺人..." autocomplete="off"><button class="clr" id="sClr">✕</button></div>
+
+<div class="fav-fil" id="favFil">
+  <button class="on" data-fav="all">全部</button>
+  <button data-fav="fav">⭐ 收藏 <span class="cnt" id="favCnt">0</span></button>
+</div>
 
 <div class="list" id="list"></div>
 <div class="footer">双鱼小栈 · 吉他谱</div>
@@ -309,6 +324,7 @@ var vwr=document.getElementById('vwr'), vBody=document.getElementById('vBody'),
 var rolling=false, speed=4, zoom=25, arrowTimers={}, rollTimer=null, rollAcc=0;
 var currentSongId = null;
 var filterText = '';
+var showFavOnly = false;
 
 // ===== Render list =====
 function renderList(filter){
@@ -321,14 +337,25 @@ function renderList(filter){
     });
   }
   var meta = loadMeta();
+
+  // showFavOnly — only favorited
+  if(showFavOnly){
+    data = data.filter(function(s){ return meta[s.id] && meta[s.id].fav; });
+  }
+
   var sorted = data.slice().sort(function(a,b){
     var fa = meta[a.id] && meta[a.id].fav ? 1 : 0;
     var fb = meta[b.id] && meta[b.id].fav ? 1 : 0;
     return fb - fa;
   });
 
+  // update fav count
+  var favCount = 0;
+  for(var k in meta){ if(meta[k].fav) favCount++; }
+  document.getElementById('favCnt').textContent = favCount;
+
   if(!sorted.length){
-    listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6a5a80;font-size:14px;letter-spacing:2px">没有找到匹配的歌曲</div>';
+    listEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6a5a80;font-size:14px;letter-spacing:2px">'+(showFavOnly?'还没有收藏的歌曲，点击 ☆ 收藏':'没有找到匹配的歌曲')+'</div>';
     return;
   }
 
@@ -362,6 +389,16 @@ sClr.addEventListener('click', function(){
   sClr.classList.remove('on');
   renderList('');
   sInp.focus();
+});
+
+// ===== Favorite filter =====
+var favFil = document.getElementById('favFil');
+favFil.addEventListener('click', function(e){
+  var btn = e.target.closest('button');
+  if(!btn) return;
+  showFavOnly = btn.dataset.fav === 'fav';
+  favFil.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b === btn); });
+  renderList(filterText);
 });
 
 // ===== Click delegation =====
