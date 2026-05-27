@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>后来 - 吉他演奏</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#0f0f1a;color:#eee;display:flex;flex-direction:column;align-items:center;padding:24px 16px;min-height:100vh}
+h1{font-size:28px;color:#e94560;letter-spacing:4px;margin-bottom:2px}
+.sub{color:#666;font-size:13px;margin-bottom:12px}
+#controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;margin:12px 0}
+.btn{border:none;padding:10px 30px;border-radius:25px;font-size:15px;cursor:pointer;transition:.2s;font-weight:600}
+.btn-play{background:#e94560;color:#fff}.btn-play:hover{background:#ff6b81;transform:scale(1.05)}.btn-play:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-stop{background:#222;color:#aaa;border:1px solid #444}.btn-stop:hover{background:#333;color:#fff}.btn-stop:disabled{opacity:.3;cursor:not-allowed}
+.btn-test{background:#1a3a2a;color:#4ecdc4;border:1px solid #4ecdc4;padding:6px 16px;font-size:12px}
+#display{width:100%;max-width:640px;margin:16px 0}
+#chordBox{background:#0d1b2a;border-radius:12px;padding:16px;text-align:center;min-height:56px;border:1px solid #1a2a3a}
+#chordName{font-size:38px;font-weight:800;color:#e94560;letter-spacing:2px}
+#measureInfo{color:#888;font-size:13px;margin-top:2px}
+#lyricsBox{background:#111122;border-radius:10px;padding:14px 20px;min-height:48px;text-align:center;font-size:18px;color:#f0d9b5;border:1px solid #1a1a30;margin-top:10px;line-height:1.6}
+#sectionTag{display:inline-block;padding:2px 12px;border-radius:4px;font-size:11px;margin:6px 0;background:#1a2a3a;color:#4ecdc4}
+#progress{width:100%;max-width:640px;height:3px;background:#222;border-radius:2px;margin:10px 0;overflow:hidden}
+#progressFill{height:100%;background:linear-gradient(90deg,#e94560,#ff6b81);width:0%;transition:width .1s}
+#status{color:#666;font-size:13px;margin:4px 0;min-height:18px}
+#time{font-size:12px;color:#555}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:8px 0;font-size:11px;color:#666}
+.tag{display:inline-block;padding:1px 8px;border-radius:3px;font-size:10px}
+.tag-arp{background:#0a2a2a;color:#4ecdc4}
+.tag-dec{background:#2a1a0a;color:#ffa500}
+.tag-stm{background:#2a0a1a;color:#e94560}
+</style>
+</head>
+<body>
+<h1>后 来</h1>
+<div class="sub">刘若英 · 75 BPM · 4/4 · Capo 3</div>
+
+<div id="controls">
+<button class="btn btn-play" id="playBtn">▶ 演奏</button>
+<button class="btn btn-stop" id="stopBtn" disabled>■ 停止</button>
+<button class="btn-test" id="testBtn">🔊 测试音频</button>
+<div class="vol-row" style="display:inline-flex;align-items:center;gap:6px;color:#666;font-size:12px">
+  <span>音量</span>
+  <input type="range" id="volSlider" min="0" max="100" value="70" style="width:80px;accent-color:#e94560">
+</div>
+</div>
+
+<div id="display">
+<div id="chordBox"><div id="chordName">—</div><div id="measureInfo">就绪</div></div>
+<div id="lyricsBox">🎵</div>
+<div id="sectionTag"></div>
+</div>
+
+<div id="progress"><div id="progressFill"></div></div>
+<div id="time">0:00</div>
+<div id="status"></div>
+
+<div class="legend">
+<span><span class="tag tag-arp">琶音</span> 前奏/间奏</span>
+<span><span class="tag tag-dec">分解</span> 副歌/主歌</span>
+<span><span class="tag tag-stm">扫弦</span> 副歌高潮</span>
+</div>
+
+<script>
+// ==================== DATA ====================
+const D = {
+  bpm:75, measures:[
+    {id:1,ch:[["C",4]],ly:"",sec:"前奏"},
+    {id:2,ch:[["G/B",4]],ly:"",sec:"前奏"},
+    {id:3,ch:[["Am",4]],ly:"",sec:"前奏"},
+    {id:4,ch:[["Am7/G",4]],ly:"",sec:"前奏"},
+    {id:5,ch:[["C",2],["G",2]],ly:"后来",sec:"副歌"},
+    {id:6,ch:[["Em",2],["Am",2]],ly:"我总算学会了",sec:"副歌"},
+    {id:7,ch:[["Dm",2],["G",2]],ly:"如何去爱",sec:"副歌"},
+    {id:8,ch:[["C",2],["Em",2]],ly:"可惜你早已远去",sec:"副歌"},
+    {id:9,ch:[["Am",2],["F",2]],ly:"消失在人海",sec:"副歌"},
+    {id:10,ch:[["G",2],["Em",2]],ly:"后来终于在眼泪中",sec:"副歌"},
+    {id:11,ch:[["Am",2],["Dm",2]],ly:"明白",sec:"副歌"},
+    {id:12,ch:[["G",2],["C",2]],ly:"有些人一旦错过就不在",sec:"副歌"},
+    {id:13,ch:[["C",2],["G",2]],ly:"栀子花 白花瓣",sec:"主歌"},
+    {id:14,ch:[["Em",2],["Am",2]],ly:"那时候的爱情",sec:"主歌"},
+    {id:15,ch:[["F",2],["C",2]],ly:"落在我蓝色百褶裙上",sec:"主歌"},
+    {id:16,ch:[["F",2],["G",2]],ly:"爱你 你轻声说",sec:"主歌"},
+    {id:17,ch:[["C",2],["G",2]],ly:"那个永恒的夜晚",sec:"主歌"},
+    {id:18,ch:[["Em",2],["Am",2]],ly:"十七岁仲夏",sec:"主歌"},
+    {id:19,ch:[["F",2],["C",2]],ly:"你吻我的那个夜晚",sec:"主歌"},
+    {id:20,ch:[["F",2],["G",2]],ly:"让我往后的时光",sec:"主歌"},
+    {id:21,ch:[["Em",2],["Am",2]],ly:"每当有感叹",sec:"主歌"},
+    {id:22,ch:[["Dm",2],["G",2]],ly:"总想起 当天的星光",sec:"主歌"},
+    {id:23,ch:[["C",2],["G",2]],ly:"",sec:"主歌"},
+    {id:24,ch:[["Em",2],["Am",2]],ly:"",sec:"主歌"},
+    {id:25,ch:[["F",2],["C",2]],ly:"",sec:"主歌"},
+    {id:26,ch:[["F",2],["G",2]],ly:"",sec:"主歌"},
+    {id:27,ch:[["C",2],["G",2]],ly:"",sec:"主歌"},
+    {id:28,ch:[["C",4]],ly:"星光",sec:"主歌"},
+    {id:29,ch:[["Dm",2],["G",2]],ly:"现在也 不那么 遗憾",sec:"过渡"},
+    {id:30,ch:[["C",2],["G",2]],ly:"你都",sec:"过渡"},
+    {id:31,ch:[["F",2],["G",2]],ly:"如何回忆我 带着笑",sec:"过渡"},
+    {id:32,ch:[["Em",2],["Am",2]],ly:"或是很沉默",sec:"过渡"},
+    {id:33,ch:[["F",2],["G",2]],ly:"这些年来",sec:"过渡"},
+    {id:34,ch:[["C",2],["G",2]],ly:"有没有人能让你",sec:"过渡"},
+    {id:35,ch:[["F",2],["G",2]],ly:"不寂寞",sec:"过渡"},
+    {id:36,ch:[["C",4]],ly:"",sec:"过渡"},
+    {id:37,ch:[["C",2],["G",2]],ly:"后来",sec:"副歌"},
+    {id:38,ch:[["Em",2],["Am",2]],ly:"我总算学会了",sec:"副歌"},
+    {id:39,ch:[["Dm",2],["G",2]],ly:"如何去爱",sec:"副歌"},
+    {id:40,ch:[["C",2],["Em",2]],ly:"可惜你早已远去",sec:"副歌"},
+    {id:41,ch:[["Am",2],["F",2]],ly:"消失在人海",sec:"副歌"},
+    {id:42,ch:[["G",2],["Em",2]],ly:"后来终于在眼泪中",sec:"副歌"},
+    {id:43,ch:[["Am",2],["Dm",2]],ly:"明白",sec:"副歌"},
+    {id:44,ch:[["G",2],["C",2]],ly:"有些人一旦错过就不在",sec:"副歌"},
+    {id:45,ch:[["C",4]],ly:"",sec:"间奏"},
+    {id:46,ch:[["G",4]],ly:"",sec:"间奏"},
+    {id:47,ch:[["Am",4]],ly:"",sec:"间奏"},
+    {id:48,ch:[["Em",4]],ly:"",sec:"间奏"},
+    {id:49,ch:[["F",4]],ly:"",sec:"间奏"},
+    {id:50,ch:[["C",4]],ly:"",sec:"间奏"},
+    {id:51,ch:[["Dm",4]],ly:"",sec:"间奏"},
+    {id:52,ch:[["G",4]],ly:"",sec:"间奏"},
+    {id:53,ch:[["C",2],["G",2]],ly:"后来",sec:"副歌"},
+    {id:54,ch:[["Em",2],["Am",2]],ly:"我总算学会了",sec:"副歌"},
+    {id:55,ch:[["Dm",2],["G",2]],ly:"如何去爱",sec:"副歌"},
+    {id:56,ch:[["C",2],["Em",2]],ly:"可惜你早已远去",sec:"副歌"},
+    {id:57,ch:[["Am",2],["F",2]],ly:"消失在人海",sec:"副歌"},
+    {id:58,ch:[["G",2],["Em",2]],ly:"后来终于在眼泪中",sec:"副歌"},
+    {id:59,ch:[["Am",2],["Dm",2]],ly:"明白",sec:"副歌"},
+    {id:60,ch:[["G",2],["C",2]],ly:"有些人一旦错过就不在",sec:"副歌"},
+    {id:61,ch:[["C",2],["G",2]],ly:"后来",sec:"副歌"},
+    {id:62,ch:[["Em",2],["Am",2]],ly:"我总算学会了",sec:"副歌"},
+    {id:63,ch:[["Dm",2],["G",2]],ly:"如何去爱",sec:"副歌"},
+    {id:64,ch:[["C",4]],ly:"可惜你早已远去消失在人海",sec:"副歌"},
+    {id:65,ch:[["C",4]],ly:"",sec:"尾奏"},
+    {id:66,ch:[["C",4]],ly:"",sec:"尾奏"}
+  ]
+};
+
+const VOICE = {
+  "C":[0,1,0,2,3,-1],"G/B":[3,0,0,0,2,-1],"Am":[0,1,2,2,0,-1],
+  "Am7/G":[0,1,0,2,0,3],"F":[1,1,2,3,3,1],"Em":[0,0,0,2,2,0],
+  "Dm":[1,3,2,0,-1,-1],"G":[3,0,0,0,2,3]
+};
+
+// OPEN[0]=low E, OPEN[5]=high E; chord diagram[0]=high E => invert
+const OPEN = [82.41,110,146.83,196,246.94,329.63];
+function freq(si,fr){return fr<0?0:OPEN[5-si]*Math.pow(2,fr/12)}
+
+// ==================== AUDIO ENGINE ====================
+let ctx=null, playing=false, timer=null, nodes=[], vol=0.7;
+
+// Play one string with simple ADSR
+function playString(t, fr, dur, amp) {
+  if (!fr || fr <= 0 || amp <= 0) return;
+  amp *= vol;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  // Triangle wave for warmer tone
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(fr, t);
+
+  // ADSR envelope — anchor at t first, then schedule ramps
+  const att = 0.004;
+  const dec = 0.08;
+  const sus = amp * 0.4;
+
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(amp, t + att);
+  gain.gain.linearRampToValueAtTime(sus, t + att + dec);
+  gain.gain.linearRampToValueAtTime(sus, t + dur * 0.5);
+  gain.gain.linearRampToValueAtTime(0.0001, t + dur);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.start(t + 0.001);  // tiny delay after gain is set up
+  osc.stop(t + dur + 0.02);
+
+  nodes.push(osc, gain);
+
+  // Add 2nd harmonic for realism (sine, lower volume)
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(fr * 2.01, t);
+  gain2.gain.setValueAtTime(0, t);
+  gain2.gain.linearRampToValueAtTime(amp * 0.35, t + att);
+  gain2.gain.linearRampToValueAtTime(amp * 0.1, t + att + dec);
+  gain2.gain.linearRampToValueAtTime(0.0001, t + dur * 0.6);
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  osc2.start(t + 0.001);
+  osc2.stop(t + dur + 0.02);
+  nodes.push(osc2, gain2);
+
+  // 3rd harmonic
+  const osc3 = ctx.createOscillator();
+  const gain3 = ctx.createGain();
+  osc3.type = 'sine';
+  osc3.frequency.setValueAtTime(fr * 3.02, t);
+  gain3.gain.setValueAtTime(0, t);
+  gain3.gain.linearRampToValueAtTime(amp * 0.15, t + att + 0.002);
+  gain3.gain.linearRampToValueAtTime(0.0001, t + dur * 0.4);
+  osc3.connect(gain3);
+  gain3.connect(ctx.destination);
+  osc3.start(t + 0.001);
+  osc3.stop(t + dur + 0.02);
+  nodes.push(osc3, gain3);
+
+  // Pick noise (very short burst)
+  const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.004), ctx.sampleRate);
+  const bd = buf.getChannelData(0);
+  for (let i = 0; i < bd.length; i++) bd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bd.length * 0.1));
+  const ns = ctx.createBufferSource();
+  ns.buffer = buf;
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(0, t);
+  ng.gain.linearRampToValueAtTime(0.08 * amp, t + 0.001);
+  ng.gain.linearRampToValueAtTime(0.0001, t + 0.008);
+  ns.connect(ng);
+  ng.connect(ctx.destination);
+  ns.start(t + 0.001);
+  nodes.push(ns, ng);
+}
+
+// Play a chord
+function playChord(t, dur, cn, pat) {
+  const v = VOICE[cn];
+  if (!v) return;
+  const act = [];
+  for (let si = 0; si < 6; si++) if (v[si] >= 0) act.push({ si, fr: v[si] });
+  if (act.length === 0) return;
+  const beat = 60 / D.bpm;
+
+  if (pat === 'arpeggio') {
+    // Slow ascending from bass
+    const ord = act.sort((a, b) => b.si - a.si);
+    const per = dur / (ord.length + 1);
+    ord.forEach((s, i) => {
+      playString(t + i * per, freq(s.si, s.fr), per * 1.5, i === 0 ? 0.8 : 0.4);
+    });
+  } else if (pat === 'decomp') {
+    // 8th note fingerpicking: bass on downbeats, treble on upbeats
+    const bass = act.reduce((a, b) => a.si > b.si ? a : b);
+    const rest = act.filter(s => s.si !== bass.si);
+    const n = Math.round(dur / beat);
+    for (let i = 0; i < n; i++) {
+      const tt = t + i * beat;
+      if (i % 2 === 0) {
+        playString(tt, freq(bass.si, bass.fr), beat * 0.7, 0.7);
+        const h = rest[i % rest.length] || rest[0];
+        if (h) playString(tt, freq(h.si, h.fr), beat * 0.4, 0.2);
+      } else {
+        const h = rest[i % rest.length] || rest[0];
+        if (h) playString(tt, freq(h.si, h.fr), beat * 0.6, 0.3);
+      }
+    }
+  } else if (pat === 'strum') {
+    const ord = act.sort((a, b) => b.si - a.si);
+    const n = Math.round(dur / beat);
+    for (let i = 0; i < n; i++) {
+      const tt = t + i * beat;
+      const dir = i % 2 === 0 ? ord : [...ord].reverse();
+      const nStr = Math.min(4 + i, dir.length);
+      for (let j = 0; j < nStr; j++) {
+        playString(tt + j * 0.005, freq(dir[j].si, dir[j].fr), beat * 0.5, 0.3 - j * 0.02);
+      }
+    }
+  }
+}
+
+// ==================== PLAYBACK ====================
+async function playSong() {
+  if (playing) return;
+
+  // Create and resume AudioContext
+  ctx = new AudioContext();
+  if (ctx.state === 'suspended') {
+    document.getElementById('status').textContent = '⏳ 正在启动音频...';
+    await ctx.resume();
+  }
+  // Verify audio is running
+  if (ctx.state !== 'running') {
+    document.getElementById('status').textContent = '❌ 音频无法启动，请点击页面后再试';
+    return;
+  }
+
+  playing = true;
+  nodes = [];
+
+  const BEAT = 60 / D.bpm;
+  const start = ctx.currentTime + 0.5;
+  const total = D.measures.length;
+
+  // Section patterns
+  const patMap = {};
+  [[1,4,'arpeggio'],[5,12,'decomp'],[13,28,'decomp'],[29,36,'decomp'],
+   [37,44,'strum'],[45,52,'arpeggio'],[53,64,'strum'],[65,66,'arpeggio']]
+    .forEach(([s,e,p]) => { for (let m = s; m <= e; m++) patMap[m] = p; });
+
+  let bc = 0;
+  D.measures.forEach((m, mi) => {
+    const pat = patMap[m.id] || 'decomp';
+    m.ch.forEach(([cn, bts]) => {
+      playChord(start + bc * BEAT, bts * BEAT, cn, pat);
+      bc += bts;
+    });
+
+    // Schedule UI
+    const dly = (start + mi * 4 * BEAT - ctx.currentTime) * 1000;
+    if (dly > 0) setTimeout(() => {
+      if (!playing) return;
+      document.getElementById('chordName').textContent = m.ch.map(x => x[0].replace('_', '/')).join('  ');
+      document.getElementById('measureInfo').textContent = `${m.id}/${total} · ${m.sec}`;
+      document.getElementById('sectionTag').textContent = m.sec + (pat === 'arpeggio' ? ' 琶音' : pat === 'decomp' ? ' 分解' : ' 扫弦');
+      if (m.ly) document.getElementById('lyricsBox').textContent = m.ly;
+      document.getElementById('progressFill').style.width = (mi / total * 100) + '%';
+      const el = Math.floor(mi * 4 * BEAT);
+      document.getElementById('time').textContent = Math.floor(el/60) + ':' + String(el%60).padStart(2,'0');
+    }, dly);
+  });
+
+  timer = setTimeout(() => { if (playing) stop(); }, (bc * BEAT + 2) * 1000);
+
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('status').textContent = '▶ 演奏中';
+}
+
+function stop() {
+  playing = false;
+  if (timer) { clearTimeout(timer); timer = null; }
+  nodes.forEach(n => { try { n.stop(); } catch(e) {} try { n.disconnect(); } catch(e) {} });
+  nodes = [];
+  if (ctx) { try { ctx.close(); } catch(e) {} ctx = null; }
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('status').textContent = '■ 停止';
+  document.getElementById('chordName').textContent = '—';
+  document.getElementById('measureInfo').textContent = '';
+  document.getElementById('lyricsBox').textContent = '🎵';
+  document.getElementById('sectionTag').textContent = '';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('time').textContent = '0:00';
+}
+
+// ==================== TEST TONE ====================
+async function testAudio() {
+  const tctx = new AudioContext();
+  if (tctx.state === 'suspended') await tctx.resume();
+  if (tctx.state !== 'running') { alert('❌ 音频无法启动，请与页面交互后再试'); return; }
+
+  // Play a simple A440 tone
+  const now = tctx.currentTime;
+  const osc = tctx.createOscillator();
+  const gain = tctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, now);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.3, now + 0.01);
+  gain.gain.linearRampToValueAtTime(0.3, now + 0.5);
+  gain.gain.linearRampToValueAtTime(0.0001, now + 1);
+  osc.connect(gain);
+  gain.connect(tctx.destination);
+  osc.start(now + 0.01);
+  osc.stop(now + 1.1);
+
+  // Also play 220Hz (buzzy)
+  const osc2 = tctx.createOscillator();
+  const gain2 = tctx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(220, now);
+  gain2.gain.setValueAtTime(0, now);
+  gain2.gain.linearRampToValueAtTime(0.2, now + 0.01);
+  gain2.gain.linearRampToValueAtTime(0.0001, now + 0.6);
+  osc2.connect(gain2);
+  gain2.connect(tctx.destination);
+  osc2.start(now + 0.01);
+  osc2.stop(now + 0.7);
+
+  document.getElementById('status').textContent = '🔊 测试音 A4(440Hz) + A3(220Hz)';
+  setTimeout(() => {
+    if (!playing) document.getElementById('status').textContent = '就绪';
+    tctx.close();
+  }, 1500);
+}
+
+document.getElementById('playBtn').addEventListener('click', playSong);
+document.getElementById('stopBtn').addEventListener('click', stop);
+document.getElementById('testBtn').addEventListener('click', testAudio);
+document.getElementById('volSlider').addEventListener('input', e => { vol = parseInt(e.target.value) / 100; });
+</script>
+</body>
+</html>
