@@ -224,6 +224,17 @@
             box-shadow: 0 4px 20px rgba(150, 80, 180, 0.15);
         }
 
+        /* ===== Focus 可见性 ===== */
+        :focus { outline: none; }
+        :focus-visible {
+            outline: 2px solid #f48fb1;
+            outline-offset: 3px;
+            border-radius: 50px;
+        }
+        .card:focus-visible {
+            border-radius: 20px;
+        }
+
         .tab-content { display: none; animation: fadeUp 0.5s ease; }
         .tab-content.active { display: block; }
         @keyframes fadeUp {
@@ -365,7 +376,7 @@
                 return;
             }
             g.innerHTML = data.map(d =>
-                `<div class="card" onclick="window.open('${d.url}','_blank')">
+                `<div class="card" tabindex="0" role="button" onclick="window.open('${d.url}','_blank','noopener')">
                     <div class="icon">${d.icon}</div>
                     <h3>${d.name}</h3>
                     <p>${d.desc}</p>
