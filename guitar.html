@@ -793,6 +793,7 @@ tscCard.addEventListener('click', function(){
   showEl(tscOvl);
   if(tscAtRender) tscAtRender.innerHTML = '';
   currentMidiUrl = null;
+  tscError.style.display = 'none';
 });
 tscClose.addEventListener('click', function(){ hideEl(tscOvl); stopRecording(); });
 document.addEventListener('keydown', function(e){
@@ -816,8 +817,16 @@ tscUpload.addEventListener('drop', function(e){
   if(f) handleFile(f);
 });
 
+function showError(msg){
+  hideAll();
+  showEl(tscUpload);
+  tscError.style.display = 'block';
+  tscErrorTxt.textContent = msg;
+}
+
 function handleFile(file){
   hideAll(); showEl(tscProg);
+  tscError.style.display = 'none';
   tscProgTxt.textContent = '正在上传...';
   tscProgBar.style.width = '5%';
 
@@ -916,6 +925,7 @@ document.getElementById('tscNew').addEventListener('click', function(){
   hideAll(); showEl(tscUpload);
   tscAtRender.innerHTML = '';
   currentMidiUrl = null;
+  tscError.style.display = 'none';
 });
 
 })();
