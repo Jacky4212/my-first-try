@@ -189,6 +189,79 @@ body{
   .cgrp input[type=range]{width:70px}
   .vwr .bot{gap:8px;padding:8px 10px}
 }
+
+/* ===== Transcription UI ===== */
+.tsc-entry{max-width:900px;margin:16px auto;padding:0 20px}
+.tsc-card{
+  background:linear-gradient(135deg,rgba(168,216,234,0.08),rgba(244,143,177,0.06));
+  backdrop-filter:blur(16px);border-radius:16px;
+  padding:20px 24px;border:1px solid rgba(168,216,234,0.12);
+  cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:16px
+}
+.tsc-card:hover{
+  transform:translateY(-2px);border-color:rgba(168,216,234,0.3);
+  box-shadow:0 8px 30px rgba(100,180,220,0.12)
+}
+.tsc-card .ico{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(168,216,234,0.1);border-radius:12px;font-size:28px}
+.tsc-card .n h3{font-size:18px;font-weight:600;color:#a8d8ea;letter-spacing:1px}
+.tsc-card .n p{font-size:13px;color:#8a7aaa;margin-top:2px;letter-spacing:1px}
+.tsc-card .arr{color:#8a7aaa;font-size:20px;margin-left:auto;flex-shrink:0}
+
+.tsc-ovl{display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.92);flex-direction:column}
+.tsc-ovl.on{display:flex}
+.tsc-ovl .top{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:rgba(0,0,0,0.8);flex-shrink:0}
+.tsc-ovl .top .t{font-size:15px;font-weight:600;color:#a8d8ea;letter-spacing:1px}
+.tsc-ovl .top button{width:34px;height:34px;border:none;background:rgba(255,255,255,0.12);border-radius:50%;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.tsc-ovl .top button:hover{background:rgba(255,255,255,0.25)}
+
+.tsc-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;align-items:center}
+.tsc-body::-webkit-scrollbar{width:5px}
+.tsc-body::-webkit-scrollbar-track{background:transparent}
+.tsc-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
+
+.tsc-upload{
+  width:100%;max-width:560px;border:2px dashed rgba(168,216,234,0.2);
+  border-radius:16px;padding:48px 24px;text-align:center;transition:all .3s;
+  background:rgba(255,255,255,0.02);margin:20px 0
+}
+.tsc-upload:hover,.tsc-upload.drag{border-color:rgba(168,216,234,0.5);background:rgba(168,216,234,0.04)}
+.tsc-upload .big{font-size:48px;display:block;margin-bottom:12px}
+.tsc-upload .hint{color:#8a7aaa;font-size:14px;letter-spacing:1px;margin-bottom:16px}
+.tsc-upload .hint span{color:#a8d8ea}
+.tsc-upload input[type=file]{display:none}
+
+.tsc-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.tsc-btn{
+  padding:10px 24px;border:1px solid rgba(168,216,234,0.2);border-radius:10px;
+  background:rgba(168,216,234,0.08);color:#a8d8ea;font-size:14px;cursor:pointer;
+  font-family:inherit;letter-spacing:1px;transition:all .3s
+}
+.tsc-btn:hover{background:rgba(168,216,234,0.16);border-color:rgba(168,216,234,0.4)}
+.tsc-btn.rec{background:rgba(231,76,60,0.15);border-color:rgba(231,76,60,0.25);color:#e74c3c}
+.tsc-btn.rec:hover{background:rgba(231,76,60,0.25)}
+.tsc-btn.rec.on{animation:pulse-rec 1.2s infinite}
+@keyframes pulse-rec{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.4)}50%{box-shadow:0 0 0 8px rgba(231,76,60,0)}}
+
+.tsc-progress{display:none;width:100%;max-width:560px;margin:20px 0;text-align:center}
+.tsc-progress.on{display:block}
+.tsc-progress .bar-wrap{
+  width:100%;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin:12px 0
+}
+.tsc-progress .bar-fill{
+  height:100%;background:linear-gradient(90deg,#81d4fa,#f48fb1);border-radius:3px;
+  transition:width .3s;width:0%
+}
+.tsc-progress .txt{color:#8a7aaa;font-size:13px;letter-spacing:1px}
+
+.tsc-result{display:none;width:100%;max-width:900px;margin:20px 0;flex-direction:column;align-items:center}
+.tsc-result.on{display:flex}
+.tsc-result .info{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.tsc-result .info .itm{text-align:center}
+.tsc-result .info .itm .v{font-size:22px;font-weight:600;color:#a8d8ea}
+.tsc-result .info .itm .l{font-size:11px;color:#6a5a80;letter-spacing:1px;margin-top:2px}
+.tsc-result .at-wrap{width:100%;background:rgba(255,255,255,0.03);border-radius:12px;overflow:auto;padding:10px}
+.tsc-result .note{color:#6a5a80;font-size:12px;margin-top:10px;text-align:center;letter-spacing:1px}
+.tsc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
 </style>
 </head>
 <body>
@@ -199,6 +272,12 @@ body{
   <p>收藏喜欢的吉他谱，随时弹唱</p>
   <div class="div"></div>
 </div>
+
+<div class="tsc-entry"><div class="tsc-card" id="tscCard">
+  <div class="ico">🎸</div>
+  <div class="n"><h3>智能扒谱</h3><p>上传音频 / 录音 → AI 自动生成吉他谱</p></div>
+  <span class="arr">→</span>
+</div></div>
 
 <div class="srch"><input type="text" id="sInp" placeholder="搜索歌曲或艺人..." autocomplete="off"><button class="clr" id="sClr">✕</button></div>
 
@@ -268,6 +347,53 @@ body{
       <button class="zbtn" id="cDown">−</button>
       <span class="vl" id="cVal" style="min-width:16px">0</span>
       <button class="zbtn" id="cUp">+</button>
+    </div>
+  </div>
+</div>
+
+<div class="tsc-ovl" id="tscOvl">
+  <div class="top">
+    <span class="t">🎸 智能扒谱</span>
+    <button id="tscClose">✕</button>
+  </div>
+  <div class="tsc-body" id="tscBody">
+    <!-- Upload -->
+    <div class="tsc-upload" id="tscUpload">
+      <span class="big">🎵</span>
+      <p class="hint">拖拽音频文件到此处，或 <span>点击选择</span></p>
+      <p class="hint" style="font-size:12px;color:#5a4a70">支持 MP3 / WAV / OGG / FLAC / M4A</p>
+      <input type="file" id="tscFile" accept=".mp3,.wav,.ogg,.flac,.m4a,.webm">
+      <div class="tsc-btns">
+        <button class="tsc-btn" id="tscPick">📂 选择文件</button>
+        <button class="tsc-btn rec" id="tscRec">🎤 录音</button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="tsc-progress" id="tscProg">
+      <div class="txt" id="tscProgTxt">正在分析音频...</div>
+      <div class="bar-wrap"><div class="bar-fill" id="tscProgBar"></div></div>
+    </div>
+
+    <!-- Result -->
+    <div class="tsc-result" id="tscResult">
+      <div class="info">
+        <div class="itm"><div class="v" id="tscNoteCnt">-</div><div class="l">音符数</div></div>
+        <div class="itm"><div class="v" id="tscChordCnt">-</div><div class="l">和弦数</div></div>
+        <div class="itm"><div class="v" id="tscDur">-</div><div class="l">时长 (秒)</div></div>
+        <div class="itm"><div class="v" id="tscTempo">-</div><div class="l">BPM</div></div>
+      </div>
+      <div class="at-wrap" id="tscAtWrap"><div id="tscAtRender"></div></div>
+      <p class="note">※ AI 转录结果仅供参考，复杂曲目可能需要手动调整</p>
+      <div class="tsc-actions">
+        <button class="tsc-btn" id="tscDownloadMidi">⬇ 下载 .mid</button>
+        <button class="tsc-btn" id="tscNew">🔄 重新上传</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="tsc-progress" id="tscError" style="display:none">
+      <div class="txt" style="color:#e74c3c" id="tscErrorTxt"></div>
     </div>
   </div>
 </div>
@@ -631,7 +757,169 @@ vImg.addEventListener('click', function(){
   }
 });
 
+
+// ===== Transcription =====
+var tscOvl = document.getElementById('tscOvl');
+var tscCard = document.getElementById('tscCard');
+var tscClose = document.getElementById('tscClose');
+var tscUpload = document.getElementById('tscUpload');
+var tscFile = document.getElementById('tscFile');
+var tscPick = document.getElementById('tscPick');
+var tscRec = document.getElementById('tscRec');
+var tscProg = document.getElementById('tscProg');
+var tscProgTxt = document.getElementById('tscProgTxt');
+var tscProgBar = document.getElementById('tscProgBar');
+var tscResult = document.getElementById('tscResult');
+var tscAtRender = document.getElementById('tscAtRender');
+var tscError = document.getElementById('tscError');
+var tscErrorTxt = document.getElementById('tscErrorTxt');
+var API = 'http://localhost:8765';
+
+var recording = false;
+var mediaRecorder = null;
+var audioChunks = [];
+var currentMidiUrl = null;
+
+function showEl(el){ el.classList.add('on'); }
+function hideEl(el){ el.classList.remove('on'); }
+function hideAll(){
+  hideEl(tscUpload); hideEl(tscProg); hideEl(tscResult);
+  tscError.style.display = 'none';
+}
+
+// Open / Close
+tscCard.addEventListener('click', function(){
+  hideAll(); showEl(tscUpload);
+  showEl(tscOvl);
+  if(tscAtRender) tscAtRender.innerHTML = '';
+  currentMidiUrl = null;
+});
+tscClose.addEventListener('click', function(){ hideEl(tscOvl); stopRecording(); });
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && tscOvl.classList.contains('on')){
+    hideEl(tscOvl); stopRecording();
+  }
+});
+
+// File upload
+tscPick.addEventListener('click', function(){ tscFile.click(); });
+tscFile.addEventListener('change', function(){
+  if(tscFile.files.length) handleFile(tscFile.files[0]);
+});
+
+// Drag & drop
+tscUpload.addEventListener('dragover', function(e){ e.preventDefault(); tscUpload.classList.add('drag'); });
+tscUpload.addEventListener('dragleave', function(){ tscUpload.classList.remove('drag'); });
+tscUpload.addEventListener('drop', function(e){
+  e.preventDefault(); tscUpload.classList.remove('drag');
+  var f = e.dataTransfer.files[0];
+  if(f) handleFile(f);
+});
+
+function handleFile(file){
+  hideAll(); showEl(tscProg);
+  tscProgTxt.textContent = '正在上传...';
+  tscProgBar.style.width = '5%';
+
+  var fd = new FormData();
+  fd.append('audio', file);
+  fetch(API + '/api/transcribe', { method: 'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.task_id) pollTask(data.task_id);
+      else showError(data.detail || '上传失败');
+    })
+    .catch(function(e){ showError('无法连接后端服务，请确保已启动 guitar-transcriber/start.bat'); });
+}
+
+// Recording
+tscRec.addEventListener('click', function(){
+  if(recording){ stopRecording(); return; }
+  startRecording();
+});
+
+function startRecording(){
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
+    mediaRecorder.onstop = function(){
+      var blob = new Blob(audioChunks, { type: 'audio/webm' });
+      handleFile(new File([blob], 'recording.webm', { type: 'audio/webm' }));
+      stream.getTracks().forEach(function(t){ t.stop(); });
+    };
+    mediaRecorder.start();
+    recording = true;
+    tscRec.textContent = '⏹ 停止录音';
+    tscRec.classList.add('on');
+  }).catch(function(){ showError('无法访问麦克风'); });
+}
+
+function stopRecording(){
+  if(mediaRecorder && recording){
+    mediaRecorder.stop();
+    recording = false;
+    tscRec.textContent = '🎤 录音';
+    tscRec.classList.remove('on');
+  }
+}
+
+// Poll task
+function pollTask(taskId){
+  var progress = 10;
+  var interval = setInterval(function(){
+    fetch(API + '/api/status/' + taskId)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if(data.status === 'error'){
+          clearInterval(interval);
+          showError(data.message || '转录失败');
+        } else if(data.status === 'done'){
+          clearInterval(interval);
+          tscProgBar.style.width = '100%';
+          showResult(data);
+        } else {
+          progress = Math.min(95, progress + Math.random() * 8);
+          tscProgBar.style.width = progress + '%';
+          tscProgTxt.textContent = '正在分析音频... ' + Math.round(progress) + '%';
+        }
+      })
+      .catch(function(){
+        clearInterval(interval);
+        showError('连接后端失败');
+      });
+  }, 2000);
+}
+
+// Show result
+function showResult(data){
+  hideAll();
+  document.getElementById('tscNoteCnt').textContent = data.note_count || 0;
+  document.getElementById('tscChordCnt').textContent = data.chord_count || 0;
+  document.getElementById('tscDur').textContent = data.duration || 0;
+  document.getElementById('tscTempo').textContent = data.tempo || '-';
+
+  currentMidiUrl = API + data.midi_url;
+
+  // Render guitar tab using Canvas
+  renderTab(data);
+
+  showEl(tscResult);
+  hideEl(tscProg);
+}
+
+// Download
+document.getElementById('tscDownloadMidi').addEventListener('click', function(){
+  if(currentMidiUrl){ var a = document.createElement('a'); a.href = currentMidiUrl; a.download = 'transcription.mid'; a.click(); }
+});
+document.getElementById('tscNew').addEventListener('click', function(){
+  hideAll(); showEl(tscUpload);
+  tscAtRender.innerHTML = '';
+  currentMidiUrl = null;
+});
+
 })();
 </script>
+<script src="guitar-transcriber/tab_renderer.js"></script>
 </body>
 </html>
