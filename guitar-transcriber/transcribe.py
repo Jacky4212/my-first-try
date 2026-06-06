@@ -1,5 +1,6 @@
 """Core transcription pipeline: audio -> MIDI -> guitar tab data"""
 import os
+import subprocess
 import traceback
 import numpy as np
 import pretty_midi
@@ -7,6 +8,32 @@ import pretty_midi
 # Standard guitar tuning MIDI pitches (high e, B, G, D, A, low E)
 STD_TUNING = [64, 59, 55, 50, 45, 40]
 MAX_FRET = 24
+
+# Look for ffmpeg in the same directory or PATH
+_FFMPEG = None
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+for _cand in [os.path.join(_script_dir, 'ffmpeg.exe'), 'ffmpeg.exe', 'ffmpeg']:
+    try:
+        subprocess.run([_cand, '-version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        _FFMPEG = _cand
+        break
+    except Exception:
+        pass
+
+
+def _ensure_wav(audio_path):
+    """Convert M4A/MP4/AAC to WAV if needed. Returns path to WAV file."""
+    ext = os.path.splitext(audio_path)[1].lower()
+    if ext in ('.wav', '.wave'):
+        return audio_path
+    if not _FFMPEG:
+        raise RuntimeError(f'无法处理 {ext} 格式，需要安装 ffmpeg。请将 ffmpeg.exe 放入本目录。')
+    wav_path = audio_path + '.conv.wav'
+    subprocess.run(
+        [_FFMPEG, '-y', '-i', audio_path, '-ar', '22050', '-ac', '1', wav_path],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True,
+    )
+    return wav_path
 
 
 def _py(v):
@@ -94,12 +121,15 @@ def notes_to_bars(notes_fb, beats_per_bar=4, beats_per_minute=120):
 
 def transcribe(audio_path, output_dir, task_id):
     """Full transcription pipeline. Saves MIDI and returns tab data + metadata."""
+    wav_path = None
     try:
         from basic_pitch.inference import predict
         from basic_pitch import ICASSP_2022_MODEL_PATH
 
+        wav_path = _ensure_wav(str(audio_path))
+
         model_output, midi_data, note_events = predict(
-            str(audio_path),
+            wav_path,
             onset_threshold=0.5,
             frame_threshold=0.3,
             minimum_note_length=58,
@@ -166,3 +196,6 @@ def transcribe(audio_path, output_dir, task_id):
             'status': 'error',
             'message': str(e),
         }
+    finally:
+        if wav_path and wav_path.endswith('.conv.wav') and os.path.exists(wav_path):
+            os.remove(wav_path)

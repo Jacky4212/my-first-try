@@ -213,6 +213,14 @@ body{
 .tsc-ovl .top .t{font-size:15px;font-weight:600;color:#a8d8ea;letter-spacing:1px}
 .tsc-ovl .top button{width:34px;height:34px;border:none;background:rgba(255,255,255,0.12);border-radius:50%;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .tsc-ovl .top button:hover{background:rgba(255,255,255,0.25)}
+.tsc-close-btn{
+  width:auto !important;height:34px !important;border-radius:8px !important;
+  padding:0 16px !important;font-size:14px !important;font-weight:600 !important;
+  background:rgba(231,76,60,0.2) !important;color:#e74c3c !important;
+  border:1px solid rgba(231,76,60,0.3) !important;letter-spacing:1px;
+  gap:4px;transition:all .3s
+}
+.tsc-close-btn:hover{background:rgba(231,76,60,0.35) !important;border-color:rgba(231,76,60,0.5) !important;box-shadow:0 0 16px rgba(231,76,60,0.15)}
 
 .tsc-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;align-items:center}
 .tsc-body::-webkit-scrollbar{width:5px}
@@ -354,7 +362,7 @@ body{
 <div class="tsc-ovl" id="tscOvl">
   <div class="top">
     <span class="t">🎸 智能扒谱</span>
-    <button id="tscClose">✕</button>
+    <button id="tscClose" class="tsc-close-btn">✕ 关闭</button>
   </div>
   <div class="tsc-body" id="tscBody">
     <!-- Upload -->
@@ -366,6 +374,7 @@ body{
       <div class="tsc-btns">
         <button class="tsc-btn" id="tscPick">📂 选择文件</button>
         <button class="tsc-btn rec" id="tscRec">🎤 录音</button>
+        <button class="tsc-btn" id="tscBack" style="border-color:rgba(255,255,255,0.12);color:#8a7aaa">← 返回歌单</button>
       </div>
     </div>
 
@@ -795,10 +804,12 @@ tscCard.addEventListener('click', function(){
   currentMidiUrl = null;
   tscError.style.display = 'none';
 });
-tscClose.addEventListener('click', function(){ hideEl(tscOvl); stopRecording(); });
+function closeTranscriber(){ hideEl(tscOvl); stopRecording(); }
+tscClose.addEventListener('click', closeTranscriber);
+document.getElementById('tscBack').addEventListener('click', closeTranscriber);
 document.addEventListener('keydown', function(e){
   if(e.key === 'Escape' && tscOvl.classList.contains('on')){
-    hideEl(tscOvl); stopRecording();
+    closeTranscriber();
   }
 });
 

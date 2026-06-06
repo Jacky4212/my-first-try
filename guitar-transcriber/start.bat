@@ -1,31 +1,30 @@
 @echo off
-chcp 65001 >nul
+chcp 65001 >/dev/null
 cd /d "%~dp0"
 
 echo ============================================
-echo   🎸 Guitar Transcriber - 启动中...
+echo   Guitar Transcriber
 echo ============================================
 echo.
 
-REM Check if venv exists, create if not
 if not exist "venv\Scripts\python.exe" (
-    echo [1/3] 创建虚拟环境...
+    echo [1/3] Creating virtual environment...
     python -m venv venv
     echo.
-    echo [2/3] 安装依赖（首次需要几分钟）...
-    venv\Scripts\pip install -r requirements.txt --quiet
+    echo [2/3] Installing dependencies (first time, ~3 min)...
+    venv\Scripts\pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --quiet
     echo.
 ) else (
-    echo [✓] 虚拟环境已存在
+    echo [OK] venv found
     echo.
 )
 
-echo [3/3] 启动服务...
+echo [3/3] Starting server...
 echo.
-echo   后端地址: http://localhost:8765
-echo   API 文档: http://localhost:8765/docs
+echo   Backend: http://localhost:8765
+echo   API docs: http://localhost:8765/docs
 echo.
-echo   按 Ctrl+C 停止服务
+echo   Press Ctrl+C to stop
 echo ============================================
 
 venv\Scripts\python server.py
