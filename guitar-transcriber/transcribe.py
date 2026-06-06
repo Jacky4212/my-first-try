@@ -9,7 +9,7 @@ import pretty_midi
 STD_TUNING = [64, 59, 55, 50, 45, 40]
 MAX_FRET = 24
 
-# Look for ffmpeg in the same directory or PATH
+# Look for ffmpeg in the same directory, PATH, or imageio_ffmpeg
 _FFMPEG = None
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 for _cand in [os.path.join(_script_dir, 'ffmpeg.exe'), 'ffmpeg.exe', 'ffmpeg']:
@@ -17,6 +17,13 @@ for _cand in [os.path.join(_script_dir, 'ffmpeg.exe'), 'ffmpeg.exe', 'ffmpeg']:
         subprocess.run([_cand, '-version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
         _FFMPEG = _cand
         break
+    except Exception:
+        pass
+
+if not _FFMPEG:
+    try:
+        import imageio_ffmpeg
+        _FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
     except Exception:
         pass
 

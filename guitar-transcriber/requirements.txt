@@ -6,3 +6,4 @@ pretty-midi>=0.2.10
 librosa>=0.10.0
 soundfile>=0.12.0
 numpy>=1.26.0
+imageio-ffmpeg>=0.5.0
