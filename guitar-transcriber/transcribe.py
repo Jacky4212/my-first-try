@@ -173,11 +173,14 @@ def separate_vocals(audio_path, output_dir=None):
         model_file_dir=models_dir,
     )
     sep.load_model('UVR_MDXNET_KARA_2.onnx')
-    paths = sep.separate(audio_path)
-    # paths is (instrumental, vocal) tuple
-    if isinstance(paths, (list, tuple)) and len(paths) >= 1:
-        return paths[0]
-    return paths if isinstance(paths, str) else audio_path
+    sep.separate(audio_path)
+    # separate() writes files to output_dir; find the instrumental one
+    base = os.path.splitext(os.path.basename(audio_path))[0]
+    for f in os.listdir(output_dir):
+        if 'instrumental' in f.lower() and base[:8] in f:
+            return os.path.join(output_dir, f)
+    # Fallback: return original audio
+    return audio_path
 
 
 def transcribe(audio_path, output_dir, task_id, remove_vocals=True):

@@ -1,3 +1,9 @@
 .claude/
 for testing.ipynb
 hello.py
+guitar-transcriber/ffmpeg.exe
+guitar-transcriber/.models/
+guitar-transcriber/__pycache__/
+guitar-transcriber/uploads/
+guitar-transcriber/outputs/*.wav
+guitar-transcriber/server.log
