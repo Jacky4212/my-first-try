@@ -1258,10 +1258,10 @@ function createKSBuffer(ctx, freq, durSec, velocity) {
     d[i] = dcOut;
   }
 
-  // ——— Envelope: quick attack, sustain, quadratic release ———
-  var amp = (velocity || 100) / 127 * 0.28;
+  // ——— Envelope: quick attack, long sustain, gentle release ———
+  var amp = (velocity || 100) / 127 * 0.4;
   var atkLen = Math.min(period, Math.floor(sr * 0.003));
-  var susLen = Math.floor(sr * Math.max(durSec, 0.15));
+  var susLen = Math.floor(sr * Math.max(durSec, 0.5));
   for (var i = 0; i < totalSamples; i++) {
     var env;
     if (i < atkLen) {
@@ -1281,15 +1281,25 @@ function createKSBuffer(ctx, freq, durSec, velocity) {
 function _ensurePlaybackGraph(ctx) {
   // Build shared graph: dry -> destination, wet -> reverb -> destination
   var dry = ctx.createGain();
-  dry.gain.value = 0.7;
+  dry.gain.value = 0.45;
   dry.connect(ctx.destination);
 
+  // Longer, more natural reverb tail
+  var sr = ctx.sampleRate;
+  var revLen = Math.floor(sr * 2.0);
+  var revBuf = ctx.createBuffer(2, revLen, sr);
+  for (var ch = 0; ch < 2; ch++) {
+    var d = revBuf.getChannelData(ch);
+    for (var i = 0; i < revLen; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(0.002, i / revLen);
+    }
+  }
   var reverb = ctx.createConvolver();
-  reverb.buffer = _getReverb(ctx);
+  reverb.buffer = revBuf;
   reverb.normalize = true;
 
   var wet = ctx.createGain();
-  wet.gain.value = 0.25;
+  wet.gain.value = 0.55;
   wet.connect(ctx.destination);
 
   reverb.connect(wet);
