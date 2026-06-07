@@ -268,10 +268,10 @@ def _notes_to_bars_rigid(notes_fb, beats_per_bar=4, beats_per_minute=120):
     return bars
 
 
-def _notes_to_bars_real(notes_fb, beat_times, beats_per_bar=4, strum_window=0.12):
+def _notes_to_bars_real(notes_fb, beat_times, beats_per_bar=4, strum_window=0.08):
     """Align notes to real musical beats detected by librosa.
 
-    Strum-aware: notes starting within `strum_window` seconds (default 120ms)
+    Strum-aware: notes starting within `strum_window` seconds (default 80ms)
     are grouped and snapped to the same beat, so strummed chords appear as
     stacked notes rather than spread across beats.
     """
@@ -480,9 +480,9 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
         _report(50, '正在分析音符（basic-pitch）...')
         model_output, midi_data, note_events = predict(
             wav_path,
-            onset_threshold=0.65,     # ↑ 0.5→0.65: fewer false onsets
-            frame_threshold=0.4,      # ↑ 0.3→0.4:  shorter/sharper notes
-            minimum_note_length=127,  # ↑ 58→127ms: filters short noise bursts
+            onset_threshold=0.6,      # ↑ 0.5→0.6: balance of sensitivity vs false positives
+            frame_threshold=0.3,      # back to default: notes ring naturally, not cut short
+            minimum_note_length=80,   # ↑ 58→80: filters noise but keeps short musical notes
             minimum_frequency=75.0,
             maximum_frequency=2000.0,
             melodia_trick=True,
