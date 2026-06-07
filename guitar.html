@@ -266,10 +266,13 @@
 .tsc-bar-playing{border-color:rgba(168,216,234,0.7)!important;box-shadow:0 0 12px rgba(168,216,234,0.35);background:rgba(168,216,234,0.08)!important}
 .tsc-history{max-width:360px;margin:16px auto 0}
 .tsc-hist-title{font-size:12px;color:#6a5a80;text-align:center;margin-bottom:8px;letter-spacing:1px}
-.tsc-hist-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.03);border-radius:6px;cursor:pointer;transition:background .15s}
+.tsc-hist-item{display:flex;align-items:center;padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.03);border-radius:6px;cursor:pointer;transition:background .15s}
 .tsc-hist-item:hover{background:rgba(168,216,234,0.1)}
-.tsc-hist-item .hi{font-size:12px;color:#8a7aaa}
-.tsc-hist-item .hv{font-size:13px;color:#a8d8ea;font-weight:500}
+.hi2-title{display:flex;align-items:center;gap:6px}
+.hi2-txt{font-size:14px;color:#a8d8ea;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.hi2-sub{font-size:11px;color:#6a5a80;margin-top:1px}
+.rn-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:0 2px;opacity:0.4;transition:opacity .15s;flex-shrink:0}
+.rn-btn:hover{opacity:1}
 
 
 </style>
@@ -909,21 +912,53 @@ function loadHistory(){
         return;
       }
       list.innerHTML = items.map(function(it){
+        var title = it.title || it.task_id.slice(0, 12);
         var label = (it.note_count || '?') + '音符 · ' + (it.duration || '?') + 's · ' + (it.tempo || '?') + 'BPM';
         var timeStr = it.timestamp ? fmtRelativeTime(it.timestamp) : '';
         return '<div class="tsc-hist-item" data-tid="' + it.task_id + '">' +
-          '<span class="hv">' + timeStr + '</span>' +
-          '<span class="hi">' + label + '</span>' +
+          '<div class="hi2" style="flex:1;min-width:0">' +
+            '<div class="hi2-title"><span class="hi2-txt">' + escHtml(title) + '</span><button class="rn-btn" data-tid="' + it.task_id + '" title="重命名">✏️</button></div>' +
+            '<div class="hi2-sub">' + timeStr + ' · ' + label + '</div>' +
+          '</div>' +
           '</div>';
       }).join('');
       list.querySelectorAll('.tsc-hist-item').forEach(function(el){
-        el.addEventListener('click', function(){
+        el.addEventListener('click', function(e){
+          if(e.target.closest('.rn-btn')) return;
           loadCached(el.dataset.tid);
+        });
+      });
+      list.querySelectorAll('.rn-btn').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          renameTranscription(btn.dataset.tid);
         });
       });
     }).catch(function(){
       list.innerHTML = '<div style="text-align:center;color:#3a2a50;font-size:12px;padding:8px">⚠ 后端未连接，历史不可用</div>';
     });
+}
+
+// HTML escape for user-provided text
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Rename transcription
+function renameTranscription(taskId){
+  var item = document.querySelector('.tsc-hist-item[data-tid="' + taskId + '"]');
+  var titleEl = item ? item.querySelector('.hi2-txt') : null;
+  var oldTitle = titleEl ? titleEl.textContent : '';
+  var newTitle = prompt('重命名扒谱：', oldTitle);
+  if(!newTitle || newTitle.trim() === '' || newTitle === oldTitle) return;
+  newTitle = newTitle.trim().slice(0, 100);
+  fetch(API + '/api/transcriptions/' + taskId + '/rename', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title: newTitle})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.status === 'ok' && titleEl) titleEl.textContent = d.title;
+  }).catch(function(){});
 }
 
 function loadCached(taskId){

@@ -6,7 +6,7 @@ import shutil
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -71,7 +71,7 @@ def _update_progress(task_id: str, progress: int, message: str = ''):
                 tasks[task_id]['message'] = message
 
 
-def run_transcribe(task_id: str, audio_path: str):
+def run_transcribe(task_id: str, audio_path: str, title: str = ''):
     """Run transcription in background thread with cancel support."""
     cancel_event = _cancel_events.get(task_id)
     if not cancel_event:
@@ -89,7 +89,6 @@ def run_transcribe(task_id: str, audio_path: str):
 
         _update_progress(task_id, 10, '正在分析音频特征...')
 
-        # transcribe() now accepts a progress callback and cancel_event
         result = transcribe(
             audio_path,
             str(OUTPUT_DIR),
@@ -109,7 +108,9 @@ def run_transcribe(task_id: str, audio_path: str):
             tasks[task_id].update(result)
             tasks[task_id]['progress'] = 100
             tasks[task_id]['message'] = '完成'
+            tasks[task_id]['title'] = title
         if result.get('status') == 'done':
+            result['title'] = title
             _write_cache(task_id, result)
     except Exception as e:
         if not cancel_event.is_set():
@@ -168,12 +169,16 @@ async def api_transcribe(audio: UploadFile = File(...)):
     cancel_event = threading.Event()
     _cancel_events[task_id] = cancel_event
 
+    # Derive default title from original filename
+    orig_stem = Path(audio.filename).stem
+    title = orig_stem[:80]  # limit length
+
     with _tasks_lock:
-        tasks[task_id] = {'task_id': task_id, 'status': 'pending', 'progress': 0, 'message': ''}
+        tasks[task_id] = {'task_id': task_id, 'status': 'pending', 'progress': 0, 'message': '', 'title': title}
 
     thread = threading.Thread(
         target=run_transcribe,
-        args=(task_id, str(save_path)),
+        args=(task_id, str(save_path), title),
         daemon=True,
     )
     thread.start()
@@ -204,17 +209,48 @@ async def api_list_transcriptions():
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             mtime = cache_file.stat().st_mtime
+            title = data.get('title', '') or ''
+            if not title:
+                title = cache_file.stem[:12]
             results.append({
                 'task_id': cache_file.stem,
+                'title': title,
                 'note_count': data.get('note_count', 0),
                 'duration': data.get('duration', 0),
                 'tempo': data.get('tempo', 120),
                 'num_bars': data.get('num_bars', 0),
-                'timestamp': mtime,  # Unix timestamp, for relative time display
+                'timestamp': mtime,
             })
         except Exception:
             pass
     return results[:20]
+
+
+@app.post("/api/transcriptions/{task_id}/rename")
+async def api_rename_transcription(task_id: str, request: Request):
+    """Rename a cached transcription."""
+    body = await request.json()
+    new_title = body.get('title', '').strip()
+    if not new_title or len(new_title) > 100:
+        raise HTTPException(400, "Title must be 1-100 characters")
+
+    cache_path = OUTPUT_DIR / f"{task_id}.json"
+    if not cache_path.exists():
+        raise HTTPException(404, "Transcription not found")
+    try:
+        with open(cache_path, 'r', encoding='utf-8') as f:
+            cached = json.load(f)
+        cached['title'] = new_title
+        with open(cache_path, 'w', encoding='utf-8') as f:
+            json.dump(cached, f, ensure_ascii=False)
+    except Exception as e:
+        raise HTTPException(500, f"Failed to rename: {e}")
+
+    with _tasks_lock:
+        if task_id in tasks:
+            tasks[task_id]['title'] = new_title
+
+    return {'status': 'ok', 'title': new_title}
 
 
 # Serve output files
