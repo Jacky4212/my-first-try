@@ -1,8 +1,21 @@
 """Core transcription pipeline: audio -> MIDI -> guitar tab data"""
 import os
+import ssl
 import shutil
 import subprocess
 import traceback
+
+# Fix SSL certificate verification on Windows (needed for model downloads)
+try:
+    import certifi
+    os.environ.setdefault('SSL_CERT_FILE', certifi.where())
+except ImportError:
+    pass
+# Also set for urllib/requests used by audio-separator
+if 'SSL_CERT_FILE' in os.environ:
+    ssl._create_default_https_context = lambda: ssl.create_default_context(
+        cafile=os.environ['SSL_CERT_FILE']
+    )
 
 import numpy as np
 import pretty_midi
@@ -26,7 +39,11 @@ STD_TUNING = [64, 59, 55, 50, 45, 40]
 MAX_FRET = 24
 
 # Vocal separation model name
-UVR_MODEL_NAME = 'UVR_MDXNET_KARA_2.onnx'
+# MDX  (old):        UVR_MDXNET_KARA_2.onnx       SDR ~7.5  (51MB, fastest)
+# MDX  (better):     UVR_MDXNET_Main.onnx          SDR ~10.2 (fast, good balance)
+# MDXC (best, slow): MDX23C-8KFFT-InstVoc_HQ.ckpt  SDR ~10.5 (427MB, ~CPU bound)
+# MDXC (best):       model_bs_roformer_ep_317_sdr_12.9755.ckpt SDR ~13
+UVR_MODEL_NAME = 'UVR_MDXNET_Main.onnx'
 
 # Look for ffmpeg in the same directory, PATH, or imageio_ffmpeg
 _FFMPEG = None
