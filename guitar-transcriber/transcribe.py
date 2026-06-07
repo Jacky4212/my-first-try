@@ -480,7 +480,7 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
         _report(50, '正在分析音符（basic-pitch）...')
         model_output, midi_data, note_events = predict(
             wav_path,
-            onset_threshold=0.6,      # ↑ 0.5→0.6: balance of sensitivity vs false positives
+            onset_threshold=0.5,      # default: capture more notes including quiet ones
             frame_threshold=0.3,      # back to default: notes ring naturally, not cut short
             minimum_note_length=80,   # ↑ 58→80: filters noise but keeps short musical notes
             minimum_frequency=75.0,
