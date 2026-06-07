@@ -1,42 +1,31 @@
 """Core transcription pipeline: audio -> MIDI -> guitar tab data"""
 import os
+import shutil
 import subprocess
 import traceback
+
 import numpy as np
 import pretty_midi
 
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Ensure ffmpeg.exe in the script directory is on PATH (needed by audio-separator)
+def _safe_remove(path: str) -> None:
+    """Remove a file without raising on error."""
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+# Ensure ffmpeg in the script directory is on PATH (needed by audio-separator)
 if _script_dir not in os.environ.get('PATH', ''):
     os.environ['PATH'] = _script_dir + os.pathsep + os.environ.get('PATH', '')
-
-# Fix SSL cert for model downloads (raw.githubusercontent.com may be blocked)
-try:
-    import urllib3
-    urllib3.disable_warnings()
-except Exception:
-    pass
-try:
-    import requests
-    _orig_get = requests.get
-    _orig_post = requests.post
-    def _patched_get(url, **kwargs):
-        kwargs.setdefault('verify', False)
-        kwargs.setdefault('timeout', 30)
-        return _orig_get(url, **kwargs)
-    def _patched_post(url, **kwargs):
-        kwargs.setdefault('verify', False)
-        kwargs.setdefault('timeout', 30)
-        return _orig_post(url, **kwargs)
-    requests.get = _patched_get
-    requests.post = _patched_post
-except Exception:
-    pass
 
 # Standard guitar tuning MIDI pitches (high e, B, G, D, A, low E)
 STD_TUNING = [64, 59, 55, 50, 45, 40]
 MAX_FRET = 24
+
+# Vocal separation model name
+UVR_MODEL_NAME = 'UVR_MDXNET_KARA_2.onnx'
 
 # Look for ffmpeg in the same directory, PATH, or imageio_ffmpeg
 _FFMPEG = None
@@ -154,12 +143,14 @@ def notes_to_bars(notes_fb, beats_per_bar=4, beats_per_minute=120):
     return bars
 
 
-def separate_vocals(audio_path, output_dir=None):
+def separate_vocals(audio_path, output_dir=None, cancel_event=None):
     """Remove vocals from audio, return path to instrumental track.
 
     Uses MDX-Net Karaoke model for vocal/instrumental separation.
     Returns path to the instrumental (no-vocals) WAV file.
     """
+    if cancel_event and cancel_event.is_set():
+        return audio_path
     if output_dir is None:
         output_dir = os.path.dirname(audio_path)
     from audio_separator.separator import Separator
@@ -172,8 +163,10 @@ def separate_vocals(audio_path, output_dir=None):
         log_level=1,
         model_file_dir=models_dir,
     )
-    sep.load_model('UVR_MDXNET_KARA_2.onnx')
+    sep.load_model(UVR_MODEL_NAME)
     sep.separate(audio_path)
+    if cancel_event and cancel_event.is_set():
+        return audio_path
     # separate() writes files to output_dir; find the instrumental one
     base = os.path.splitext(os.path.basename(audio_path))[0]
     for f in os.listdir(output_dir):
@@ -183,7 +176,8 @@ def separate_vocals(audio_path, output_dir=None):
     return audio_path
 
 
-def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
+def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
+               progress_callback=None, cancel_event=None):
     """Full transcription pipeline. Saves MIDI and returns tab data + metadata."""
     wav_path = None
     inst_path = None
@@ -191,17 +185,29 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
         from basic_pitch.inference import predict
         from basic_pitch import ICASSP_2022_MODEL_PATH
 
+        _report = (lambda p, m: None) if not progress_callback else progress_callback
+
+        _report(12, '转换音频格式...')
+        if cancel_event and cancel_event.is_set():
+            raise KeyboardInterrupt()
         wav_path = _ensure_wav(str(audio_path))
 
         # Optional vocal removal
         if remove_vocals:
+            _report(20, '正在分离人声（首次需要下载模型）...')
+            if cancel_event and cancel_event.is_set():
+                raise KeyboardInterrupt()
             try:
-                inst_path = separate_vocals(wav_path, output_dir)
+                inst_path = separate_vocals(wav_path, output_dir, cancel_event)
                 if inst_path and os.path.exists(inst_path):
                     wav_path = inst_path
+                    _report(40, '人声分离完成')
             except Exception:
                 pass  # fall through to original audio if vocal removal fails
 
+        if cancel_event and cancel_event.is_set():
+            raise KeyboardInterrupt()
+        _report(50, '正在分析音符（basic-pitch）...')
         model_output, midi_data, note_events = predict(
             wav_path,
             onset_threshold=0.5,
@@ -212,6 +218,10 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
             melodia_trick=True,
             midi_tempo=120,
         )
+
+        if cancel_event and cancel_event.is_set():
+            raise KeyboardInterrupt()
+        _report(75, '估算节奏...')
 
         # Tempo estimate
         tempo = 120
@@ -224,6 +234,8 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
         # Save MIDI
         midi_path = os.path.join(output_dir, f"{task_id}.mid")
         midi_data.write(midi_path)
+
+        _report(85, '生成吉他谱...')
 
         # Extract notes
         notes_raw = []
@@ -252,6 +264,8 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
 
         duration = round(max(n[2] for n in notes_fb), 1) if notes_fb else 0
 
+        _report(95, '生成完成')
+
         return {
             'status': 'done',
             'midi_url': f"/outputs/{task_id}.mid",
@@ -264,6 +278,8 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
             'tuning': ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'],  # high to low
         }
 
+    except KeyboardInterrupt:
+        return {'status': 'cancelled', 'message': '转录已取消'}
     except Exception as e:
         traceback.print_exc()
         return {
@@ -271,19 +287,15 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
             'message': str(e),
         }
     finally:
-        # Clean up temp WAV files
-        for _p in [wav_path, inst_path]:
-            if _p and _p.endswith('.conv.wav') and os.path.exists(_p):
-                try:
-                    os.remove(_p)
-                except OSError:
-                    pass
-            # Also clean up audio-separator output dirs
-            _parent = os.path.dirname(_p) if _p else ''
-            _stem_dir = os.path.join(_parent, os.path.splitext(os.path.basename(_p or ''))[0])
-            if _stem_dir and os.path.isdir(_stem_dir) and '_' in os.path.basename(_stem_dir):
-                try:
-                    import shutil
-                    shutil.rmtree(_stem_dir, ignore_errors=True)
-                except Exception:
-                    pass
+        # Clean up temp WAV files and audio-separator artifacts
+        for _p in filter(None, [wav_path, inst_path]):
+            # Remove .conv.wav temp files
+            if _p.endswith('.conv.wav') and os.path.exists(_p):
+                _safe_remove(_p)
+            # Remove audio-separator output subdirectories
+            _stem_dir = os.path.join(
+                os.path.dirname(_p),
+                os.path.splitext(os.path.basename(_p))[0],
+            )
+            if os.path.isdir(_stem_dir) and '_' in os.path.basename(_stem_dir):
+                shutil.rmtree(_stem_dir, ignore_errors=True)

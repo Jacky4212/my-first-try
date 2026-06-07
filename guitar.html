@@ -4,20 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>吉他谱 - 双鱼小栈</title>
+<link rel="stylesheet" href="common.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
-  min-height:100vh;
-  background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
-  color:#e8e0f0
-}
-.hdr{max-width:900px;margin:0 auto;padding:30px 20px 10px}
-.hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
-.hdr a:hover{color:#f48fb1}
-.hdr h1{font-size:34px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
-.hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
 .srch{max-width:900px;margin:0 auto;padding:0 20px 10px;position:relative}
 .srch input{
   width:100%;padding:10px 16px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;
@@ -100,8 +88,6 @@ body{
 .card .ico{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-radius:12px;font-size:28px}
 .card .n h3{font-size:18px;font-weight:600;color:#e0d0e8}
 .card .n p{font-size:13px;color:#8a7aaa;margin-top:2px;letter-spacing:1px}
-.footer{text-align:center;padding:40px 20px 20px;color:#6a5a80;font-size:13px;letter-spacing:2px}
-
 /* ===== VIEWER ===== */
 .vwr{display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column}
 .vwr.on{display:flex}
@@ -222,7 +208,7 @@ body{
 }
 .tsc-close-btn:hover{background:rgba(231,76,60,0.35) !important;border-color:rgba(231,76,60,0.5) !important;box-shadow:0 0 16px rgba(231,76,60,0.15)}
 
-.tsc-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;align-items:center}
+.tsc-body{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;align-items:center;min-height:0}
 .tsc-body::-webkit-scrollbar{width:5px}
 .tsc-body::-webkit-scrollbar-track{background:transparent}
 .tsc-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:3px}
@@ -261,15 +247,22 @@ body{
 }
 .tsc-progress .txt{color:#8a7aaa;font-size:13px;letter-spacing:1px}
 
-.tsc-result{display:none;width:100%;max-width:900px;margin:20px 0;flex-direction:column;align-items:center}
+.tsc-result{display:none;width:100%;max-width:900px;flex-direction:column;align-items:center;flex:1}
 .tsc-result.on{display:flex}
-.tsc-result .info{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.tsc-result .info{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;flex-shrink:0}
 .tsc-result .info .itm{text-align:center}
 .tsc-result .info .itm .v{font-size:22px;font-weight:600;color:#a8d8ea}
 .tsc-result .info .itm .l{font-size:11px;color:#6a5a80;letter-spacing:1px;margin-top:2px}
-.tsc-result .at-wrap{width:100%;background:rgba(255,255,255,0.03);border-radius:12px;overflow:auto;padding:10px}
+.tsc-result .at-wrap{width:100%;background:rgba(255,255,255,0.03);border-radius:12px;overflow:auto;padding:10px;flex:1;min-height:0}
+.tsc-result .at-wrap::-webkit-scrollbar{width:6px;height:6px}
+.tsc-result .at-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+.tsc-result .at-wrap::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.25)}
 .tsc-result .note{color:#6a5a80;font-size:12px;margin-top:10px;text-align:center;letter-spacing:1px}
-.tsc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.tsc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:12px 0 4px;
+  position:sticky;bottom:0;z-index:5;
+  background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);
+  border-top:1px solid rgba(255,255,255,0.04);
+  margin-top:auto;width:100%}
 .tsc-bar-playing{border-color:rgba(168,216,234,0.7)!important;box-shadow:0 0 12px rgba(168,216,234,0.35);background:rgba(168,216,234,0.08)!important}
 .tsc-history{max-width:360px;margin:16px auto 0}
 .tsc-hist-title{font-size:12px;color:#6a5a80;text-align:center;margin-bottom:8px;letter-spacing:1px}
@@ -278,10 +271,22 @@ body{
 .tsc-hist-item .hi{font-size:12px;color:#8a7aaa}
 .tsc-hist-item .hv{font-size:13px;color:#a8d8ea;font-weight:500}
 
+/* 主页面缓存扒谱列表 */
+.tsc-cached-item{display:flex;align-items:center;gap:10px;padding:8px 12px;margin:3px 0;background:rgba(255,255,255,0.03);border-radius:8px;cursor:pointer;transition:background .15s}
+.tsc-cached-item:hover{background:rgba(168,216,234,0.08)}
+.tsc-cached-item .ci-main{flex:1;min-width:0}
+.tsc-cached-item .ci-main .ci-title{font-size:13px;color:#a8d8ea;font-weight:500;letter-spacing:.5px}
+.tsc-cached-item .ci-main .ci-sub{font-size:11px;color:#5a4a70;margin-top:1px}
+.tsc-cached-item .ci-arr{color:#5a4a70;font-size:14px;flex-shrink:0}
+
 
 </style>
 </head>
 <body>
+
+<a href="#main-content" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;z-index:999"
+   onfocus="this.style.left='16px';this.style.top='16px';this.style.width='auto';this.style.height='auto';this.style.background='#1a1d4e';this.style.color='#f48fb1';this.style.padding='12px 24px';this.style.borderRadius='8px';this.style.fontSize='16px';this.style.fontWeight='600';this.style.textDecoration='none'"
+   onblur="this.style.left='-9999px';this.style.width='1px';this.style.height='1px'">跳到主内容</a>
 
 <div class="hdr">
   <a href="index.html">← 返回首页</a>
@@ -290,13 +295,20 @@ body{
   <div class="div"></div>
 </div>
 
-<div class="tsc-entry"><div class="tsc-card" id="tscCard">
-  <div class="ico">🎸</div>
-  <div class="n"><h3>智能扒谱</h3><p>上传音频 / 录音 → AI 自动生成吉他谱</p></div>
-  <span class="arr">→</span>
-</div></div>
+<div class="tsc-entry" id="main-content">
+  <div class="tsc-card" id="tscCard">
+    <div class="ico">🎸</div>
+    <div class="n"><h3>智能扒谱</h3><p>上传音频 / 录音 → AI 自动生成吉他谱</p></div>
+    <span class="arr">→</span>
+  </div>
+  <!-- 已缓存的扒谱结果（后端在线时显示） -->
+  <div id="tscCached" style="display:none;margin-top:10px">
+    <div style="font-size:12px;color:#5a4a70;letter-spacing:1px;padding:0 4px 6px">📋 历史扒谱</div>
+    <div id="tscCachedList"></div>
+  </div>
+</div>
 
-<div class="srch"><input type="text" id="sInp" placeholder="搜索歌曲或艺人..." autocomplete="off"><button class="clr" id="sClr">✕</button></div>
+<div class="srch"><input type="text" id="sInp" placeholder="搜索歌曲或艺人..." autocomplete="off" aria-label="搜索吉他谱"><button class="clr" id="sClr" aria-label="清除搜索">✕</button></div>
 
 <div class="fav-fil" id="favFil">
   <button class="on" data-fav="all">全部</button>
@@ -395,6 +407,7 @@ body{
     <div class="tsc-progress" id="tscProg">
       <div class="txt" id="tscProgTxt">正在分析音频...</div>
       <div class="bar-wrap"><div class="bar-fill" id="tscProgBar"></div></div>
+      <button class="tsc-btn" id="tscCancel" style="margin-top:12px;border-color:rgba(231,76,60,0.3);color:#e74c3c">✕ 取消转录</button>
     </div>
 
     <!-- Result -->
@@ -423,7 +436,8 @@ body{
 
     <!-- Error -->
     <div class="tsc-progress" id="tscError" style="display:none">
-      <div class="txt" style="color:#e74c3c" id="tscErrorTxt"></div>
+      <div class="txt" style="color:#e74c3c;margin-bottom:8px" id="tscErrorTxt"></div>
+      <button class="tsc-btn" id="tscRetryBtn" style="border-color:rgba(168,216,234,0.2);color:#a8d8ea">🔄 重试</button>
     </div>
   </div>
 </div>
@@ -799,6 +813,7 @@ var tscRec = document.getElementById('tscRec');
 var tscProg = document.getElementById('tscProg');
 var tscProgTxt = document.getElementById('tscProgTxt');
 var tscProgBar = document.getElementById('tscProgBar');
+var tscCancel = document.getElementById('tscCancel');
 var tscResult = document.getElementById('tscResult');
 var tscAtRender = document.getElementById('tscAtRender');
 var tscError = document.getElementById('tscError');
@@ -809,6 +824,17 @@ var recording = false;
 var mediaRecorder = null;
 var audioChunks = [];
 var currentMidiUrl = null;
+var _recMimeType = null;
+var _currentTaskId = null;
+
+// 浏览器兼容的 MediaRecorder MIME 类型检测
+function _bestRecMimeType() {
+  var types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/wav'];
+  for (var i = 0; i < types.length; i++) {
+    if (MediaRecorder.isTypeSupported(types[i])) return types[i];
+  }
+  return ''; // 浏览器自己选
+}
 
 function showEl(el){ el.classList.add('on'); }
 function hideEl(el){ el.classList.remove('on'); }
@@ -826,7 +852,48 @@ tscCard.addEventListener('click', function(){
   tscError.style.display = 'none';
   loadHistory();
 });
-function closeTranscriber(){ stopPlayback(); hideEl(tscOvl); stopRecording(); }
+function closeTranscriber(){
+  stopPlayback(); hideEl(tscOvl); stopRecording();
+  _currentTaskId = null; tscCancel.disabled = false; tscCancel.style.opacity = '';
+  tscCancel.textContent = '✕ 取消转录';
+  // 关闭后刷新主页面缓存列表
+  loadCachedTcList();
+}
+
+// ===== 主页面上显示已缓存的扒谱结果 =====
+function loadCachedTcList(){
+  var wrap = document.getElementById('tscCached');
+  var list = document.getElementById('tscCachedList');
+  fetch('http://localhost:8765/api/transcriptions')
+    .then(function(r){ return r.json(); })
+    .then(function(items){
+      if(!items || !items.length){ wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+      list.innerHTML = items.map(function(it){
+        return '<div class="tsc-cached-item" data-tid="'+it.task_id+'">'+
+          '<div class="ci-main">'+
+            '<div class="ci-title">🎸 '+(it.note_count||'?')+'音符 · '+(it.duration||'?')+'s</div>'+
+            '<div class="ci-sub">'+(it.tempo||'?')+'BPM · '+it.num_bars+'小节</div>'+
+          '</div>'+
+          '<span class="ci-arr">→</span></div>';
+      }).join('');
+      // Click to load directly
+      list.querySelectorAll('.tsc-cached-item').forEach(function(el){
+        el.addEventListener('click', function(e){
+          e.stopPropagation();
+          var tid = el.dataset.tid;
+          // Open transcription overlay
+          var card = document.getElementById('tscCard');
+          card.click(); // opens the overlay
+          // Then load the cached result
+          setTimeout(function(){ loadCached(tid); }, 300);
+        });
+      });
+    }).catch(function(){ wrap.style.display = 'none'; });
+}
+
+// Load on page start
+loadCachedTcList();
 tscClose.addEventListener('click', closeTranscriber);
 document.getElementById('tscBack').addEventListener('click', closeTranscriber);
 document.addEventListener('keydown', function(e){
@@ -857,28 +924,54 @@ function showError(msg){
   tscErrorTxt.textContent = msg;
 }
 
+// Retry button — reset state and let user choose a new file
+document.getElementById('tscRetryBtn').addEventListener('click', function(){
+  tscError.style.display = 'none';
+  tscFile.value = '';
+  tscErrorTxt.textContent = '';
+  _currentTaskId = null;
+});
+
+// 格式化相对时间
+function fmtRelativeTime(unixTs){
+  var diff = Date.now() / 1000 - unixTs;
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return Math.round(diff / 60) + '分钟前';
+  if (diff < 86400) return Math.round(diff / 3600) + '小时前';
+  if (diff < 604800) return Math.round(diff / 86400) + '天前';
+  return new Date(unixTs * 1000).toLocaleDateString('zh-CN');
+}
+
 // History
 function loadHistory(){
   var list = document.getElementById('tscHistList');
   var wrap = document.getElementById('tscHistory');
+  list.innerHTML = '<div style="text-align:center;color:#5a4a70;font-size:12px;padding:8px">⏳ 加载历史...</div>';
+  wrap.style.display = '';
+
   fetch(API + '/api/transcriptions')
     .then(function(r){ return r.json(); })
     .then(function(items){
-      if (!items || !items.length) { wrap.style.display = 'none'; return; }
-      wrap.style.display = '';
+      if (!items || !items.length) {
+        list.innerHTML = '<div style="text-align:center;color:#3a2a50;font-size:12px;padding:8px">暂无历史转录</div>';
+        return;
+      }
       list.innerHTML = items.map(function(it){
+        var label = (it.note_count || '?') + '音符 · ' + (it.duration || '?') + 's · ' + (it.tempo || '?') + 'BPM';
+        var timeStr = it.timestamp ? fmtRelativeTime(it.timestamp) : '';
         return '<div class="tsc-hist-item" data-tid="' + it.task_id + '">' +
-          '<span class="hi">' + it.task_id + '</span>' +
-          '<span class="hi">' + it.note_count + '音符 ' + it.duration + 's ' + it.tempo + 'BPM</span>' +
+          '<span class="hv">' + timeStr + '</span>' +
+          '<span class="hi">' + label + '</span>' +
           '</div>';
       }).join('');
-      // Click to load cached result
       list.querySelectorAll('.tsc-hist-item').forEach(function(el){
         el.addEventListener('click', function(){
           loadCached(el.dataset.tid);
         });
       });
-    }).catch(function(){});
+    }).catch(function(){
+      list.innerHTML = '<div style="text-align:center;color:#3a2a50;font-size:12px;padding:8px">⚠ 后端未连接，历史不可用</div>';
+    });
 }
 
 function loadCached(taskId){
@@ -898,18 +991,33 @@ function loadCached(taskId){
 }
 
 function handleFile(file){
+  // 前端校验
+  var allowedExts = ['.mp3','.wav','.ogg','.flac','.m4a','.webm'];
+  var ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+  if (allowedExts.indexOf(ext) === -1) {
+    showError('不支持 ' + ext + ' 格式，请使用 MP3/WAV/OGG/FLAC/M4A');
+    return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    showError('文件过大（最大 50MB），当前 ' + (file.size / 1024 / 1024).toFixed(1) + 'MB');
+    return;
+  }
+
   hideAll(); showEl(tscProg);
   tscError.style.display = 'none';
-  tscProgTxt.textContent = '正在上传...';
+  tscProgTxt.textContent = '正在上传... (' + (file.size / 1024 / 1024).toFixed(1) + 'MB)';
   tscProgBar.style.width = '5%';
+  _currentTaskId = null;
 
   var fd = new FormData();
   fd.append('audio', file);
   fetch(API + '/api/transcribe', { method: 'POST', body: fd })
     .then(function(r){ return r.json(); })
     .then(function(data){
-      if(data.task_id) pollTask(data.task_id);
-      else showError(data.detail || '上传失败');
+      if(data.task_id) {
+        window._currentTaskId = data.task_id;
+        pollTask(data.task_id);
+      } else showError(data.detail || '上传失败');
     })
     .catch(function(e){ showError('无法连接后端服务，请确保已启动 guitar-transcriber/start.bat'); });
 }
@@ -923,18 +1031,22 @@ tscRec.addEventListener('click', function(){
 function startRecording(){
   navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
     audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    _recMimeType = _bestRecMimeType();
+    var opts = _recMimeType ? { mimeType: _recMimeType } : {};
+    mediaRecorder = new MediaRecorder(stream, opts);
+    var actualType = mediaRecorder.mimeType || _recMimeType || 'audio/webm';
+    var ext = actualType.split('/')[1] || 'webm';
     mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
     mediaRecorder.onstop = function(){
-      var blob = new Blob(audioChunks, { type: 'audio/webm' });
-      handleFile(new File([blob], 'recording.webm', { type: 'audio/webm' }));
+      var blob = new Blob(audioChunks, { type: actualType });
+      handleFile(new File([blob], 'recording.' + ext, { type: actualType }));
       stream.getTracks().forEach(function(t){ t.stop(); });
     };
     mediaRecorder.start();
     recording = true;
     tscRec.textContent = '⏹ 停止录音';
     tscRec.classList.add('on');
-  }).catch(function(){ showError('无法访问麦克风'); });
+  }).catch(function(){ showError('无法访问麦克风，请检查权限设置'); });
 }
 
 function stopRecording(){
@@ -946,31 +1058,34 @@ function stopRecording(){
   }
 }
 
-// Poll task
+// Poll task with real progress
 function pollTask(taskId){
-  var progress = 10;
   var interval = setInterval(function(){
     fetch(API + '/api/status/' + taskId)
       .then(function(r){ return r.json(); })
       .then(function(data){
         if(data.status === 'error'){
-          clearInterval(interval);
+          clearInterval(interval); hideEl(tscCancel);
           showError(data.message || '转录失败');
+        } else if(data.status === 'cancelled'){
+          clearInterval(interval); hideEl(tscCancel);
+          showError('转录已取消');
         } else if(data.status === 'done'){
-          clearInterval(interval);
+          clearInterval(interval); hideEl(tscCancel);
           tscProgBar.style.width = '100%';
-          showResult(data);
+          tscProgTxt.textContent = '转录完成 ✓';
+          setTimeout(function(){ showResult(data); }, 400);
         } else {
-          progress = Math.min(95, progress + Math.random() * 8);
-          tscProgBar.style.width = progress + '%';
-          tscProgTxt.textContent = '正在分析音频... ' + Math.round(progress) + '%';
+          var pct = Math.min(99, Math.max(3, data.progress || 0));
+          tscProgBar.style.width = pct + '%';
+          tscProgTxt.textContent = data.message || '正在分析音频... ' + Math.round(pct) + '%';
         }
       })
       .catch(function(){
-        clearInterval(interval);
-        showError('连接后端失败');
+        clearInterval(interval); hideEl(tscCancel);
+        showError('连接后端失败，请确认服务已启动');
       });
-  }, 2000);
+  }, 1500);
 }
 
 // Show result
@@ -1009,6 +1124,18 @@ document.getElementById('tscCapoUp').addEventListener('click', function(){
     document.getElementById('tscCapoVal').textContent = window._tscCapo;
     renderTab(window._tscTabData, window._tscCapo);
   }
+});
+
+// Cancel transcription
+tscCancel.addEventListener('click', function(){
+  if(!_currentTaskId) return;
+  var btn = tscCancel;
+  btn.textContent = '⏳ 取消中...';
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  fetch(API + '/api/cancel/' + _currentTaskId, { method: 'POST' })
+    .then(function(){})
+    .catch(function(){});
 });
 
 // Download

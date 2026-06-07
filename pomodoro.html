@@ -4,24 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>番茄钟 - 双鱼小栈</title>
+<link rel="stylesheet" href="common.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
-  min-height:100vh;
-  background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
-  color:#e8e0f0
-}
-.hdr{max-width:700px;margin:0 auto;padding:30px 20px 10px}
-.hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
-.hdr a:hover{color:#f48fb1}
-.hdr h1{
-  font-size:34px;font-weight:700;letter-spacing:4px;
-  background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
-}
-.hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
-.hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
+.hdr{max-width:700px}
 
 /* ===== main card ===== */
 .main-card{
@@ -121,7 +106,6 @@ body{
   border-radius:24px;border:1px solid rgba(255,255,255,.08);
   padding:32px;width:100%;max-width:400px;animation:fadeUp .3s ease
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .modal-card .modal-hdr{
   display:flex;justify-content:space-between;align-items:center;margin-bottom:28px
 }
@@ -193,6 +177,10 @@ body{
 </head>
 <body>
 
+<a href="#main-content" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;z-index:999"
+   onfocus="this.style.left='16px';this.style.top='16px';this.style.width='auto';this.style.height='auto';this.style.background='#1a1d4e';this.style.color='#f48fb1';this.style.padding='12px 24px';this.style.borderRadius='8px';this.style.fontSize='16px';this.style.fontWeight='600';this.style.textDecoration='none'"
+   onblur="this.style.left='-9999px';this.style.width='1px';this.style.height='1px'">跳到主内容</a>
+
 <div class="hdr">
   <a href="index.html">← 返回首页</a>
   <h1>番茄钟</h1>
@@ -200,7 +188,7 @@ body{
   <div class="div"></div>
 </div>
 
-<div class="main-card">
+<div class="main-card" id="main-content">
   <div class="card-inner">
 
     <!-- mode tabs -->

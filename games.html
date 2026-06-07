@@ -4,22 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>小游戏 - 双鱼小栈</title>
+<link rel="stylesheet" href="common.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
-  min-height:100vh;
-  background:linear-gradient(145deg,#1a1d4e 0%,#301d5e 30%,#1d3d5e 60%,#2a1f60 100%);
-  color:#e8e0f0
-}
-.hdr{max-width:900px;margin:0 auto;padding:30px 20px 10px}
-.hdr a{color:#8a7aaa;text-decoration:none;font-size:14px;display:inline-block;margin-bottom:10px;letter-spacing:1px}
-.hdr a:hover{color:#f48fb1}
-.hdr h1{font-size:34px;font-weight:700;letter-spacing:4px;background:linear-gradient(135deg,#b39ddb,#f48fb1,#81d4fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hdr p{font-size:14px;color:#8a7aaa;margin-top:6px;letter-spacing:2px}
-.hdr .div{width:80px;height:2px;margin:16px 0 0;background:linear-gradient(90deg,transparent,#f48fb1,transparent);border-radius:2px}
-
-/* tabs */
 .tabs{max-width:900px;margin:24px auto 20px;padding:0 20px;display:flex;gap:10px;flex-wrap:wrap}
 .tab-btn{
   padding:10px 24px;border:none;border-radius:50px;font-size:14px;font-weight:600;cursor:pointer;
@@ -165,6 +151,10 @@ body{
 </head>
 <body>
 
+<a href="#game-content" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;z-index:999"
+   onfocus="this.style.left='16px';this.style.top='16px';this.style.width='auto';this.style.height='auto';this.style.background='#1a1d4e';this.style.color='#f48fb1';this.style.padding='12px 24px';this.style.borderRadius='8px';this.style.fontSize='16px';this.style.fontWeight='600';this.style.textDecoration='none'"
+   onblur="this.style.left='-9999px';this.style.width='1px';this.style.height='1px'">跳到游戏内容</a>
+
 <div class="hdr">
   <a href="index.html">← 返回首页</a>
   <h1>小游戏</h1>
@@ -172,7 +162,7 @@ body{
   <div class="div"></div>
 </div>
 
-<div class="tabs" id="tabs">
+<div class="tabs" id="game-content">
   <button class="tab-btn active" data-panel="g2048">2048</button>
   <button class="tab-btn" data-panel="ms">扫雷</button>
   <button class="tab-btn" data-panel="snake">贪吃蛇</button>
@@ -231,7 +221,7 @@ body{
     <button class="info-btn" id="snake-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="snake-layout">
-    <div class="canvas-wrap"><canvas id="snake-canvas" width="400" height="400"></canvas></div>
+    <div class="canvas-wrap"><canvas id="snake-canvas" width="400" height="400" role="img" aria-label="贪吃蛇游戏画面"></canvas></div>
     <div class="snake-side">
       <p class="game-hint" style="margin-top:0">控制方向</p>
       <div class="ctrl-row" id="snake-ctrl">
@@ -258,7 +248,7 @@ body{
     <button class="rst-btn" onclick="flappyInit()">重新开始</button>
     <button class="info-btn" id="flappy-info-btn" title="玩法说明">ⓘ</button>
   </div>
-  <div class="canvas-wrap"><canvas id="flappy-canvas" width="400" height="500"></canvas></div>
+  <div class="canvas-wrap"><canvas id="flappy-canvas" width="400" height="500" role="img" aria-label="Flappy Bird 游戏画面"></canvas></div>
   <div class="flappy-hint-wrap"><div class="flappy-hint" id="flappyHint">按 空格 / 点击画面 飞行</div></div>
   <div class="rules-panel" id="flappy-rules">
     <h4>🐦 Flappy Bird 玩法</h4>
@@ -279,7 +269,7 @@ body{
     <button class="info-btn" id="tank-info-btn" title="玩法说明">ⓘ</button>
   </div>
   <div class="snake-layout">
-    <div class="canvas-wrap"><canvas id="tank-canvas" width="416" height="416"></canvas></div>
+    <div class="canvas-wrap"><canvas id="tank-canvas" width="416" height="416" role="img" aria-label="坦克大战游戏画面"></canvas></div>
     <div class="snake-side">
       <p class="game-hint" style="margin-top:0">移动 / 射击</p>
       <div class="ctrl-row" id="tank-ctrl">

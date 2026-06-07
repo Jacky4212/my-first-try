@@ -1,0 +1,62 @@
+/* ===================================================================
+   双鱼小栈 · 共享样式表 v3
+   仅包含所有页面完全一致的样式
+   =================================================================== */
+
+/* ---- Reset ---- */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ---- Document ---- */
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(145deg, #1a1d4e 0%, #301d5e 30%, #1d3d5e 60%, #2a1f60 100%);
+  color: #e8e0f0;
+  overflow-x: hidden;
+}
+
+/* ---- Header (guitar/games/pomodoro 通用) ---- */
+.hdr { max-width: 900px; margin: 0 auto; padding: 30px 20px 10px; }
+.hdr a {
+  color: #8a7aaa; text-decoration: none; font-size: 14px;
+  display: inline-block; margin-bottom: 10px; letter-spacing: 1px;
+}
+.hdr a:hover { color: #f48fb1; }
+.hdr h1 {
+  font-size: 34px; font-weight: 700; letter-spacing: 4px;
+  background: linear-gradient(135deg, #b39ddb, #f48fb1, #81d4fa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hdr p { font-size: 14px; color: #8a7aaa; margin-top: 6px; letter-spacing: 2px; }
+.hdr .div {
+  width: 80px; height: 2px; margin: 16px 0 0;
+  background: linear-gradient(90deg, transparent, #f48fb1, transparent);
+  border-radius: 2px;
+}
+
+/* ---- Footer ---- */
+.footer { text-align: center; padding: 40px 20px 20px; color: #6a5a80; font-size: 13px; letter-spacing: 2px; }
+
+/* ---- 滚动条 ---- */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 3px; }
+
+/* ---- 焦点 ---- */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid #f48fb1; outline-offset: 3px; border-radius: 50px;
+}
+
+/* ---- 淡入动画 ---- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 640px) {
+  .hdr h1 { font-size: 26px; letter-spacing: 3px; }
+}

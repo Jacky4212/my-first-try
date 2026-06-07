@@ -177,42 +177,57 @@ function renderTab(data, capo){
         ctx.setLineDash([]);
       }
 
-      // Draw notes
+      // Draw notes with chord-aware layout
       var notes = bar.notes || [];
-      var drawnPositions = {};
+      // Group notes by (string, beat) for overlap resolution
+      var groups = {};
+      notes.forEach(function(n){
+        var beatKey = Math.round(n.beat * 10) / 10;
+        var key = n.string + '_' + beatKey;
+        if(!groups[key]) groups[key] = [];
+        groups[key].push(n);
+      });
 
       notes.forEach(function(n){
         var bx = leftPad + 4 + noteArea * (Math.min(n.beat, maxBeat - 0.01) / maxBeat);
         var by = topPad + (n.string - 1) * stringSpacing;
         var fret = n.fret;
 
-        var posKey = n.string + '_' + Math.round(n.beat * 10) / 10;
-        var offsetCnt = drawnPositions[posKey] || 0;
-        drawnPositions[posKey] = offsetCnt + 1;
-        if(offsetCnt > 0){
-          by -= offsetCnt * 7;
+        // Layout multiple notes at same (string, beat): fan outward
+        var beatKey = Math.round(n.beat * 10) / 10;
+        var groupKey = n.string + '_' + beatKey;
+        var group = groups[groupKey];
+        if(group && group.length > 1){
+          var idx = group.indexOf(n);
+          var total = group.length;
+          // Spread from -8px to +8px per note, alternating
+          var span = Math.min(total * 8, 20);
+          var offset = -span/2 + (idx + 0.5) * (span / total);
+          by += offset;
         }
 
-        // Note dot
+        // Note dot (open strings smaller)
         ctx.beginPath();
-        ctx.arc(bx, by, fret === 0 ? 2.5 : 5.5, 0, Math.PI * 2);
+        ctx.arc(bx, by, fret === 0 ? 2.5 : 5, 0, Math.PI * 2);
         ctx.fillStyle = fret === 0 ? 'rgba(255,255,255,0.12)' : 'rgba(244,143,177,0.55)';
         ctx.fill();
 
         // Note ring for non-zero frets
         if(fret > 0){
           ctx.beginPath();
-          ctx.arc(bx, by, 5.5, 0, Math.PI * 2);
+          ctx.arc(bx, by, 5, 0, Math.PI * 2);
           ctx.strokeStyle = 'rgba(244,143,177,0.3)';
           ctx.lineWidth = 1;
           ctx.stroke();
         }
 
-        // Fret number
-        ctx.fillStyle = fret === 0 ? 'rgba(168,216,234,0.4)' : '#e0d0e8';
-        ctx.font = (fret > 9 ? 'bold 9px' : 'bold 11px') + ' monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(fret === 0 ? '0' : String(fret), bx, by - 8);
+        // Fret number (skip if too many overlaps would be unreadable)
+        if(!group || group.length <= 3){
+          ctx.fillStyle = fret === 0 ? 'rgba(168,216,234,0.4)' : '#e0d0e8';
+          ctx.font = (fret > 9 ? 'bold 9px' : 'bold 11px') + ' monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(fret === 0 ? '0' : String(fret), bx, by - 8);
+        }
       });
 
       // Bar number
