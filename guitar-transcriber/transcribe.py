@@ -332,6 +332,13 @@ def separate_vocals(audio_path, output_dir=None, cancel_event=None):
         output_format='WAV',
         log_level=1,
         model_file_dir=models_dir,
+        mdx_params={
+            'hop_length': 1024,
+            'segment_size': 256,
+            'overlap': 0.5,          # ↑ 0.25→0.5: fewer boundary artifacts
+            'batch_size': 1,
+            'enable_denoise': True,   # was False: reduce residual noise
+        },
     )
     sep.load_model(UVR_MODEL_NAME)
     sep.separate(audio_path)
@@ -344,6 +351,52 @@ def separate_vocals(audio_path, output_dir=None, cancel_event=None):
             return os.path.join(output_dir, f)
     # Fallback: return original audio
     return audio_path
+
+
+def _apply_noise_gate(wav_path, cancel_event=None):
+    """Adaptive noise gate using librosa frame RMS.
+
+    Estimates noise floor from quietest frames, applies soft attenuation
+    to frames below threshold. Helps reduce background hum/fan/hiss
+    being misinterpreted as notes by basic-pitch.
+    Returns path to gated audio (may be same path if no change).
+    """
+    if cancel_event and cancel_event.is_set():
+        return wav_path
+    try:
+        y, sr = librosa.load(wav_path, sr=22050, mono=True)
+        frame_length = 2048
+        hop_length = 512
+
+        # Frame RMS energy
+        energy = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)[0]
+        noise_floor = float(np.percentile(energy, 15))
+        peak = float(np.max(energy))
+
+        # Only gate if noise is a noticeable fraction of peak
+        if peak > 1e-6 and noise_floor / peak > 0.02:
+            threshold = max(noise_floor * 2.0, 1e-10)
+            gate = np.clip((energy - threshold) / (threshold * 0.5), 0.0, 1.0)
+
+            # Smooth gate transitions with a tiny lowpass
+            gate = np.convolve(gate, [0.15, 0.7, 0.15], mode='same')
+
+            # Resample gate to audio sample rate
+            gate_rs = np.interp(
+                np.linspace(0, len(gate) - 1, len(y)),
+                np.arange(len(gate)),
+                gate,
+            )
+            y_gated = y * gate_rs
+
+            import soundfile as sf
+            gated_path = wav_path + '.gated.wav'
+            sf.write(gated_path, y_gated, sr)
+            return gated_path
+
+        return wav_path
+    except Exception:
+        return wav_path
 
 
 def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
@@ -377,12 +430,17 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
 
         if cancel_event and cancel_event.is_set():
             raise KeyboardInterrupt()
+
+        # ——— Adaptive noise gate: suppress environmental noise before analysis ———
+        _report(45, '降噪预处理...')
+        wav_path = _apply_noise_gate(wav_path, cancel_event=cancel_event)
+
         _report(50, '正在分析音符（basic-pitch）...')
         model_output, midi_data, note_events = predict(
             wav_path,
-            onset_threshold=0.5,
-            frame_threshold=0.3,
-            minimum_note_length=58,
+            onset_threshold=0.65,     # ↑ 0.5→0.65: fewer false onsets
+            frame_threshold=0.4,      # ↑ 0.3→0.4:  shorter/sharper notes
+            minimum_note_length=127,  # ↑ 58→127ms: filters short noise bursts
             minimum_frequency=75.0,
             maximum_frequency=2000.0,
             melodia_trick=True,
@@ -460,8 +518,8 @@ def transcribe(audio_path, output_dir, task_id, remove_vocals=True,
     finally:
         # Clean up temp WAV files and audio-separator artifacts
         for _p in filter(None, [wav_path, inst_path]):
-            # Remove .conv.wav temp files
-            if _p.endswith('.conv.wav') and os.path.exists(_p):
+            # Remove .conv.wav and .gated.wav temp files
+            if (_p.endswith('.conv.wav') or _p.endswith('.gated.wav')) and os.path.exists(_p):
                 _safe_remove(_p)
             # Remove audio-separator output subdirectories
             _stem_dir = os.path.join(

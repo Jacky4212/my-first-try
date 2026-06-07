@@ -1133,40 +1133,64 @@ function _getReverb(ctx) {
 function createKSBuffer(ctx, freq, durSec, velocity) {
   var sr = ctx.sampleRate;
   var period = Math.max(2, Math.round(sr / freq));
-  // Make buffer 3x longer than notated duration for natural ring-out
+  // Ring time: 3x notated, frequency-dependent extension for low notes
   var ringTime = Math.max(durSec, 0.3) * 3;
-  // Lower notes ring longer
-  if (freq < 200) ringTime = Math.max(ringTime, 2.5);
-  else if (freq < 400) ringTime = Math.max(ringTime, 1.5);
+  if (freq < 150) ringTime = Math.max(ringTime, 3.0);
+  else if (freq < 250) ringTime = Math.max(ringTime, 2.0);
+  else if (freq < 400) ringTime = Math.max(ringTime, 1.2);
   var totalSamples = Math.floor(sr * ringTime);
   var buf = ctx.createBuffer(1, totalSamples, sr);
   var d = buf.getChannelData(0);
 
-  // Noise burst for initial pluck
+  // ——— Lowpass-filtered noise burst (softer, warmer attack) ———
+  var noiseLP = 0;
   for (var i = 0; i < period && i < totalSamples; i++) {
-    d[i] = (Math.random() * 2 - 1);
+    noiseLP += (Math.random() * 2 - 1 - noiseLP) * 0.25;
+    d[i] = noiseLP;
   }
 
-  var decay = 0.99935 - (freq - 80) / 3000 * 0.003;
+  // ——— Frequency-dependent decay (low notes ring longer) ———
+  // t60 = time for -60dB, ~3.5s at 80Hz, ~1s at 1kHz
+  var t60 = 4.0 - (freq - 80) / 3500 * 3.0;
+  t60 = Math.max(0.8, Math.min(4.5, t60));
+  var decay = Math.pow(0.001, 1 / (t60 * sr));
+
+  // ——— One-pole lowpass in feedback loop for warmer tone ———
+  var lpCoeff = Math.min(0.85, 0.1 + freq / 2000 * 0.45);
+  var lpState = 0;
+
+  // ——— DC blocker (prevents low-frequency rumble/click) ———
+  var dcPrevIn = 0, dcPrevOut = 0;
+  var DC_R = 0.995;
+
   for (var i = period; i < totalSamples; i++) {
-    d[i] = (d[i - period] + (i > period + 1 ? d[i - period - 1] : 0)) * 0.5 * decay;
+    // Basic KS: two-point average
+    var avg = (d[i - period] + (i > period ? d[i - period - 1] : d[i - period])) * 0.5;
+    // Warm up via one-pole lowpass
+    lpState += lpCoeff * (avg - lpState);
+    var sample = lpState * decay;
+    // DC blocker: y(n) = x(n) - x(n-1) + R * y(n-1)
+    var dcOut = sample - dcPrevIn + DC_R * dcPrevOut;
+    dcPrevIn = sample;
+    dcPrevOut = dcOut;
+    d[i] = dcOut;
   }
 
-  // Natural pluck envelope: quick attack, sustain at note duration, soft release
-  var amp = (velocity || 100) / 127 * 0.3;
-  var atkSamples = Math.min(period, Math.floor(sr * 0.002));
-  var susSamples = Math.floor(sr * durSec * 1.2); // sustain a bit beyond notation
+  // ——— Envelope: quick attack, sustain, quadratic release ———
+  var amp = (velocity || 100) / 127 * 0.28;
+  var atkLen = Math.min(period, Math.floor(sr * 0.003));
+  var susLen = Math.floor(sr * Math.max(durSec, 0.15));
   for (var i = 0; i < totalSamples; i++) {
     var env;
-    if (i < atkSamples) {
-      env = i / atkSamples;
-    } else if (i < susSamples) {
+    if (i < atkLen) {
+      env = i / atkLen;
+    } else if (i < susLen) {
       env = 1;
     } else {
-      // Soft release — never goes fully to zero from envelope alone
-      env = Math.max(0.001, 1 - (i - susSamples) / (totalSamples - susSamples) * 0.7);
+      var rt = (i - susLen) / (totalSamples - susLen);
+      env = 1 - rt * rt * 0.95;  // quadratic fade to near-zero
     }
-    d[i] *= amp * env;
+    d[i] *= amp * Math.max(0, env);
   }
 
   return buf;
