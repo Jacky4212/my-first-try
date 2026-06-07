@@ -36,7 +36,7 @@ def run_transcribe(task_id: str, audio_path: str):
     tasks[task_id]['status'] = 'processing'
     tasks[task_id]['progress'] = 10
     try:
-        result = transcribe(audio_path, str(OUTPUT_DIR), task_id)
+        result = transcribe(audio_path, str(OUTPUT_DIR), task_id, remove_vocals=True)
         tasks[task_id].update(result)
         tasks[task_id]['progress'] = 100
     except Exception as e:

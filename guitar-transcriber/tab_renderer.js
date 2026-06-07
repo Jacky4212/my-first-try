@@ -1,9 +1,95 @@
 // Guitar Tab Canvas Renderer
-// Renders tab data (bars/notes) onto Canvas elements
+// Renders tab data (bars/notes) onto Canvas elements with chord detection
 var _tabTuningNames = ['e','B','G','D','A','E'];
 
-function renderTab(data){
+// Chord pattern dictionary: interval set -> chord name
+var _CHORD_PATTERNS = [
+  {name:'maj',  ints:[0,4,7]},
+  {name:'m',    ints:[0,3,7]},
+  {name:'dim',  ints:[0,3,6]},
+  {name:'aug',  ints:[0,4,8]},
+  {name:'sus2', ints:[0,2,7]},
+  {name:'sus4', ints:[0,5,7]},
+  {name:'7',    ints:[0,4,7,10]},
+  {name:'maj7', ints:[0,4,7,11]},
+  {name:'m7',   ints:[0,3,7,10]},
+  {name:'dim7', ints:[0,3,6,9]},
+  {name:'m7b5', ints:[0,3,6,10]},
+  {name:'aug7', ints:[0,4,8,10]},
+  {name:'6',    ints:[0,4,7,9]},
+  {name:'m6',   ints:[0,3,7,9]},
+  {name:'9',    ints:[0,4,7,10,2]},
+  {name:'m9',   ints:[0,3,7,10,2]},
+  {name:'add9', ints:[0,4,7,2]},
+  {name:'7sus4',ints:[0,5,7,10]},
+];
+
+var _NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function _notesToChord(notes, capo){
+  // notes: array of {string, fret, pitch} (or just pitch values)
+  // capo: number of frets (0 = no capo)
+  // Returns {name: 'Am', score: 0.8} or null
+
+  if(!notes || notes.length < 2) return null;
+
+  // Collect unique pitch classes
+  var pcs = {};
+  for(var i = 0; i < notes.length; i++){
+    var pitch = typeof notes[i] === 'number' ? notes[i] : notes[i].pitch;
+    if(pitch != null) pcs[pitch % 12] = true;
+  }
+  var pcList = Object.keys(pcs).map(Number);
+  if(pcList.length < 2) return null;
+
+  var best = null;
+  for(var r = 0; r < 12; r++){
+    // Transpose all pitch classes relative to root r
+    var rel = {};
+    for(var k in pcs) rel[(parseInt(k) - r + 12) % 12] = true;
+    var relArr = Object.keys(rel).map(Number);
+
+    // Try each chord pattern
+    for(var ci = 0; ci < _CHORD_PATTERNS.length; ci++){
+      var pat = _CHORD_PATTERNS[ci];
+      var match = 0;
+      for(var pi = 0; pi < pat.ints.length; pi++){
+        if(rel[pat.ints[pi]]) match++;
+      }
+      var extra = relArr.length - pat.ints.length;
+      var score = match / Math.max(pat.ints.length, relArr.length);
+      // Penalty for extra notes not in chord
+      if(extra > 0) score -= extra * 0.1;
+      if(score > 0.5 && (!best || score > best.score)){
+        best = { root: r, type: pat.name, score: score };
+      }
+    }
+  }
+
+  if(!best) return null;
+
+  // Apply capo: shift root down by capo frets
+  var displayRoot = (best.root - (capo || 0) + 12) % 12;
+  var rootName = _NOTE_NAMES[displayRoot];
+  var suffix = best.type === 'maj' ? '' : best.type;
+  return rootName + suffix;
+}
+
+function detectChords(bars, capo){
+  // Detect chord for each bar based on its notes
+  capo = capo || 0;
+  var chords = [];
+  for(var i = 0; i < bars.length; i++){
+    var notes = bars[i].notes || [];
+    var chord = _notesToChord(notes, capo);
+    chords.push({ barIndex: i, chord: chord ? chord : null });
+  }
+  return chords;
+}
+
+function renderTab(data, capo){
   var bars = data.bars || [];
+  var chords = detectChords(bars, capo || 0);
   var wrap = document.getElementById('tscAtRender');
   wrap.innerHTML = '';
 
@@ -17,7 +103,7 @@ function renderTab(data){
   var leftPad = 34;
   var rightPad = 10;
   var stringSpacing = 20;
-  var topPad = 24;
+  var topPad = 36;  // increased for chord label
   var bottomPad = 14;
   var barHeight = topPad + (5 * stringSpacing) + bottomPad;
   var maxBeat = 4;
@@ -45,6 +131,16 @@ function renderTab(data){
 
       var ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
+
+      // Chord label above bar
+      var barIdx = row.idx + bi;
+      var chordData = chords[barIdx];
+      if(chordData && chordData.chord){
+        ctx.fillStyle = '#f48fb1';
+        ctx.font = 'bold 13px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(chordData.chord, barWidth / 2, topPad - 10);
+      }
 
       // Draw 6 strings
       for(var s = 0; s < 6; s++){
@@ -82,14 +178,13 @@ function renderTab(data){
 
       // Draw notes
       var notes = bar.notes || [];
-      var drawnPositions = {};  // track drawn positions to avoid overlap
+      var drawnPositions = {};
 
       notes.forEach(function(n){
         var bx = leftPad + 4 + noteArea * (Math.min(n.beat, maxBeat - 0.01) / maxBeat);
         var by = topPad + (n.string - 1) * stringSpacing;
         var fret = n.fret;
 
-        // Offset overlapping notes on same string+beat
         var posKey = n.string + '_' + Math.round(n.beat * 10) / 10;
         var offsetCnt = drawnPositions[posKey] || 0;
         drawnPositions[posKey] = offsetCnt + 1;

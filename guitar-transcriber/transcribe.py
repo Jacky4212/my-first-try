@@ -5,13 +5,41 @@ import traceback
 import numpy as np
 import pretty_midi
 
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Ensure ffmpeg.exe in the script directory is on PATH (needed by audio-separator)
+if _script_dir not in os.environ.get('PATH', ''):
+    os.environ['PATH'] = _script_dir + os.pathsep + os.environ.get('PATH', '')
+
+# Fix SSL cert for model downloads (raw.githubusercontent.com may be blocked)
+try:
+    import urllib3
+    urllib3.disable_warnings()
+except Exception:
+    pass
+try:
+    import requests
+    _orig_get = requests.get
+    _orig_post = requests.post
+    def _patched_get(url, **kwargs):
+        kwargs.setdefault('verify', False)
+        kwargs.setdefault('timeout', 30)
+        return _orig_get(url, **kwargs)
+    def _patched_post(url, **kwargs):
+        kwargs.setdefault('verify', False)
+        kwargs.setdefault('timeout', 30)
+        return _orig_post(url, **kwargs)
+    requests.get = _patched_get
+    requests.post = _patched_post
+except Exception:
+    pass
+
 # Standard guitar tuning MIDI pitches (high e, B, G, D, A, low E)
 STD_TUNING = [64, 59, 55, 50, 45, 40]
 MAX_FRET = 24
 
 # Look for ffmpeg in the same directory, PATH, or imageio_ffmpeg
 _FFMPEG = None
-_script_dir = os.path.dirname(os.path.abspath(__file__))
 for _cand in [os.path.join(_script_dir, 'ffmpeg.exe'), 'ffmpeg.exe', 'ffmpeg']:
     try:
         subprocess.run([_cand, '-version'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
@@ -126,14 +154,50 @@ def notes_to_bars(notes_fb, beats_per_bar=4, beats_per_minute=120):
     return bars
 
 
-def transcribe(audio_path, output_dir, task_id):
+def separate_vocals(audio_path, output_dir=None):
+    """Remove vocals from audio, return path to instrumental track.
+
+    Uses MDX-Net Karaoke model for vocal/instrumental separation.
+    Returns path to the instrumental (no-vocals) WAV file.
+    """
+    if output_dir is None:
+        output_dir = os.path.dirname(audio_path)
+    from audio_separator.separator import Separator
+    # Use models dir on D drive, not C drive temp
+    models_dir = os.path.join(_script_dir, '.models')
+    os.makedirs(models_dir, exist_ok=True)
+    sep = Separator(
+        output_dir=output_dir,
+        output_format='WAV',
+        log_level=1,
+        model_file_dir=models_dir,
+    )
+    sep.load_model('UVR_MDXNET_KARA_2.onnx')
+    paths = sep.separate(audio_path)
+    # paths is (instrumental, vocal) tuple
+    if isinstance(paths, (list, tuple)) and len(paths) >= 1:
+        return paths[0]
+    return paths if isinstance(paths, str) else audio_path
+
+
+def transcribe(audio_path, output_dir, task_id, remove_vocals=True):
     """Full transcription pipeline. Saves MIDI and returns tab data + metadata."""
     wav_path = None
+    inst_path = None
     try:
         from basic_pitch.inference import predict
         from basic_pitch import ICASSP_2022_MODEL_PATH
 
         wav_path = _ensure_wav(str(audio_path))
+
+        # Optional vocal removal
+        if remove_vocals:
+            try:
+                inst_path = separate_vocals(wav_path, output_dir)
+                if inst_path and os.path.exists(inst_path):
+                    wav_path = inst_path
+            except Exception:
+                pass  # fall through to original audio if vocal removal fails
 
         model_output, midi_data, note_events = predict(
             wav_path,
@@ -204,5 +268,19 @@ def transcribe(audio_path, output_dir, task_id):
             'message': str(e),
         }
     finally:
-        if wav_path and wav_path.endswith('.conv.wav') and os.path.exists(wav_path):
-            os.remove(wav_path)
+        # Clean up temp WAV files
+        for _p in [wav_path, inst_path]:
+            if _p and _p.endswith('.conv.wav') and os.path.exists(_p):
+                try:
+                    os.remove(_p)
+                except OSError:
+                    pass
+            # Also clean up audio-separator output dirs
+            _parent = os.path.dirname(_p) if _p else ''
+            _stem_dir = os.path.join(_parent, os.path.splitext(os.path.basename(_p or ''))[0])
+            if _stem_dir and os.path.isdir(_stem_dir) and '_' in os.path.basename(_stem_dir):
+                try:
+                    import shutil
+                    shutil.rmtree(_stem_dir, ignore_errors=True)
+                except Exception:
+                    pass

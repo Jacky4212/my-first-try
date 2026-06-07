@@ -392,6 +392,12 @@ body{
         <div class="itm"><div class="v" id="tscDur">-</div><div class="l">时长 (秒)</div></div>
         <div class="itm"><div class="v" id="tscTempo">-</div><div class="l">BPM</div></div>
       </div>
+      <div class="cgrp" style="justify-content:center;margin:8px 0">
+        <span class="lb">变调夹</span>
+        <button class="zbtn" id="tscCapoDown">−</button>
+        <span class="vl" id="tscCapoVal" style="min-width:16px">0</span>
+        <button class="zbtn" id="tscCapoUp">+</button>
+      </div>
       <div class="at-wrap" id="tscAtWrap"><div id="tscAtRender"></div></div>
       <p class="note">※ AI 转录结果仅供参考，复杂曲目可能需要手动调整</p>
       <div class="tsc-actions">
@@ -921,12 +927,33 @@ function showResult(data){
 
   currentMidiUrl = API + data.midi_url;
 
+  // Store tab data for capo re-render
+  window._tscTabData = data;
+  window._tscCapo = 0;
+  document.getElementById('tscCapoVal').textContent = '0';
+
   // Render guitar tab using Canvas
-  renderTab(data);
+  renderTab(data, 0);
 
   showEl(tscResult);
   hideEl(tscProg);
 }
+
+// Capo controls in transcription result
+document.getElementById('tscCapoDown').addEventListener('click', function(){
+  if(window._tscCapo > 0){
+    window._tscCapo--;
+    document.getElementById('tscCapoVal').textContent = window._tscCapo;
+    renderTab(window._tscTabData, window._tscCapo);
+  }
+});
+document.getElementById('tscCapoUp').addEventListener('click', function(){
+  if(window._tscCapo < 11){
+    window._tscCapo++;
+    document.getElementById('tscCapoVal').textContent = window._tscCapo;
+    renderTab(window._tscTabData, window._tscCapo);
+  }
+});
 
 // Download
 document.getElementById('tscDownloadMidi').addEventListener('click', function(){
