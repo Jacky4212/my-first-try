@@ -271,6 +271,13 @@ body{
 .tsc-result .note{color:#6a5a80;font-size:12px;margin-top:10px;text-align:center;letter-spacing:1px}
 .tsc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
 .tsc-bar-playing{border-color:rgba(168,216,234,0.7)!important;box-shadow:0 0 12px rgba(168,216,234,0.35);background:rgba(168,216,234,0.08)!important}
+.tsc-history{max-width:360px;margin:16px auto 0}
+.tsc-hist-title{font-size:12px;color:#6a5a80;text-align:center;margin-bottom:8px;letter-spacing:1px}
+.tsc-hist-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:4px 0;background:rgba(255,255,255,0.03);border-radius:6px;cursor:pointer;transition:background .15s}
+.tsc-hist-item:hover{background:rgba(168,216,234,0.1)}
+.tsc-hist-item .hi{font-size:12px;color:#8a7aaa}
+.tsc-hist-item .hv{font-size:13px;color:#a8d8ea;font-weight:500}
+
 
 </style>
 </head>
@@ -377,6 +384,10 @@ body{
         <button class="tsc-btn" id="tscPick">📂 选择文件</button>
         <button class="tsc-btn rec" id="tscRec">🎤 录音</button>
         <button class="tsc-btn" id="tscBack" style="border-color:rgba(255,255,255,0.12);color:#8a7aaa">← 返回歌单</button>
+      </div>
+      <div class="tsc-history" id="tscHistory" style="display:none">
+        <div class="tsc-hist-title">📋 最近转录</div>
+        <div id="tscHistList"></div>
       </div>
     </div>
 
@@ -813,6 +824,7 @@ tscCard.addEventListener('click', function(){
   if(tscAtRender) tscAtRender.innerHTML = '';
   currentMidiUrl = null;
   tscError.style.display = 'none';
+  loadHistory();
 });
 function closeTranscriber(){ stopPlayback(); hideEl(tscOvl); stopRecording(); }
 tscClose.addEventListener('click', closeTranscriber);
@@ -843,6 +855,46 @@ function showError(msg){
   showEl(tscUpload);
   tscError.style.display = 'block';
   tscErrorTxt.textContent = msg;
+}
+
+// History
+function loadHistory(){
+  var list = document.getElementById('tscHistList');
+  var wrap = document.getElementById('tscHistory');
+  fetch(API + '/api/transcriptions')
+    .then(function(r){ return r.json(); })
+    .then(function(items){
+      if (!items || !items.length) { wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+      list.innerHTML = items.map(function(it){
+        return '<div class="tsc-hist-item" data-tid="' + it.task_id + '">' +
+          '<span class="hi">' + it.task_id + '</span>' +
+          '<span class="hi">' + it.note_count + '音符 ' + it.duration + 's ' + it.tempo + 'BPM</span>' +
+          '</div>';
+      }).join('');
+      // Click to load cached result
+      list.querySelectorAll('.tsc-hist-item').forEach(function(el){
+        el.addEventListener('click', function(){
+          loadCached(el.dataset.tid);
+        });
+      });
+    }).catch(function(){});
+}
+
+function loadCached(taskId){
+  hideAll(); showEl(tscProg);
+  tscProgTxt.textContent = '加载历史转录...';
+  tscProgBar.style.width = '30%';
+  fetch(API + '/api/status/' + taskId)
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      tscProgBar.style.width = '100%';
+      if (data.status === 'done'){
+        showResult(data);
+      } else {
+        showError('缓存加载失败');
+      }
+    }).catch(function(){ showError('加载失败'); });
 }
 
 function handleFile(file){
@@ -971,17 +1023,39 @@ document.getElementById('tscNew').addEventListener('click', function(){
   tscError.style.display = 'none';
 });
 
-// ===== Playback engine (Karplus-Strong guitar synthesis) =====
+// ===== Playback engine (Karplus-Strong guitar synthesis + reverb) =====
 var _pbCtx = null;
 var _pbNodes = [];
 var _pbTimer = null;
 var _pbPlaying = false;
 var _pbBarIdx = -1;
 
+var _REVERB_IR = null;
+function _getReverb(ctx) {
+  // Generate a simple reverb impulse response (algorithmic)
+  if (_REVERB_IR && _REVERB_IR.sampleRate === ctx.sampleRate) return _REVERB_IR;
+  var sr = ctx.sampleRate;
+  var len = Math.floor(sr * 1.2); // 1.2s reverb tail
+  var buf = ctx.createBuffer(2, len, sr);
+  for (var ch = 0; ch < 2; ch++) {
+    var d = buf.getChannelData(ch);
+    for (var i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(0.001, i / len);
+    }
+  }
+  _REVERB_IR = buf;
+  return buf;
+}
+
 function createKSBuffer(ctx, freq, durSec, velocity) {
   var sr = ctx.sampleRate;
   var period = Math.max(2, Math.round(sr / freq));
-  var totalSamples = Math.floor(sr * Math.max(durSec, 0.04));
+  // Make buffer 3x longer than notated duration for natural ring-out
+  var ringTime = Math.max(durSec, 0.3) * 3;
+  // Lower notes ring longer
+  if (freq < 200) ringTime = Math.max(ringTime, 2.5);
+  else if (freq < 400) ringTime = Math.max(ringTime, 1.5);
+  var totalSamples = Math.floor(sr * ringTime);
   var buf = ctx.createBuffer(1, totalSamples, sr);
   var d = buf.getChannelData(0);
 
@@ -990,23 +1064,48 @@ function createKSBuffer(ctx, freq, durSec, velocity) {
     d[i] = (Math.random() * 2 - 1);
   }
 
-  // Decay: higher notes decay faster (realistic)
-  var decay = 0.9991 - (freq - 80) / 3000 * 0.004;
-  // Karplus-Strong with dispersion
+  var decay = 0.99935 - (freq - 80) / 3000 * 0.003;
   for (var i = period; i < totalSamples; i++) {
     d[i] = (d[i - period] + (i > period + 1 ? d[i - period - 1] : 0)) * 0.5 * decay;
   }
 
-  // Amplitude envelope
-  var amp = (velocity || 100) / 127 * 0.35;
-  var atkSamples = Math.min(totalSamples >> 2, Math.floor(sr * 0.003));
+  // Natural pluck envelope: quick attack, sustain at note duration, soft release
+  var amp = (velocity || 100) / 127 * 0.3;
+  var atkSamples = Math.min(period, Math.floor(sr * 0.002));
+  var susSamples = Math.floor(sr * durSec * 1.2); // sustain a bit beyond notation
   for (var i = 0; i < totalSamples; i++) {
-    var atk = i < atkSamples ? i / atkSamples : 1;
-    var rel = Math.pow(0.001, i / totalSamples);
-    d[i] *= amp * atk * rel;
+    var env;
+    if (i < atkSamples) {
+      env = i / atkSamples;
+    } else if (i < susSamples) {
+      env = 1;
+    } else {
+      // Soft release — never goes fully to zero from envelope alone
+      env = Math.max(0.001, 1 - (i - susSamples) / (totalSamples - susSamples) * 0.7);
+    }
+    d[i] *= amp * env;
   }
 
   return buf;
+}
+
+function _ensurePlaybackGraph(ctx) {
+  // Build shared graph: dry -> destination, wet -> reverb -> destination
+  var dry = ctx.createGain();
+  dry.gain.value = 0.7;
+  dry.connect(ctx.destination);
+
+  var reverb = ctx.createConvolver();
+  reverb.buffer = _getReverb(ctx);
+  reverb.normalize = true;
+
+  var wet = ctx.createGain();
+  wet.gain.value = 0.25;
+  wet.connect(ctx.destination);
+
+  reverb.connect(wet);
+
+  return { dry: dry, reverb: reverb };
 }
 
 function playTab(data) {
@@ -1016,15 +1115,15 @@ function playTab(data) {
   _pbCtx = ctx;
   _pbPlaying = true;
 
+  var graph = _ensurePlaybackGraph(ctx);
+
   var tempo = data.tempo || 120;
   var spb = 60 / tempo;
-  var scheduleAhead = 0.08;
   var now = ctx.currentTime + 0.1;
 
   var bars = data.bars || [];
   if (!bars.length) { stopPlayback(); return; }
 
-  // Schedule all notes
   for (var bi = 0; bi < bars.length; bi++) {
     var notes = bars[bi].notes || [];
     var barStartBeat = bi * 4;
@@ -1032,23 +1131,28 @@ function playTab(data) {
       var n = notes[ni];
       var freq = 440 * Math.pow(2, (n.pitch - 69) / 12);
       var startTime = now + (barStartBeat + n.beat) * spb;
-      var dur = Math.max(0.04, n.duration * spb);
+      var dur = Math.max(0.08, n.duration * spb);
 
       var buf = createKSBuffer(ctx, freq, dur, n.velocity || 100);
       var src = ctx.createBufferSource();
       src.buffer = buf;
       var g = ctx.createGain();
+      // Fade out at the very end of the buffer to avoid click
+      var bufDur = buf.duration;
       g.gain.setValueAtTime(1, startTime);
-      g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+      g.gain.setValueAtTime(1, startTime + bufDur - 0.02);
+      g.gain.linearRampToValueAtTime(0, startTime + bufDur);
+      // Connect to both dry and reverb
       src.connect(g);
-      g.connect(ctx.destination);
+      g.connect(graph.dry);
+      g.connect(graph.reverb);
       src.start(startTime);
-      src.stop(startTime + dur + 0.15);
+      // No hard stop — buffer plays to end naturally
       _pbNodes.push(src, g);
     }
   }
 
-  // Highlight current bar during playback
+  // Highlight
   var totalBars = bars.length;
   var totalBeats = totalBars * 4;
   var endTime = now + totalBeats * spb;
@@ -1061,15 +1165,12 @@ function playTab(data) {
     var barIdx = Math.floor(beat / 4);
 
     if (barIdx !== _pbBarIdx && barIdx < totalBars) {
-      // Remove old highlight
       var prev = document.querySelector('.tsc-bar-playing');
       if (prev) prev.classList.remove('tsc-bar-playing');
-      // Add new highlight
       var cur = document.querySelector('[data-bar-idx="' + barIdx + '"]');
       if (cur) cur.classList.add('tsc-bar-playing');
       _pbBarIdx = barIdx;
 
-      // Scroll bar into view if needed
       if (cur) {
         var wrap = document.getElementById('tscAtWrap');
         var wrapTop = wrap.scrollTop;
@@ -1081,16 +1182,14 @@ function playTab(data) {
       }
     }
 
-    if (ctx.currentTime < endTime + 0.1) {
+    if (ctx.currentTime < endTime + 2) {
       _pbTimer = requestAnimationFrame(updateHighlight);
     } else {
-      // Playback complete
-      setTimeout(function() { stopPlayback(); }, 100);
+      setTimeout(function() { stopPlayback(); }, 200);
     }
   }
   _pbTimer = requestAnimationFrame(updateHighlight);
 
-  // Update UI
   document.getElementById('tscPlay').style.display = 'none';
   document.getElementById('tscStop').style.display = '';
 }
@@ -1098,8 +1197,8 @@ function playTab(data) {
 function stopPlayback() {
   _pbPlaying = false;
   if (_pbTimer) { cancelAnimationFrame(_pbTimer); _pbTimer = null; }
+  _REVERB_IR = null;
 
-  // Disconnect all nodes
   for (var i = 0; i < _pbNodes.length; i++) {
     try { _pbNodes[i].stop(); _pbNodes[i].disconnect(); } catch(e) {}
   }
@@ -1110,12 +1209,10 @@ function stopPlayback() {
   }
   _pbCtx = null;
 
-  // Remove highlight
   var prev = document.querySelector('.tsc-bar-playing');
   if (prev) prev.classList.remove('tsc-bar-playing');
   _pbBarIdx = -1;
 
-  // Update UI
   document.getElementById('tscPlay').style.display = '';
   document.getElementById('tscStop').style.display = 'none';
 }

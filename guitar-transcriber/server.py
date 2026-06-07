@@ -39,6 +39,12 @@ def run_transcribe(task_id: str, audio_path: str):
         result = transcribe(audio_path, str(OUTPUT_DIR), task_id, remove_vocals=True)
         tasks[task_id].update(result)
         tasks[task_id]['progress'] = 100
+        # Cache result to disk so user can reload without re-processing
+        if result.get('status') == 'done':
+            import json
+            _cache_path = OUTPUT_DIR / f"{task_id}.json"
+            with open(_cache_path, 'w', encoding='utf-8') as _f:
+                json.dump(result, _f, ensure_ascii=False)
     except Exception as e:
         tasks[task_id] = {
             'status': 'error',
@@ -92,8 +98,35 @@ async def api_status(task_id: str):
     """Get transcription task status."""
     task = tasks.get(task_id)
     if not task:
+        # Check disk cache
+        import json
+        _cache_path = OUTPUT_DIR / f"{task_id}.json"
+        if _cache_path.exists():
+            with open(_cache_path, 'r', encoding='utf-8') as _f:
+                return json.load(_f)
         raise HTTPException(404, "Task not found")
     return task
+
+
+@app.get("/api/transcriptions")
+async def api_list_transcriptions():
+    """List recent cached transcriptions."""
+    import json
+    results = []
+    for _p in sorted(OUTPUT_DIR.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+        try:
+            with open(_p, 'r', encoding='utf-8') as _f:
+                _d = json.load(_f)
+            results.append({
+                'task_id': _p.stem,
+                'note_count': _d.get('note_count', 0),
+                'duration': _d.get('duration', 0),
+                'tempo': _d.get('tempo', 120),
+                'num_bars': _d.get('num_bars', 0),
+            })
+        except Exception:
+            pass
+    return results[:20]
 
 
 # Serve output files
