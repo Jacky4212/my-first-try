@@ -251,8 +251,13 @@ def _notes_to_bars_rigid(notes_fb, beats_per_bar=4, beats_per_minute=120):
     return bars
 
 
-def _notes_to_bars_real(notes_fb, beat_times, beats_per_bar=4):
-    """Align notes to real musical beats detected by librosa."""
+def _notes_to_bars_real(notes_fb, beat_times, beats_per_bar=4, strum_window=0.12):
+    """Align notes to real musical beats detected by librosa.
+
+    Strum-aware: notes starting within `strum_window` seconds (default 120ms)
+    are grouped and snapped to the same beat, so strummed chords appear as
+    stacked notes rather than spread across beats.
+    """
     beat_times = list(beat_times)
     num_bars = max(1, len(beat_times) // beats_per_bar)
     bars = []
@@ -260,32 +265,52 @@ def _notes_to_bars_real(notes_fb, beat_times, beats_per_bar=4):
     for bar_idx in range(num_bars):
         beat_start_idx = bar_idx * beats_per_bar
         beat_end_idx = min(beat_start_idx + beats_per_bar, len(beat_times))
-
         if beat_end_idx - beat_start_idx < 2:
             break
 
         bar_start_time = beat_times[beat_start_idx]
         bar_end_time = beat_times[beat_end_idx - 1]
+        beat_spacing = (bar_end_time - bar_start_time) / max(1, beat_end_idx - beat_start_idx - 1)
+        if beat_spacing <= 0:
+            beat_spacing = 60.0 / 120
 
-        # Compute average beat spacing within this bar for duration conversion
-        beat_spacing = (bar_end_time - bar_start_time) / (beat_end_idx - beat_start_idx - 1) if beat_end_idx - beat_start_idx > 1 else (60.0 / 120)
-
-        bar_notes = []
+        # Collect notes within this bar with their original times
+        raw = []
         for pitch, start, end, vel, string, fret in notes_fb:
             if bar_start_time <= start < bar_end_time:
-                # Find nearest beat index within this bar
-                offsets = [abs(start - beat_times[min(idx, len(beat_times) - 1)])
-                           for idx in range(beat_start_idx, min(beat_end_idx, len(beat_times)))]
-                nearest = min(range(len(offsets)), key=lambda i: offsets[i]) if offsets else 0
-                beat_pos = nearest  # 0, 1, 2, or 3 within the bar
+                raw.append((start, end, pitch, vel, int(string), int(fret)))
+        if not raw:
+            bars.append({'index': bar_idx, 'notes': []})
+            continue
 
+        # Sort by start time, then cluster by proximity
+        raw.sort(key=lambda n: n[0])
+        clusters = []   # each cluster = [(start, end, pitch, vel, string, fret), ...]
+        cur = [raw[0]]
+        for n in raw[1:]:
+            if n[0] - cur[-1][0] < strum_window:
+                cur.append(n)
+            else:
+                clusters.append(cur)
+                cur = [n]
+        if cur:
+            clusters.append(cur)
+
+        # Each cluster snaps to one beat (based on average start time)
+        bar_notes = []
+        for cl in clusters:
+            avg_start = sum(n[0] for n in cl) / len(cl)
+            offsets = [abs(avg_start - beat_times[min(idx, len(beat_times) - 1)])
+                       for idx in range(beat_start_idx, beat_end_idx)]
+            nearest = min(range(len(offsets)), key=lambda i: offsets[i]) if offsets else 0
+
+            for start, end, pitch, vel, string, fret in cl:
                 dur_beats = max(0.25, (end - start) / beat_spacing)
-
                 bar_notes.append({
-                    'beat': round(beat_pos, 2),
+                    'beat': round(nearest, 2),
                     'duration': round(dur_beats, 2),
-                    'string': int(string),
-                    'fret': int(fret),
+                    'string': string,
+                    'fret': fret,
                     'pitch': int(pitch),
                     'velocity': int(vel),
                 })
