@@ -1320,7 +1320,8 @@ function playTab(data) {
       var n = notes[ni];
       var freq = 440 * Math.pow(2, (n.pitch - 69) / 12);
       var startTime = now + (barStartBeat + n.beat) * spb;
-      var dur = Math.max(0.2, n.duration * spb * 1.8);
+      // Extend duration so notes overlap naturally (legato)
+      var dur = Math.max(0.8, n.duration * spb * 2.5);
 
       var buf = createKSBuffer(ctx, freq, dur, n.velocity || 100);
       var src = ctx.createBufferSource();
