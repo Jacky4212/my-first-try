@@ -84,6 +84,38 @@ function detectChords(bars, capo){
     var chord = _notesToChord(notes, capo);
     chords.push({ barIndex: i, chord: chord ? chord : null });
   }
+
+  // Smooth: remove single-bar anomalies (A ? B ? A becomes A ? A ? A)
+  for(var i = 1; i < chords.length - 1; i++){
+    var prev = chords[i-1].chord;
+    var cur = chords[i].chord;
+    var next = chords[i+1].chord;
+    if(cur && prev && next && cur !== prev && prev === next){
+      chords[i].chord = prev;
+    }
+  }
+
+  // Fill gaps: if a bar has no chord but neighbors share the same chord
+  for(var i = 1; i < chords.length - 1; i++){
+    if(!chords[i].chord && chords[i-1].chord && chords[i+1].chord){
+      if(chords[i-1].chord === chords[i+1].chord){
+        chords[i].chord = chords[i-1].chord;
+      }
+    }
+  }
+
+  // Propagate: fill leading nulls with first detected chord
+  var firstChord = null;
+  for(var i = 0; i < chords.length; i++){
+    if(chords[i].chord){ firstChord = chords[i].chord; break; }
+  }
+  if(firstChord){
+    for(var i = 0; i < chords.length; i++){
+      if(!chords[i].chord) chords[i].chord = firstChord;
+      else break;
+    }
+  }
+
   return chords;
 }
 

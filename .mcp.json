@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "doubao-vision": {
+      "command": "python",
+      "args": [
+        ".claude/mcp_servers/vision_server.py"
+      ],
+      "env": {
+        "ARK_API_KEY": "ark-97069b20-deae-4318-9b3e-cf8c70304668-73290",
+        "ARK_ENDPOINT_ID": "doubao-seed-2-0-pro-260215"
+      }
+    },
+    "doubao-image-gen": {
+      "command": "python",
+      "args": [
+        ".claude/mcp_servers/image_gen_server.py"
+      ],
+      "env": {
+        "ARK_API_KEY": "ark-97069b20-deae-4318-9b3e-cf8c70304668-73290",
+        "IMAGE_MODEL_ID": "doubao-seedream-5-0-260128"
+      }
+    },
+    "doubao-video-gen": {
+      "command": "python",
+      "args": [
+        ".claude/mcp_servers/video_gen_server.py"
+      ],
+      "env": {
+        "ARK_API_KEY": "ark-97069b20-deae-4318-9b3e-cf8c70304668-73290",
+        "VIDEO_MODEL_ID": "doubao-seedance-2-0-260128"
+      }
+    }
+  }
+}

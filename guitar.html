@@ -840,7 +840,7 @@ tscCard.addEventListener('click', function(){
   loadHistory();
 });
 function closeTranscriber(){
-  stopPlayback(); hideEl(tscOvl); stopRecording();
+  stopPlayback(); hideEl(tscOvl); stopRecording(true);
   _currentTaskId = null; tscCancel.disabled = false; tscCancel.style.opacity = '';
   tscCancel.textContent = '✕ 取消转录';
   // 历史扒谱在智能扒谱弹窗内部展示
@@ -967,7 +967,7 @@ function handleFile(file){
     .then(function(r){ return r.json(); })
     .then(function(data){
       if(data.task_id) {
-        window._currentTaskId = data.task_id;
+        _currentTaskId = data.task_id;
         pollTask(data.task_id);
       } else showError(data.detail || '上传失败');
     })
@@ -1001,8 +1001,12 @@ function startRecording(){
   }).catch(function(){ showError('无法访问麦克风，请检查权限设置'); });
 }
 
-function stopRecording(){
+function stopRecording(skipUpload){
   if(mediaRecorder && recording){
+    if(skipUpload) {
+      mediaRecorder.onstop = null;
+      if(mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(function(t){ t.stop(); });
+    }
     mediaRecorder.stop();
     recording = false;
     tscRec.textContent = '🎤 录音';
