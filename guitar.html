@@ -292,7 +292,10 @@
   margin-top:auto;width:100%}
 .tsc-bar-playing{border-color:rgba(168,216,234,0.7)!important;box-shadow:0 0 12px rgba(168,216,234,0.35);background:rgba(168,216,234,0.08)!important}
 
-.tsc-history{width:100%;max-width:500px;margin:4px 0 0;text-align:left}
+.tsc-history{width:100%;max-width:500px;margin:4px 0 0;text-align:left;max-height:260px;overflow-y:auto}
+.tsc-history::-webkit-scrollbar{width:4px}
+.tsc-history::-webkit-scrollbar-track{background:transparent}
+.tsc-history::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
 .tsc-hist-title{font-size:13px;font-weight:600;color:#6a5a80;padding:10px 0 8px;letter-spacing:1px;text-align:center;border-top:1px solid rgba(255,255,255,0.05)}
 .tsc-hist-item{display:flex;align-items:center;padding:10px 14px;margin:3px 0;background:rgba(255,255,255,0.02);border-radius:8px;cursor:pointer;transition:all .2s}
 .tsc-hist-item:hover{background:rgba(168,216,234,0.06)}
