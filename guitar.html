@@ -270,6 +270,8 @@ body{
 .tsc-result .at-wrap{width:100%;background:rgba(255,255,255,0.03);border-radius:12px;overflow:auto;padding:10px}
 .tsc-result .note{color:#6a5a80;font-size:12px;margin-top:10px;text-align:center;letter-spacing:1px}
 .tsc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.tsc-bar-playing{border-color:rgba(168,216,234,0.7)!important;box-shadow:0 0 12px rgba(168,216,234,0.35);background:rgba(168,216,234,0.08)!important}
+
 </style>
 </head>
 <body>
@@ -401,6 +403,8 @@ body{
       <div class="at-wrap" id="tscAtWrap"><div id="tscAtRender"></div></div>
       <p class="note">※ AI 转录结果仅供参考，复杂曲目可能需要手动调整</p>
       <div class="tsc-actions">
+        <button class="tsc-btn" id="tscPlay">▶ 播放</button>
+        <button class="tsc-btn" id="tscStop" style="display:none">⏹ 停止</button>
         <button class="tsc-btn" id="tscDownloadMidi">⬇ 下载 .mid</button>
         <button class="tsc-btn" id="tscNew">🔄 重新上传</button>
       </div>
@@ -810,7 +814,7 @@ tscCard.addEventListener('click', function(){
   currentMidiUrl = null;
   tscError.style.display = 'none';
 });
-function closeTranscriber(){ hideEl(tscOvl); stopRecording(); }
+function closeTranscriber(){ stopPlayback(); hideEl(tscOvl); stopRecording(); }
 tscClose.addEventListener('click', closeTranscriber);
 document.getElementById('tscBack').addEventListener('click', closeTranscriber);
 document.addEventListener('keydown', function(e){
@@ -960,10 +964,167 @@ document.getElementById('tscDownloadMidi').addEventListener('click', function(){
   if(currentMidiUrl){ var a = document.createElement('a'); a.href = currentMidiUrl; a.download = 'transcription.mid'; a.click(); }
 });
 document.getElementById('tscNew').addEventListener('click', function(){
+  stopPlayback();
   hideAll(); showEl(tscUpload);
   tscAtRender.innerHTML = '';
   currentMidiUrl = null;
   tscError.style.display = 'none';
+});
+
+// ===== Playback engine (Karplus-Strong guitar synthesis) =====
+var _pbCtx = null;
+var _pbNodes = [];
+var _pbTimer = null;
+var _pbPlaying = false;
+var _pbBarIdx = -1;
+
+function createKSBuffer(ctx, freq, durSec, velocity) {
+  var sr = ctx.sampleRate;
+  var period = Math.max(2, Math.round(sr / freq));
+  var totalSamples = Math.floor(sr * Math.max(durSec, 0.04));
+  var buf = ctx.createBuffer(1, totalSamples, sr);
+  var d = buf.getChannelData(0);
+
+  // Noise burst for initial pluck
+  for (var i = 0; i < period && i < totalSamples; i++) {
+    d[i] = (Math.random() * 2 - 1);
+  }
+
+  // Decay: higher notes decay faster (realistic)
+  var decay = 0.9991 - (freq - 80) / 3000 * 0.004;
+  // Karplus-Strong with dispersion
+  for (var i = period; i < totalSamples; i++) {
+    d[i] = (d[i - period] + (i > period + 1 ? d[i - period - 1] : 0)) * 0.5 * decay;
+  }
+
+  // Amplitude envelope
+  var amp = (velocity || 100) / 127 * 0.35;
+  var atkSamples = Math.min(totalSamples >> 2, Math.floor(sr * 0.003));
+  for (var i = 0; i < totalSamples; i++) {
+    var atk = i < atkSamples ? i / atkSamples : 1;
+    var rel = Math.pow(0.001, i / totalSamples);
+    d[i] *= amp * atk * rel;
+  }
+
+  return buf;
+}
+
+function playTab(data) {
+  stopPlayback();
+
+  var ctx = new (window.AudioContext || window.webkitAudioContext)();
+  _pbCtx = ctx;
+  _pbPlaying = true;
+
+  var tempo = data.tempo || 120;
+  var spb = 60 / tempo;
+  var scheduleAhead = 0.08;
+  var now = ctx.currentTime + 0.1;
+
+  var bars = data.bars || [];
+  if (!bars.length) { stopPlayback(); return; }
+
+  // Schedule all notes
+  for (var bi = 0; bi < bars.length; bi++) {
+    var notes = bars[bi].notes || [];
+    var barStartBeat = bi * 4;
+    for (var ni = 0; ni < notes.length; ni++) {
+      var n = notes[ni];
+      var freq = 440 * Math.pow(2, (n.pitch - 69) / 12);
+      var startTime = now + (barStartBeat + n.beat) * spb;
+      var dur = Math.max(0.04, n.duration * spb);
+
+      var buf = createKSBuffer(ctx, freq, dur, n.velocity || 100);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(1, startTime);
+      g.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+      src.connect(g);
+      g.connect(ctx.destination);
+      src.start(startTime);
+      src.stop(startTime + dur + 0.15);
+      _pbNodes.push(src, g);
+    }
+  }
+
+  // Highlight current bar during playback
+  var totalBars = bars.length;
+  var totalBeats = totalBars * 4;
+  var endTime = now + totalBeats * spb;
+
+  function updateHighlight() {
+    if (!_pbPlaying) return;
+    var elapsed = ctx.currentTime - now;
+    if (elapsed < 0) { _pbTimer = requestAnimationFrame(updateHighlight); return; }
+    var beat = elapsed / spb;
+    var barIdx = Math.floor(beat / 4);
+
+    if (barIdx !== _pbBarIdx && barIdx < totalBars) {
+      // Remove old highlight
+      var prev = document.querySelector('.tsc-bar-playing');
+      if (prev) prev.classList.remove('tsc-bar-playing');
+      // Add new highlight
+      var cur = document.querySelector('[data-bar-idx="' + barIdx + '"]');
+      if (cur) cur.classList.add('tsc-bar-playing');
+      _pbBarIdx = barIdx;
+
+      // Scroll bar into view if needed
+      if (cur) {
+        var wrap = document.getElementById('tscAtWrap');
+        var wrapTop = wrap.scrollTop;
+        var wrapH = wrap.clientHeight;
+        var curTop = cur.offsetTop - wrap.offsetTop;
+        if (curTop < wrapTop || curTop > wrapTop + wrapH - cur.offsetHeight) {
+          wrap.scrollTop = curTop - wrapH / 3;
+        }
+      }
+    }
+
+    if (ctx.currentTime < endTime + 0.1) {
+      _pbTimer = requestAnimationFrame(updateHighlight);
+    } else {
+      // Playback complete
+      setTimeout(function() { stopPlayback(); }, 100);
+    }
+  }
+  _pbTimer = requestAnimationFrame(updateHighlight);
+
+  // Update UI
+  document.getElementById('tscPlay').style.display = 'none';
+  document.getElementById('tscStop').style.display = '';
+}
+
+function stopPlayback() {
+  _pbPlaying = false;
+  if (_pbTimer) { cancelAnimationFrame(_pbTimer); _pbTimer = null; }
+
+  // Disconnect all nodes
+  for (var i = 0; i < _pbNodes.length; i++) {
+    try { _pbNodes[i].stop(); _pbNodes[i].disconnect(); } catch(e) {}
+  }
+  _pbNodes = [];
+
+  if (_pbCtx && _pbCtx.state !== 'closed') {
+    try { _pbCtx.close(); } catch(e) {}
+  }
+  _pbCtx = null;
+
+  // Remove highlight
+  var prev = document.querySelector('.tsc-bar-playing');
+  if (prev) prev.classList.remove('tsc-bar-playing');
+  _pbBarIdx = -1;
+
+  // Update UI
+  document.getElementById('tscPlay').style.display = '';
+  document.getElementById('tscStop').style.display = 'none';
+}
+
+document.getElementById('tscPlay').addEventListener('click', function(){
+  if (window._tscTabData) playTab(window._tscTabData);
+});
+document.getElementById('tscStop').addEventListener('click', function(){
+  stopPlayback();
 });
 
 })();

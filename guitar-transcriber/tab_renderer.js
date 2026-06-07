@@ -127,6 +127,7 @@ function renderTab(data, capo){
       canvas.height = barHeight * dpr;
       canvas.style.width = barWidth + 'px';
       canvas.style.height = barHeight + 'px';
+      canvas.setAttribute('data-bar-idx', row.idx + bi);
       canvas.style.cssText += 'background:rgba(255,255,255,0.02);border-radius:8px;border:1px solid rgba(255,255,255,0.04)';
 
       var ctx = canvas.getContext('2d');
