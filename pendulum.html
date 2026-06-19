@@ -139,7 +139,7 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
         <p><strong>能量</strong>（取最低点势能为 0）：</p>
         <div class="formula-block">
           <div class="eq"><span class="sym">K</span> = <span class="num">1/2</span> <span class="sym">m</span> <span class="sym">v</span><span class="num">²</span>     <span class="sym">U</span> = <span class="sym">m</span> <span class="sym">g</span> <span class="sym">L</span> (<span class="num">1</span> <span class="op">−</span> cos <span class="sym">θ</span>)     <span class="sym">E</span> = <span class="sym">K</span> + <span class="sym">U</span></div>
-          <div class="desc">无阻尼时 E 守横；有阻尼时 E 指数衰减</div>
+          <div class="desc">无阻尼时 E 守恒；有阻尼时 E 指数衰减</div>
         </div>
       </div>
       <div class="intro-card">
@@ -185,6 +185,7 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
             <button class="btn btn-start" id="btnStart">▶ 启动</button>
             <button class="btn btn-reset" id="btnReset">↻ 重置</button>
           </div>
+          <button class="btn btn-export" id="btnExport" style="margin-top:6px;background:#8e44ad;color:#fff;width:100%;">📥 导出实验数据 (CSV)</button>
           <div class="chk-group">
             <label><input type="checkbox" id="showTrace" checked> 摆锤轨迹</label>
             <label><input type="checkbox" id="showEnergy"> 能量条</label>
@@ -214,7 +215,7 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
             <div class="ctrl-header"><label>重力 g</label><span class="val" id="gravityVal">9.81</span></div>
             <input type="range" id="gravSlider" min="0.5" max="20" step="0.1" value="9.81">
             <div class="ctrl-input-row">
-              <input type="text" class="num-input" id="gravInput" value="9.8" maxlength="5">
+              <input type="text" class="num-input" id="gravInput" value="9.81" maxlength="5">
               <div class="arrow-group"><button class="arrow-btn" data-target="gravSlider" data-dir="1">▲</button><button class="arrow-btn" data-target="gravSlider" data-dir="-1">▼</button></div>
               <span class="ctrl-unit">m/s²</span>
             </div>
@@ -263,12 +264,12 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
         <p>每个参数提供三种调节方式，可任选：</p>
         <ul>
           <li><strong>拖动滑块</strong> — 直观快速调整</li>
-          <li><strong>输入桶蹧入</strong> — 点击输入桶，直接输入精确数值（最多两位小数），按 <span class="key">Enter</span> 或点击空白处确认</li>
+          <li><strong>输入框输入</strong> — 点击输入框，直接输入精确数值（最多两位小数），按 <span class="key">Enter</span> 或点击空白处确认</li>
           <li><strong>▲ ▼ 微调按钮</strong> — 点击上下箭头逐位微调，长按可连续调整</li>
         </ul>
         <div class="hint-box">
           <div class="hint-title">💡 提示</div>
-          <p>输入非法数值（超出范围、非数字）时，输入桶会变红并自动还原为上次有效值。</p>
+          <p>输入非法数值（超出范围、非数字）时，输入框会变红并自动还原为上次有效值。</p>
         </div>
       </div>
       <div class="help-card">
@@ -292,7 +293,7 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
       <div class="help-card">
         <h2>实验建议</h2>
         <ul>
-          <li>设阻尼 = 0，观察能量守横（总能量线保持平直）</li>
+          <li>设阻尼 = 0，观察能量守恒（总能量线保持平直）</li>
           <li>逐渐增大初始角度（30° → 60° → 80°），观察周期变化</li>
           <li>设较大阻尼（如 0.20），观察振幅的指数衰减</li>
           <li>改变重力 g（模拟月球或木星环境），观察周期变化</li>
@@ -307,9 +308,16 @@ input[type="checkbox"] { accent-color: #a8d8ea; width: 14px; height: 14px; curso
 "use strict";
 // ======================== DOM REFS ========================
 var $ = function(id) { return document.getElementById(id); };
+var DPR = window.devicePixelRatio || 1;
+function setupCanvasHiDPI(cv, lw, lh) {
+  cv._lw = lw; cv._lh = lh;
+  cv.width = lw * DPR; cv.height = lh * DPR;
+  cv.getContext('2d').scale(DPR, DPR);
+}
+
 var canvas = $('pendulumCanvas');
-var ctx = canvas.getContext('2d');
-var cW = canvas.width, cH = canvas.height;
+var cW = 560, cH = 420;
+var ctx;
 
 // Chart canvases
 var cTheta = $('chartTheta'), ctCtx = cTheta.getContext('2d');
@@ -564,7 +572,7 @@ function updateDataDisplay() {
 
 // ======================== CHART RENDERING ========================
 function drawSingleChart(canvasEl, ctx2, data, labels, colors, styles, sharedScale) {
-  var w = canvasEl.width, h = canvasEl.height;
+  var w = canvasEl._lw, h = canvasEl._lh;
   var padT = 10, padR = 8, padB = 14, padL = 6;
   var pw = w - padL - padR, ph = h - padT - padB;
   ctx2.clearRect(0,0,w,h);
@@ -646,10 +654,10 @@ function drawAllCharts() {
     var ctxs = [ctCtx, ceCtx, cvCtx, cpCtx];
     for (var i = 0; i < charts.length; i++) {
       var c = charts[i], cx = ctxs[i];
-      cx.clearRect(0,0,c.width,c.height);
-      cx.fillStyle = '#0f3460'; cx.fillRect(0,0,c.width,c.height);
+      cx.clearRect(0,0,c._lw,c._lh);
+      cx.fillStyle = '#0f3460'; cx.fillRect(0,0,c._lw,c._lh);
       cx.fillStyle = '#667'; cx.font = '11px sans-serif'; cx.textAlign = 'center';
-      cx.fillText('等待数据...', c.width/2, c.height/2+4);
+      cx.fillText('等待数据...', c._lw/2, c._lh/2+4);
     }
     return;
   }
@@ -669,7 +677,7 @@ function drawAllCharts() {
     [hist.t, hist.v], ['v'], ['#1abc9c'], ['solid'], true);
 
   // Phase space
-  var pw = cPhase.width, ph = cPhase.height;
+  var pw = cPhase._lw, ph = cPhase._lh;
   cpCtx.clearRect(0,0,pw,ph);
   cpCtx.fillStyle = '#0f3460'; cpCtx.fillRect(0,0,pw,ph);
   var maxTh = 0.1, maxOm = 0.1;
@@ -729,6 +737,11 @@ function tick(ts) {
 
 // ======================== INIT ========================
 function init() {
+  setupCanvasHiDPI(canvas, cW, cH); ctx = canvas.getContext('2d');
+  setupCanvasHiDPI(cTheta, 240, 120);
+  setupCanvasHiDPI(cEnergy, 240, 120);
+  setupCanvasHiDPI(cVel, 240, 120);
+  setupCanvasHiDPI(cPhase, 240, 120);
   L = parseFloat(sL.value);
   theta0_deg = parseFloat(sA.value);
   g = parseFloat(sG.value);
@@ -920,6 +933,29 @@ btnReset.addEventListener('click', function() {
   }, { passive: false });
   canvas.addEventListener('touchend', function() { dragging = false; });
 })();
+
+// ======================== EXPORT ========================
+$('btnExport').addEventListener('click', function() {
+  if (hist.t.length < 2) { alert('暂无数据可导出，请先启动模拟。'); return; }
+  var rows = ['时间(s),角度(rad),角速度(rad/s),线速度(m/s),动能(J),势能(J),总能量(J)'];
+  for (var i = 0; i < hist.t.length; i++) {
+    rows.push([
+      hist.t[i].toFixed(4),
+      hist.theta[i].toFixed(6),
+      hist.omega[i].toFixed(6),
+      hist.v[i].toFixed(6),
+      hist.ke[i].toFixed(6),
+      hist.pe[i].toFixed(6),
+      hist.te[i].toFixed(6)
+    ].join(','));
+  }
+  var blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'pendulum_data_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
 // ======================== START ========================
 init();
