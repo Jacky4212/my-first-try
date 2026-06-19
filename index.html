@@ -722,9 +722,10 @@
         // ================================================================
         function handlePetalEvent(e) {
             if (e.type === 'touchend') e.preventDefault();
-            const p = e.target;
-            if (p._rm) return;
-            p._rm = true;
+            if (e.currentTarget._rm) return;
+            e.currentTarget._rm = true;
+
+            const p = e.currentTarget;
             const rect = p.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
@@ -758,12 +759,9 @@
             }
         }
 
-        // 事件委托监听所有花瓣（包括 JS 动态生成的），省去每朵注册/移除
-        document.querySelector('.petals').addEventListener('click', function(e) {
-            if (e.target.classList.contains('p')) handlePetalEvent(e);
-        });
-        document.querySelector('.petals').addEventListener('touchend', function(e) {
-            if (e.target.classList.contains('p')) handlePetalEvent(e);
+        document.querySelectorAll('.p').forEach(function(p) {
+            p.addEventListener('click', handlePetalEvent);
+            p.addEventListener('touchend', handlePetalEvent);
         });
 
         // ---- 连续飘落: JS 持续生成新花瓣，避免一波一波 ----
@@ -774,6 +772,8 @@
             var bg = [['#f8bbd0,#ec407a'],['#f48fb1,#d81b60'],['#f8bbd0,#f06292'],['#f48fb1,#e91e63']][Math.floor(Math.random()*4)];
             p.style.cssText = 'left:'+(Math.random()*94)+'%;width:'+w+'px;height:'+(w*(0.9+Math.random()*0.4))+'px;animation:fall'+(1+Math.floor(Math.random()*4))+' '+(22+Math.random()*16)+'s linear;background:radial-gradient(circle at 30% 30%,'+bg+')';
             document.querySelector('.petals').appendChild(p);
+            p.addEventListener('click', handlePetalEvent);
+            p.addEventListener('touchend', handlePetalEvent);
             setTimeout(function(){if(p.parentNode)p.remove();}, 44000);
         }, 3333);
 
