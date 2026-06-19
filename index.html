@@ -722,10 +722,9 @@
         // ================================================================
         function handlePetalEvent(e) {
             if (e.type === 'touchend') e.preventDefault();
-            if (e.currentTarget._rm) return;
-            e.currentTarget._rm = true;
-
-            const p = e.currentTarget;
+            const p = e.target;
+            if (p._rm) return;
+            p._rm = true;
             const rect = p.getBoundingClientRect();
             const cx = rect.left + rect.width / 2;
             const cy = rect.top + rect.height / 2;
@@ -775,8 +774,6 @@
             var bg = [['#f8bbd0,#ec407a'],['#f48fb1,#d81b60'],['#f8bbd0,#f06292'],['#f48fb1,#e91e63']][Math.floor(Math.random()*4)];
             p.style.cssText = 'left:'+(Math.random()*94)+'%;width:'+w+'px;height:'+(w*(0.9+Math.random()*0.4))+'px;animation:fall'+(1+Math.floor(Math.random()*4))+' '+(22+Math.random()*16)+'s linear;background:radial-gradient(circle at 30% 30%,'+bg+')';
             document.querySelector('.petals').appendChild(p);
-            p.addEventListener('click', handlePetalEvent);
-            p.addEventListener('touchend', handlePetalEvent);
             setTimeout(function(){if(p.parentNode)p.remove();}, 44000);
         }, 3333);
 
