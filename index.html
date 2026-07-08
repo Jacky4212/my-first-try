@@ -387,13 +387,15 @@
                 g.innerHTML = '<div class="empty-state" style="text-align:center;padding:60px 0;color:#6a5a80"><div style="font-size:48px;margin-bottom:12px">🌸</div><p>还没有内容～</p></div>';
                 return;
             }
-            g.innerHTML = data.map(d =>
-                `<div class="card" tabindex="0" role="button" onclick="window.open('${d.url}','_blank','noopener')">
+            g.innerHTML = data.map(d => {
+                const isExt = /^https?:\/\//.test(d.url);
+                const target = isExt ? ' target="_blank" rel="noopener"' : '';
+                return `<a href="${d.url}"${target} class="card" tabindex="0" role="button" style="text-decoration:none;color:inherit">
                     <div class="icon">${d.icon}</div>
                     <h3>${d.name}</h3>
                     <p>${d.desc}</p>
-                </div>`
-            ).join('');
+                </a>`;
+            }).join('');
         }
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
