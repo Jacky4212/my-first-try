@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自编谱 - 双鱼小栈</title>
+<link rel="stylesheet" href="common.css">
+<style>
+/* === List View === */
+.srch{max-width:900px;margin:0 auto;padding:0 20px 10px;position:relative}
+.srch input{
+  width:100%;padding:10px 16px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+  background:rgba(255,255,255,0.06);color:#e0d0e8;font-size:14px;outline:none;
+  backdrop-filter:blur(10px);transition:border-color .3s
+}
+.srch input::placeholder{color:#5a4a70}
+.srch input:focus{border-color:rgba(168,216,234,0.3)}
+.srch .clr{position:absolute;right:28px;top:50%;transform:translateY(-50%);border:none;background:none;color:#6a5a80;font-size:16px;cursor:pointer;display:none;padding:4px}
+.srch .clr.on{display:block}
+.srch .clr:hover{color:#f48fb1}
+
+.list{max-width:900px;margin:12px auto;padding:0 20px;display:grid;gap:14px}
+.card{
+  background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border-radius:16px;
+  padding:20px 24px;border:1px solid rgba(255,255,255,0.06);
+  cursor:pointer;transition:all .3s;display:flex;align-items:center;gap:16px;
+  animation:fadeUp .4s ease
+}
+.card:hover{
+  transform:translateY(-2px);border-color:rgba(168,216,234,0.2);
+  background:rgba(255,255,255,0.08);box-shadow:0 8px 30px rgba(100,60,160,0.15)
+}
+.card .ico{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(168,216,234,0.1);border-radius:12px;font-size:28px}
+.card .n{flex:1;min-width:0}
+.card .n h3{font-size:18px;font-weight:600;color:#e0d0e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .n p{font-size:13px;color:#8a7aaa;margin-top:2px;letter-spacing:1px}
+.card .act{display:flex;gap:8px;flex-shrink:0}
+.card .act button{
+  width:34px;height:34px;border:none;border-radius:8px;font-size:16px;cursor:pointer;
+  background:rgba(255,255,255,0.06);color:#8a7aaa;transition:all .2s;display:flex;align-items:center;justify-content:center
+}
+.card .act button:hover{background:rgba(231,76,60,0.2);color:#e74c3c}
+
+.empty{text-align:center;padding:60px 20px;color:#6a5a80;font-size:14px;letter-spacing:2px}
+.empty .big{font-size:56px;display:block;margin-bottom:12px}
+
+.new-btn-wrap{max-width:900px;margin:20px auto;padding:0 20px;text-align:center}
+.new-btn{
+  padding:14px 40px;border:1px solid rgba(168,216,234,0.2);border-radius:14px;
+  background:rgba(168,216,234,0.08);color:#a8d8ea;font-size:16px;cursor:pointer;
+  font-family:inherit;letter-spacing:2px;transition:all .3s
+}
+.new-btn:hover{background:rgba(168,216,234,0.16);border-color:rgba(168,216,234,0.4);transform:translateY(-2px)}
+
+/* === Editor Overlay === */
+.eovl{display:none;position:fixed;inset:0;z-index:1100;background:rgba(10,8,20,0.97);flex-direction:column}
+.eovl.on{display:flex}
+.eovl .top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0}
+.eovl .top .t{font-size:15px;font-weight:600;color:#a8d8ea;letter-spacing:2px}
+.eovl .top .tbtns{display:flex;gap:8px}
+.eovl .top .tbtns button{
+  height:34px;border-radius:8px;padding:0 16px;font-size:14px;font-weight:600;letter-spacing:1px;
+  cursor:pointer;transition:all .3s;font-family:inherit;border:none
+}
+.btn-save{background:rgba(168,216,234,0.15);color:#a8d8ea;border:1px solid rgba(168,216,234,0.25)}
+.btn-save:hover{background:rgba(168,216,234,0.3)}
+.btn-save.saved{background:rgba(46,204,113,0.15);color:#2ecc71;border-color:rgba(46,204,113,0.25)}
+.btn-close{background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid rgba(231,76,60,0.2)}
+.btn-close:hover{background:rgba(231,76,60,0.25)}
+
+/* === Editor Body (3-column) === */
+.ebody{flex:1;display:flex;overflow:hidden;min-height:0}
+.ebody::-webkit-scrollbar{width:4px}
+.ebody::-webkit-scrollbar-track{background:transparent}
+.ebody::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+
+/* Left sidebar */
+.eside{
+  width:210px;flex-shrink:0;overflow-y:auto;padding:16px 12px;
+  border-right:1px solid rgba(255,255,255,0.05);
+  display:flex;flex-direction:column;gap:14px
+}
+.eside::-webkit-scrollbar{width:3px}
+.eside::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+
+.eside .sec-title{font-size:12px;font-weight:600;color:#6a5a80;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+.eside .field{margin-bottom:8px}
+.eside .field label{display:block;font-size:11px;color:#5a4a70;letter-spacing:1px;margin-bottom:3px}
+.eside .field input, .eside .field select{
+  width:100%;padding:7px 10px;border:1px solid rgba(255,255,255,0.08);border-radius:7px;
+  background:rgba(255,255,255,0.04);color:#e0d0e8;font-size:13px;outline:none;font-family:inherit
+}
+.eside .field input:focus, .eside .field select:focus{border-color:rgba(168,216,234,0.3)}
+
+.chord-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.chord-btn{
+  padding:5px 2px;border:1px solid rgba(255,255,255,0.06);border-radius:6px;
+  background:rgba(255,255,255,0.03);color:#8a7aaa;font-size:12px;cursor:pointer;
+  font-family:'Courier New',monospace;letter-spacing:0.5px;transition:all .2s
+}
+.chord-btn:hover{background:rgba(168,216,234,0.12);border-color:rgba(168,216,234,0.25);color:#a8d8ea}
+
+/* Center editor */
+.emid{
+  flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.05)
+}
+.emid textarea{
+  flex:1;width:100%;padding:16px;border:none;background:transparent;color:#c8d8e8;
+  font-family:'Cascadia Code','Fira Code','Courier New',monospace;font-size:14px;
+  line-height:1.9;resize:none;outline:none;tab-size:2;
+  white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word
+}
+.emid textarea::placeholder{color:#3a2a50}
+.emid textarea::-webkit-scrollbar{width:4px}
+.emid textarea::-webkit-scrollbar-track{background:transparent}
+.emid textarea::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.emid .hint-bar{
+  padding:6px 16px;border-top:1px solid rgba(255,255,255,0.04);
+  font-size:11px;color:#4a3a60;letter-spacing:1px;text-align:center;flex-shrink:0
+}
+
+/* Right preview */
+.eprev{
+  flex:1;min-width:0;overflow-y:auto;padding:20px
+}
+.eprev::-webkit-scrollbar{width:4px}
+.eprev::-webkit-scrollbar-track{background:transparent}
+.eprev::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:2px}
+.eprev .preview-meta{text-align:center;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.eprev .preview-meta .pm-title{font-size:22px;font-weight:700;color:#f48fb1;letter-spacing:2px}
+.eprev .preview-meta .pm-sub{font-size:13px;color:#8a7aaa;margin-top:4px;letter-spacing:1px}
+.eprev .preview-meta .pm-info{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.eprev .preview-meta .pm-info span{
+  font-size:12px;color:#6a5a80;letter-spacing:1px;
+  background:rgba(168,216,234,0.06);padding:3px 12px;border-radius:12px
+}
+.eprev .sec-label{
+  text-align:center;color:#a8d8ea;font-size:13px;font-weight:600;letter-spacing:2px;
+  padding:8px 0;margin:16px 0 10px;position:relative
+}
+.eprev .sec-label::before,.eprev .sec-label::after{
+  content:'';position:absolute;top:50%;width:40px;height:1px;background:rgba(168,216,234,0.15)
+}
+.eprev .sec-label::before{left:10%}
+.eprev .sec-label::after{right:10%}
+.eprev .tab-line{margin:6px 0;line-height:2.2;text-align:center}
+.eprev .tab-col{display:inline-flex;flex-direction:column;align-items:center;margin:0 1px}
+.eprev .tab-col .ch{font-size:13px;font-weight:700;color:#a8d8ea;letter-spacing:0.5px;cursor:pointer;transition:color .2s;white-space:nowrap;min-height:18px;line-height:18px}
+.eprev .tab-col .ch:hover{color:#f48fb1}
+.eprev .tab-col .ly{font-size:16px;color:#d0c8e0;letter-spacing:1px;white-space:pre}
+.eprev .empty-preview{text-align:center;color:#4a3a60;font-size:14px;letter-spacing:2px;padding-top:60px}
+
+/* === Bottom toolbar === */
+.etoolbar{
+  display:flex;align-items:center;gap:10px;padding:8px 16px;
+  background:rgba(255,255,255,0.02);border-top:1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;flex-wrap:wrap;justify-content:center
+}
+.etoolbar button{
+  padding:7px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+  background:rgba(255,255,255,0.04);color:#8a7aaa;font-size:13px;cursor:pointer;
+  font-family:inherit;letter-spacing:1px;transition:all .2s;white-space:nowrap
+}
+.etoolbar button:hover{background:rgba(168,216,234,0.1);border-color:rgba(168,216,234,0.2);color:#a8d8ea}
+.etoolbar .sep{width:1px;height:20px;background:rgba(255,255,255,0.08)}
+.etoolbar .tp-group{display:flex;align-items:center;gap:4px}
+.etoolbar .tp-group .tpv{color:#f48fb1;font-weight:600;font-size:13px;min-width:18px;text-align:center}
+.etoolbar .auto-save-indicator{font-size:11px;color:#4a3a60;letter-spacing:1px;min-width:80px;text-align:center}
+
+/* === Chord tooltip === */
+.chord-tip{
+  display:none;position:fixed;z-index:2000;pointer-events:none;
+  background:rgba(20,16,40,0.95);border:1px solid rgba(168,216,234,0.2);
+  border-radius:12px;padding:12px;backdrop-filter:blur(20px);
+  box-shadow:0 8px 30px rgba(0,0,0,0.5)
+}
+.chord-tip.on{display:block}
+.chord-tip .ct-name{text-align:center;font-size:14px;font-weight:700;color:#f48fb1;letter-spacing:1px;margin-bottom:6px}
+
+/* === Delete confirm === */
+.del-ovl{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.del-ovl.on{display:flex}
+.del-dlg{
+  background:rgba(30,20,50,0.97);border:1px solid rgba(231,76,60,0.3);border-radius:16px;
+  padding:30px;max-width:380px;width:90%;text-align:center;backdrop-filter:blur(20px)
+}
+.del-dlg h3{color:#e0d0e8;font-size:18px;letter-spacing:1px;margin-bottom:8px}
+.del-dlg p{color:#8a7aaa;font-size:14px;margin-bottom:20px;letter-spacing:1px}
+.del-dlg .dbtns{display:flex;gap:10px;justify-content:center}
+.del-dlg .dbtns button{
+  padding:10px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;
+  font-family:inherit;letter-spacing:1px;transition:all .2s;border:none
+}
+.del-dlg .btn-cancel{background:rgba(255,255,255,0.08);color:#8a7aaa}
+.del-dlg .btn-cancel:hover{background:rgba(255,255,255,0.15)}
+.del-dlg .btn-confirm{background:rgba(231,76,60,0.2);color:#e74c3c}
+.del-dlg .btn-confirm:hover{background:rgba(231,76,60,0.35)}
+
+/* === Import zone === */
+.import-zone{margin:4px 10px 0;text-align:center}
+.import-zone input{display:none}
+.import-zone .import-label{
+  font-size:11px;color:#4a3a60;cursor:pointer;letter-spacing:1px;transition:color .2s
+}
+.import-zone .import-label:hover{color:#a8d8ea}
+
+@media(max-width:800px){
+  .ebody{flex-direction:column;overflow-y:auto}
+  .eside{width:100%;flex-direction:row;flex-wrap:wrap;gap:8px;padding:10px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.05);max-height:180px;overflow-y:auto}
+  .eside .sec-title{width:100%}
+  .eside .field{flex:1;min-width:100px}
+  .chord-grid{grid-template-columns:repeat(6,1fr)}
+  .emid{min-height:250px;border-right:none}
+  .eprev{min-height:200px}
+  .card{padding:14px 16px}
+  .card .ico{width:42px;height:42px;font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<a href="#main-content" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;z-index:999"
+   onfocus="this.style.left='16px';this.style.top='16px';this.style.width='auto';this.style.height='auto';this.style.background='#1a1d4e';this.style.color='#f48fb1';this.style.padding='12px 24px';this.style.borderRadius='8px';this.style.fontSize='16px';this.style.fontWeight='600';this.style.textDecoration='none'"
+   onblur="this.style.left='-9999px';this.style.width='1px';this.style.height='1px'">跳到主内容</a>
+
+<div class="hdr">
+  <a href="index.html">← 返回首页</a>
+  <h1>自编谱</h1>
+  <p>创建和编辑自己的吉他谱</p>
+  <div class="div"></div>
+</div>
+
+<div class="srch" id="main-content">
+  <input type="text" id="sInp" placeholder="搜索标题或艺人..." autocomplete="off" aria-label="搜索自编谱">
+  <button class="clr" id="sClr" aria-label="清除搜索">✕</button>
+</div>
+
+<div class="list" id="list"></div>
+
+<div class="new-btn-wrap">
+  <button class="new-btn" id="newBtn">✏️ ＋ 新建曲谱</button>
+</div>
+<div class="import-zone">
+  <input type="file" id="importFile" accept=".json">
+  <label class="import-label" for="importFile">📥 导入 JSON 备份</label>
+</div>
+<div class="footer">双鱼小栈 · 自编谱</div>
+
+<!-- Editor Overlay -->
+<div class="eovl" id="eOvl">
+  <div class="top">
+    <span class="t">✏️ 编辑曲谱</span>
+    <div class="tbtns">
+      <button class="btn-save" id="eSave">💾 保存</button>
+      <button class="btn-close" id="eClose">✕ 退出</button>
+    </div>
+  </div>
+  <div class="ebody" id="eBody">
+    <!-- Left sidebar -->
+    <div class="eside">
+      <div class="sec-title">📋 曲谱信息</div>
+      <div class="field"><label>标题</label><input type="text" id="eTitle" placeholder="歌曲名" maxlength="100"></div>
+      <div class="field"><label>艺人</label><input type="text" id="eArtist" placeholder="原唱/艺人" maxlength="60"></div>
+      <div class="field"><label>原调</label><select id="eKey">
+        <option value="">未指定</option>
+        <option value="C">C</option><option value="C#">C#</option><option value="D">D</option><option value="D#">D#</option>
+        <option value="E">E</option><option value="F">F</option><option value="F#">F#</option><option value="G">G</option>
+        <option value="G#">G#</option><option value="A">A</option><option value="A#">A#</option><option value="B">B</option>
+      </select></div>
+      <div class="field"><label>变调夹</label><select id="eCapo">
+        <option value="0">无 (0)</option>
+        <option value="1">1品</option><option value="2">2品</option><option value="3">3品</option>
+        <option value="4">4品</option><option value="5">5品</option><option value="6">6品</option><option value="7">7品</option>
+      </select></div>
+      <div class="field"><label>速度 BPM</label><input type="number" id="eTempo" placeholder="如 120" min="20" max="300" step="1"></div>
+
+      <div class="sec-title">🎸 常用和弦</div>
+      <div class="chord-grid" id="chordGrid"></div>
+    </div>
+
+    <!-- Center editor -->
+    <div class="emid">
+      <textarea id="eText" placeholder="在此输入 ChordPro 格式的吉他谱...
+格式说明：
+[Am]和弦名用方括号括起来
+{title: 歌曲名}  定义曲谱信息
+{start_of_verse}  开始主歌段落
+{start_of_chorus}  开始副歌段落
+{start_of_bridge}  开始桥段
+
+示例：
+{title: 后来}
+{artist: 刘若英}
+{key: C}
+{capo: 3}
+
+{start_of_verse: 主歌}
+[C]后来 我总算[G]学会了如何去[Am]爱
+[F]可惜你早已[G]远去消失在[C]人海
+{end_of_verse}
+
+{start_of_chorus: 副歌}
+[C]后来终于在[G]眼泪中[Am]明白
+[F]有些人一旦[G]错过就不[C]在
+{end_of_chorus}
+
+💡 在左侧点击和弦按钮可快速插入
+💡 将光标放在编辑器中，点左侧和弦即可插入光标位置"></textarea>
+      <div class="hint-bar">ChordPro 格式 · [Chord]歌词 · 实时预览 →</div>
+    </div>
+
+    <!-- Right preview -->
+    <div class="eprev" id="ePrev">
+      <div class="empty-preview">在左侧输入内容<br>这里会实时显示预览效果 🎵</div>
+    </div>
+  </div>
+
+  <!-- Bottom toolbar -->
+  <div class="etoolbar">
+    <span class="auto-save-indicator" id="autoSaveInd">—</span>
+    <div class="sep"></div>
+    <div class="tp-group">
+      <button id="tpDown" title="降半音">♭−</button>
+      <span class="tpv" id="tpVal">0</span>
+      <button id="tpUp" title="升半音">♯+</button>
+    </div>
+    <div class="sep"></div>
+    <button id="eExportTxt">📄 导出文本</button>
+    <button id="eExportImg">🖼️ 导出图片</button>
+    <button id="eExportJson">📦 导出 JSON</button>
+    <div class="sep"></div>
+    <button id="eDelete" style="color:#e74c3c;border-color:rgba(231,76,60,0.15)">🗑️ 删除</button>
+  </div>
+</div>
+
+<!-- Delete confirmation -->
+<div class="del-ovl" id="delOvl">
+  <div class="del-dlg">
+    <h3>确认删除</h3>
+    <p id="delMsg">确定要删除这首曲谱吗？此操作不可撤销。</p>
+    <div class="dbtns">
+      <button class="btn-cancel" id="delCancel">取消</button>
+      <button class="btn-confirm" id="delConfirm">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chord tooltip -->
+<div class="chord-tip" id="chordTip">
+  <div class="ct-name" id="ctName"></div>
+  <canvas id="ctCanvas" width="90" height="110"></canvas>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ============================================================
+//  Chord Definitions (string 6→1: -1=muted, 0=open, N=fret)
+// ============================================================
+var CHORD_DEFS = {
+  'C':  {name:'C',  strings:[-1,3,2,0,1,0], baseFret:1},
+  'Cm': {name:'Cm', strings:[-1,3,5,5,4,3], baseFret:1},
+  'C7': {name:'C7', strings:[-1,3,2,3,1,0], baseFret:1},
+  'D':  {name:'D',  strings:[-1,-1,0,2,3,2], baseFret:1},
+  'Dm': {name:'Dm', strings:[-1,-1,0,2,3,1], baseFret:1},
+  'D7': {name:'D7', strings:[-1,-1,0,2,1,2], baseFret:1},
+  'E':  {name:'E',  strings:[0,2,2,1,0,0], baseFret:1},
+  'Em': {name:'Em', strings:[0,2,2,0,0,0], baseFret:1},
+  'E7': {name:'E7', strings:[0,2,0,1,0,0], baseFret:1},
+  'F':  {name:'F',  strings:[1,3,3,2,1,1], baseFret:1},
+  'Fm': {name:'Fm', strings:[1,3,3,1,1,1], baseFret:1},
+  'F7': {name:'F7', strings:[1,3,1,2,1,1], baseFret:1},
+  'G':  {name:'G',  strings:[3,2,0,0,0,3], baseFret:1},
+  'G7': {name:'G7', strings:[3,2,0,0,0,1], baseFret:1},
+  'A':  {name:'A',  strings:[-1,0,2,2,2,0], baseFret:1},
+  'Am': {name:'Am', strings:[-1,0,2,2,1,0], baseFret:1},
+  'A7': {name:'A7', strings:[-1,0,2,0,2,0], baseFret:1},
+  'Bm': {name:'Bm', strings:[-1,2,4,4,3,2], baseFret:1},
+  'B7': {name:'B7', strings:[-1,2,1,2,0,2], baseFret:1},
+  'Bdim':{name:'Bdim',strings:[-1,2,3,4,3,-1], baseFret:1},
+  'Em7':{name:'Em7',strings:[0,2,2,0,3,0], baseFret:1},
+  'Am7':{name:'Am7',strings:[-1,0,2,0,1,0], baseFret:1},
+  'Dm7':{name:'Dm7',strings:[-1,-1,0,2,1,1], baseFret:1},
+  'Gm': {name:'Gm', strings:[3,5,5,3,3,3], baseFret:1},
+  'Cmaj7':{name:'Cmaj7',strings:[-1,3,2,0,0,0], baseFret:1},
+  'Dmaj7':{name:'Dmaj7',strings:[-1,-1,0,2,2,2], baseFret:1},
+  'Emaj7':{name:'Emaj7',strings:[0,2,1,1,0,0], baseFret:1},
+  'Fmaj7':{name:'Fmaj7',strings:[-1,-1,3,2,1,0], baseFret:1},
+  'Gmaj7':{name:'Gmaj7',strings:[3,2,0,0,0,2], baseFret:1},
+  'Amaj7':{name:'Amaj7',strings:[-1,0,2,1,2,0], baseFret:1}
+};
+
+var CHORD_LIST = Object.keys(CHORD_DEFS);
+
+// ============================================================
+//  Chord Diagram Canvas Renderer
+// ============================================================
+function drawChordDiagram(canvas, chordDef){
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var needsInit = (canvas.getAttribute('data-init') !== '1');
+  if(needsInit) {
+    canvas.width = 90 * dpr;
+    canvas.height = 110 * dpr;
+    canvas.style.width = '90px';
+    canvas.style.height = '110px';
+    canvas.setAttribute('data-init', '1');
+  }
+  // Reset transform to avoid accumulation bug
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var W = 90, H = 110;
+  ctx.clearRect(0, 0, W, H);
+
+  var left = 18, top = 28, right = 12, bottom = 20;
+  var stringSpacing = (W - left - right) / 5;
+  var fretSpacing = (H - top - bottom) / 4;
+  var nFrets = 5;
+
+  // Strings (vertical)
+  for(var s = 0; s < 6; s++){
+    var x = left + s * stringSpacing;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, top + nFrets * fretSpacing);
+    ctx.strokeStyle = s >= 3 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = s >= 3 ? 1.2 : 0.8;
+    ctx.stroke();
+  }
+
+  // Frets (horizontal)
+  for(var f = 0; f <= nFrets; f++){
+    var y = top + f * fretSpacing;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(left + 5 * stringSpacing, y);
+    ctx.strokeStyle = f === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = f === 0 ? 2 : 0.6;
+    ctx.stroke();
+  }
+
+  // Base fret number
+  if(chordDef.baseFret > 1){
+    ctx.fillStyle = '#a8d8ea';
+    ctx.font = 'bold 9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(chordDef.baseFret + 'fr', left - 3, top + fretSpacing * 0.5 + 3);
+  }
+
+  // Draw finger dots
+  var def = chordDef.strings;
+  for(var s = 0; s < 6; s++){
+    var fret = def[s];
+    var sx = left + s * stringSpacing;
+
+    // Open/muted markers above the nut
+    if(fret === 0){
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('o', sx, top - 8);
+    } else if(fret === -1){
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('x', sx, top - 8);
+    } else {
+      var fy = top + (fret - 1) * fretSpacing + fretSpacing / 2;
+      var r = Math.min(stringSpacing / 2 - 2, 7);
+      ctx.beginPath();
+      ctx.arc(sx, fy, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(244,143,177,0.85)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(sx, fy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(244,143,177,0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+  }
+
+  // Chord name below
+  ctx.fillStyle = '#f48fb1';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(chordDef.name, W/2, H - 4);
+}
+
+// ============================================================
+//  ChordPro Parser
+// ============================================================
+function parseChordPro(text){
+  if(!text || !text.trim()) return { meta:{}, sections:[] };
+
+  var meta = {};
+  var sections = [];
+  var lines = text.split(/\r?\n/);
+  var currentSection = null;
+
+  // Helper: start new section
+  function startSection(type, label){
+    if(currentSection && currentSection.lines.length > 0){
+      sections.push(currentSection);
+    }
+    currentSection = { type: type, label: label || type, lines: [] };
+  }
+
+  for(var i = 0; i < lines.length; i++){
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    // Skip empty lines (preserve within sections as blank line markers)
+    if(!trimmed){
+      if(currentSection){
+        currentSection.lines.push({type:'blank'});
+      }
+      continue;
+    }
+
+    // Metadata tags: {key: value} or {key}
+    var metaMatch = trimmed.match(/^\{([a-z_]+)(?::\s*(.*))?\}$/i);
+    if(metaMatch){
+      var key = metaMatch[1].toLowerCase();
+      var val = (metaMatch[2] || '').trim();
+
+      // Section markers
+      if(key === 'start_of_verse' || key === 'sov'){
+        startSection('verse', val || '主歌');
+        continue;
+      }
+      if(key === 'start_of_chorus' || key === 'soc'){
+        startSection('chorus', val || '副歌');
+        continue;
+      }
+      if(key === 'start_of_bridge' || key === 'sob'){
+        startSection('bridge', val || '桥段');
+        continue;
+      }
+      if(key === 'end_of_verse' || key === 'eov' ||
+         key === 'end_of_chorus' || key === 'eoc' ||
+         key === 'end_of_bridge' || key === 'eob'){
+        // End markers: start a default section
+        if(currentSection && currentSection.lines.length > 0){
+          sections.push(currentSection);
+        }
+        currentSection = null;
+        continue;
+      }
+      if(key === 'comment' || key === 'c'){
+        if(currentSection){
+          currentSection.lines.push({type:'comment', text: val});
+        }
+        continue;
+      }
+
+      // Regular metadata
+      meta[key] = val;
+      continue;
+    }
+
+    // Ensure we have a section
+    if(!currentSection){
+      currentSection = { type: 'verse', label: '', lines: [] };
+    }
+
+    // Parse chord line: [Chord]text[Chord]text...
+    // Split by [Chord] markers, preserving them as tokens
+    var rawTokens = line.split(/(\[[^\]]+\])/);
+    var tokens = [];
+    for(var ti = 0; ti < rawTokens.length; ti++){
+      if(rawTokens[ti] !== '') tokens.push(rawTokens[ti]);
+    }
+
+    if(tokens.length === 0) continue;
+
+    var segments = [];
+    for(var ti = 0; ti < tokens.length; ti++){
+      var tok = tokens[ti];
+      if(/^\[.+\]$/.test(tok)){
+        // It's a chord marker
+        var chordName = tok.slice(1, -1).trim();
+        // Next token (if any and not a chord) is the lyric text for this chord
+        var nextText = '';
+        if(ti + 1 < tokens.length && !/^\[.+\]$/.test(tokens[ti + 1])){
+          nextText = tokens[ti + 1];
+          ti++; // consume the text token
+        }
+        segments.push({ chord: chordName, text: nextText });
+      } else {
+        // Standalone text (no preceding chord)
+        segments.push({ chord: null, text: tok });
+      }
+    }
+
+    currentSection.lines.push({type:'chordline', segments: segments});
+  }
+
+  // Push final section
+  if(currentSection && currentSection.lines.length > 0){
+    sections.push(currentSection);
+  }
+
+  return { meta: meta, sections: sections };
+}
+
+// ============================================================
+//  Preview Renderer
+// ============================================================
+function renderPreview(parsed, container){
+  container.innerHTML = '';
+  var meta = parsed.meta || {};
+  var sections = parsed.sections || [];
+
+  // Meta header
+  if(meta.title || meta.artist || meta.key || meta.capo || meta.tempo){
+    var metaDiv = document.createElement('div');
+    metaDiv.className = 'preview-meta';
+    var html = '';
+    if(meta.title) html += '<div class="pm-title">' + escHtml(meta.title) + '</div>';
+    if(meta.artist) html += '<div class="pm-sub">' + escHtml(meta.artist) + '</div>';
+    var infoTags = [];
+    if(meta.key) infoTags.push('原调: ' + escHtml(meta.key));
+    if(meta.capo && meta.capo !== '0') infoTags.push('Capo: ' + escHtml(meta.capo));
+    if(meta.tempo) infoTags.push('BPM: ' + escHtml(meta.tempo));
+    if(infoTags.length > 0) html += '<div class="pm-info">' + infoTags.map(function(t){ return '<span>' + t + '</span>'; }).join('') + '</div>';
+    metaDiv.innerHTML = html;
+    container.appendChild(metaDiv);
+  }
+
+  if(!sections.length){
+    container.innerHTML += '<div class="empty-preview">等待输入内容...</div>';
+    return;
+  }
+
+  sections.forEach(function(sec){
+    // Section label
+    if(sec.label){
+      var labelDiv = document.createElement('div');
+      labelDiv.className = 'sec-label';
+      labelDiv.textContent = sec.label;
+      container.appendChild(labelDiv);
+    }
+
+    sec.lines.forEach(function(line){
+      if(line.type === 'blank'){
+        var br = document.createElement('div');
+        br.style.height = '8px';
+        container.appendChild(br);
+        return;
+      }
+      if(line.type === 'comment'){
+        var cmt = document.createElement('div');
+        cmt.style.cssText = 'text-align:center;color:#5a4a70;font-size:12px;letter-spacing:1px;padding:4px 0';
+        cmt.textContent = line.text;
+        container.appendChild(cmt);
+        return;
+      }
+      if(line.type === 'chordline'){
+        var lineDiv = document.createElement('div');
+        lineDiv.className = 'tab-line';
+
+        line.segments.forEach(function(seg){
+          var col = document.createElement('span');
+          col.className = 'tab-col';
+
+          var chSpan = document.createElement('span');
+          chSpan.className = 'ch';
+          chSpan.textContent = seg.chord || '';
+          if(seg.chord){
+            chSpan.title = seg.chord;
+            chSpan.addEventListener('mouseenter', function(e){ showChordTip(e, seg.chord); });
+            chSpan.addEventListener('mouseleave', hideChordTip);
+          }
+
+          var lySpan = document.createElement('span');
+          lySpan.className = 'ly';
+          lySpan.textContent = seg.text;
+
+          col.appendChild(chSpan);
+          col.appendChild(lySpan);
+          lineDiv.appendChild(col);
+        });
+
+        container.appendChild(lineDiv);
+      }
+    });
+  });
+}
+
+// ============================================================
+//  Transpose
+// ============================================================
+var NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+var NOTES_FLAT  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+
+function noteIndex(name){
+  var n = name.trim();
+  // Try sharp names first
+  var idx = NOTES_SHARP.indexOf(n);
+  if(idx >= 0) return idx;
+  // Try flat equivalents
+  var flatMap = {'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+  if(flatMap[n]) return NOTES_SHARP.indexOf(flatMap[n]);
+  return -1;
+}
+
+function transposeNote(name, semitones){
+  var n = name.trim();
+  // Extract root and suffix
+  var match = n.match(/^([A-G][#b]?)(.*)$/);
+  if(!match) return n;
+  var root = match[1], suffix = match[2];
+  var idx = noteIndex(root);
+  if(idx < 0) return n;
+  idx = (idx + semitones + 12) % 12;
+  return NOTES_SHARP[idx] + suffix;
+}
+
+function transposeChordPro(text, semitones){
+  if(semitones === 0) return text;
+  return text.replace(/\[([^\]]+)\]/g, function(match, chord){
+    // chord might contain multiple notes like "Am/G" — only transpose the root
+    var parts = chord.split('/');
+    parts[0] = transposeNote(parts[0], semitones);
+    if(parts.length > 1){
+      parts[1] = transposeNote(parts[1], semitones);
+    }
+    return '[' + parts.join('/') + ']';
+  });
+}
+
+// ============================================================
+//  localStorage CRUD
+// ============================================================
+var STORE_KEY = 'custom-tabs-data';
+
+function loadAll(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveAll(data){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(data)); }catch(e){
+    alert('保存失败：localStorage 可能已满，请导出备份后清理旧数据。');
+  }
+}
+function getTab(id){
+  var all = loadAll();
+  return all[id] || null;
+}
+function saveTab(tab){
+  var all = loadAll();
+  var id = tab.id || ('tab_' + Date.now());
+  tab.id = id;
+  tab.updatedAt = Date.now();
+  if(!tab.createdAt) tab.createdAt = Date.now();
+  all[id] = tab;
+  saveAll(all);
+  return id;
+}
+function deleteTab(id){
+  var all = loadAll();
+  delete all[id];
+  saveAll(all);
+}
+
+// ============================================================
+//  HTML escape
+// ============================================================
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+//  List Management
+// ============================================================
+var filterText = '';
+var listEl = document.getElementById('list');
+
+function renderList(filter){
+  var all = loadAll();
+  var entries = [];
+  for(var k in all) entries.push(all[k]);
+
+  if(filter){
+    var lf = filter.toLowerCase();
+    entries = entries.filter(function(t){
+      return (t.title || '').toLowerCase().indexOf(lf) !== -1 ||
+             (t.artist || '').toLowerCase().indexOf(lf) !== -1;
+    });
+  }
+
+  // Sort by updatedAt desc
+  entries.sort(function(a,b){ return (b.updatedAt||0) - (a.updatedAt||0); });
+
+  if(!entries.length){
+    listEl.innerHTML = '<div class="empty"><span class="big">📝</span>'+(filter?'没有匹配的曲谱':'还没有自编谱<br>点击下方按钮创建你的第一首曲谱')+'</div>';
+    return;
+  }
+
+  listEl.innerHTML = entries.map(function(t){
+    var title = t.title || '未命名曲谱';
+    var info = [];
+    if(t.artist) info.push(t.artist);
+    if(t.key) info.push('原调: ' + t.key);
+    if(t.capo && t.capo !== '0') info.push('Capo ' + t.capo);
+    if(t.tempo) info.push(t.tempo + ' BPM');
+    var updated = t.updatedAt ? formatTime(t.updatedAt) : '';
+    if(updated) info.push(updated);
+    return '<div class="card" data-id="' + t.id + '">'+
+      '<div class="ico">🎸</div>'+
+      '<div class="n"><h3>' + escHtml(title) + '</h3><p>' + escHtml(info.join(' · ')) + '</p></div>'+
+      '<div class="act"><button class="del-card-btn" data-id="' + t.id + '" title="删除">🗑️</button></div>'+
+      '</div>';
+  }).join('');
+}
+
+function formatTime(ts){
+  var diff = Date.now() - ts;
+  if(diff < 60000) return '刚刚';
+  if(diff < 3600000) return Math.round(diff/60000) + '分钟前';
+  if(diff < 86400000) return Math.round(diff/3600000) + '小时前';
+  if(diff < 604800000) return Math.round(diff/86400000) + '天前';
+  return new Date(ts).toLocaleDateString('zh-CN');
+}
+
+// ============================================================
+//  Editor State
+// ============================================================
+var editingId = null;        // null = new, string = editing existing
+var autoSaveTimer = null;
+var _transposeOffset = 0;    // cumulative transpose applied
+var _originalContent = '';   // content before transpose
+
+// ============================================================
+//  Editor Logic
+// ============================================================
+var eOvl = document.getElementById('eOvl');
+var eText = document.getElementById('eText');
+var eTitle = document.getElementById('eTitle');
+var eArtist = document.getElementById('eArtist');
+var eKey = document.getElementById('eKey');
+var eCapo = document.getElementById('eCapo');
+var eTempo = document.getElementById('eTempo');
+var ePrev = document.getElementById('ePrev');
+var eSave = document.getElementById('eSave');
+
+function openEditor(tabId){
+  editingId = tabId || null;
+  _transposeOffset = 0;
+  document.getElementById('tpVal').textContent = '0';
+
+  if(tabId){
+    var tab = getTab(tabId);
+    if(tab){
+      eTitle.value = tab.title || '';
+      eArtist.value = tab.artist || '';
+      eKey.value = tab.key || '';
+      eCapo.value = tab.capo || '0';
+      eTempo.value = tab.tempo || '';
+      _originalContent = tab.content || '';
+      eText.value = _originalContent;
+    }
+  } else {
+    eTitle.value = '';
+    eArtist.value = '';
+    eKey.value = '';
+    eCapo.value = '0';
+    eTempo.value = '';
+    _originalContent = '';
+    eText.value = '';
+  }
+
+  eOvl.classList.add('on');
+  eText.focus();
+  updatePreview();
+  updateAutoSaveInd('');
+}
+
+function closeEditor(){
+  // Force save on close if there are unsaved changes
+  doSave(false);
+  eOvl.classList.remove('on');
+  editingId = null;
+  _transposeOffset = 0;
+  _originalContent = '';
+  renderList(filterText);
+}
+
+function doSave(showFeedback){
+  var content = eText.value;
+  var title = eTitle.value.trim();
+
+  var tab = {
+    id: editingId,
+    title: title || '未命名曲谱',
+    artist: eArtist.value.trim(),
+    key: eKey.value,
+    capo: eCapo.value,
+    tempo: eTempo.value,
+    content: content
+  };
+
+  var savedId = saveTab(tab);
+  editingId = savedId;
+  _originalContent = content;
+  _transposeOffset = 0;
+  document.getElementById('tpVal').textContent = '0';
+
+  if(showFeedback !== false){
+    eSave.textContent = '✓ 已保存';
+    eSave.classList.add('saved');
+    updateAutoSaveInd('已保存');
+    setTimeout(function(){
+      eSave.textContent = '💾 保存';
+      eSave.classList.remove('saved');
+    }, 1500);
+  }
+}
+
+function updatePreview(){
+  var parsed = parseChordPro(eText.value);
+  renderPreview(parsed, ePrev);
+}
+
+function updateAutoSaveInd(msg){
+  document.getElementById('autoSaveInd').textContent = msg || '';
+}
+
+// Auto-save with debounce
+eText.addEventListener('input', function(){
+  updatePreview();
+  updateAutoSaveInd('编辑中...');
+  if(autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(function(){
+    doSave(false);
+  }, 2000);
+});
+
+// Also auto-save on metadata change
+[eTitle, eArtist, eKey, eCapo, eTempo].forEach(function(el){
+  el.addEventListener('input', function(){
+    updatePreview();
+    updateAutoSaveInd('编辑中...');
+    if(autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function(){
+      doSave(false);
+    }, 2000);
+  });
+  el.addEventListener('change', function(){
+    updatePreview();
+    if(autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function(){
+      doSave(false);
+    }, 500);
+  });
+});
+
+// ============================================================
+//  Chord Tooltip
+// ============================================================
+var chordTip = document.getElementById('chordTip');
+var ctName = document.getElementById('ctName');
+var ctCanvas = document.getElementById('ctCanvas');
+
+function showChordTip(e, chordName){
+  var def = CHORD_DEFS[chordName];
+  if(!def) return;
+  ctName.textContent = chordName;
+  drawChordDiagram(ctCanvas, def);
+  chordTip.classList.add('on');
+  // Position tooltip near cursor
+  var x = e.clientX + 16;
+  var y = e.clientY - 130;
+  if(x + 110 > window.innerWidth) x = e.clientX - 120;
+  if(y < 10) y = e.clientY + 20;
+  chordTip.style.left = x + 'px';
+  chordTip.style.top = y + 'px';
+}
+
+function hideChordTip(){
+  chordTip.classList.remove('on');
+}
+
+// ============================================================
+//  Chord Button Panel
+// ============================================================
+var chordGrid = document.getElementById('chordGrid');
+CHORD_LIST.forEach(function(name){
+  var btn = document.createElement('button');
+  btn.className = 'chord-btn';
+  btn.textContent = name;
+  btn.title = '插入 [' + name + ']';
+  btn.addEventListener('click', function(){
+    insertAtCursor(eText, '[' + name + ']');
+  });
+  // Show chord diagram on hover
+  btn.addEventListener('mouseenter', function(ev){ showChordTip(ev, name); });
+  btn.addEventListener('mouseleave', hideChordTip);
+  chordGrid.appendChild(btn);
+});
+
+function insertAtCursor(textarea, text){
+  var start = textarea.selectionStart;
+  var end = textarea.selectionEnd;
+  var before = textarea.value.substring(0, start);
+  var after = textarea.value.substring(end);
+  textarea.value = before + text + after;
+  textarea.selectionStart = textarea.selectionEnd = start + text.length;
+  textarea.focus();
+  textarea.dispatchEvent(new Event('input', {bubbles:true}));
+}
+
+// ============================================================
+//  Transpose Controls
+// ============================================================
+document.getElementById('tpUp').addEventListener('click', function(){
+  _transposeOffset++;
+  document.getElementById('tpVal').textContent = _transposeOffset > 0 ? '+' + _transposeOffset : _transposeOffset;
+  var transposed = transposeChordPro(_originalContent, _transposeOffset);
+  eText.value = transposed;
+  updatePreview();
+});
+
+document.getElementById('tpDown').addEventListener('click', function(){
+  _transposeOffset--;
+  document.getElementById('tpVal').textContent = _transposeOffset > 0 ? '+' + _transposeOffset : _transposeOffset;
+  var transposed = transposeChordPro(_originalContent, _transposeOffset);
+  eText.value = transposed;
+  updatePreview();
+});
+
+// ============================================================
+//  Export Functions
+// ============================================================
+document.getElementById('eExportTxt').addEventListener('click', function(){
+  var content = eText.value;
+  if(!content.trim()){ alert('没有内容可导出'); return; }
+  var blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+  downloadBlob(blob, (eTitle.value.trim() || 'guitar_tab') + '.txt');
+});
+
+document.getElementById('eExportJson').addEventListener('click', function(){
+  var tab = {
+    title: eTitle.value.trim(),
+    artist: eArtist.value.trim(),
+    key: eKey.value,
+    capo: eCapo.value,
+    tempo: eTempo.value,
+    content: eText.value,
+    exportedAt: new Date().toISOString()
+  };
+  var blob = new Blob([JSON.stringify(tab, null, 2)], {type:'application/json;charset=utf-8'});
+  downloadBlob(blob, (eTitle.value.trim() || 'guitar_tab') + '.json');
+});
+
+document.getElementById('eExportImg').addEventListener('click', function(){
+  // Render preview to canvas and export as PNG
+  var parsed = parseChordPro(eText.value);
+  if(!parsed.sections.length && !parsed.meta.title){
+    alert('没有内容可导出为图片');
+    return;
+  }
+  renderToImage(parsed);
+});
+
+function renderToImage(parsed){
+  // Calculate dimensions
+  var padding = 30;
+  var lineHeight = 34;
+  var sectionGap = 24;
+  var metaHeight = 0;
+  var canvasWidth = 700;
+  var dpr = 2;
+
+  // Estimate height
+  var totalH = padding;
+  var meta = parsed.meta || {};
+
+  if(meta.title) metaHeight += 36;
+  if(meta.artist) metaHeight += 22;
+  if(meta.key || meta.capo || meta.tempo) metaHeight += 28;
+  if(metaHeight > 0) metaHeight += 20; // separator
+  totalH += metaHeight;
+
+  (parsed.sections || []).forEach(function(sec){
+    if(sec.label) totalH += lineHeight + 4;
+    sec.lines.forEach(function(line){
+      if(line.type === 'blank'){ totalH += 10; return; }
+      if(line.type === 'comment'){ totalH += lineHeight; return; }
+      totalH += lineHeight + 4;
+    });
+    totalH += sectionGap;
+  });
+  totalH += padding;
+
+  var canvas = document.createElement('canvas');
+  canvas.width = canvasWidth * dpr;
+  canvas.height = Math.max(200, totalH) * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Background
+  ctx.fillStyle = '#1a1d4e';
+  ctx.fillRect(0, 0, canvasWidth, totalH);
+
+  var y = padding;
+  var cx = canvasWidth / 2;
+
+  // Meta
+  if(meta.title){
+    ctx.fillStyle = '#f48fb1';
+    ctx.font = 'bold 22px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(meta.title, cx, y);
+    y += 36;
+  }
+  if(meta.artist){
+    ctx.fillStyle = '#8a7aaa';
+    ctx.font = '14px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(meta.artist, cx, y);
+    y += 22;
+  }
+  var tags = [];
+  if(meta.key) tags.push('Key: ' + meta.key);
+  if(meta.capo && meta.capo !== '0') tags.push('Capo: ' + meta.capo);
+  if(meta.tempo) tags.push('BPM: ' + meta.tempo);
+  if(tags.length > 0){
+    ctx.fillStyle = '#6a5a80';
+    ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tags.join('  ·  '), cx, y);
+    y += 28;
+  }
+  if(metaHeight > 0){
+    y += 12;
+    // Separator
+    ctx.beginPath();
+    ctx.moveTo(cx - 80, y);
+    ctx.lineTo(cx + 80, y);
+    ctx.strokeStyle = 'rgba(244,143,177,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    y += 16;
+  }
+
+  // Sections
+  (parsed.sections || []).forEach(function(sec){
+    if(sec.label){
+      ctx.fillStyle = '#a8d8ea';
+      ctx.font = 'bold 14px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center';
+      // Draw label with decorative lines
+      var labelW = ctx.measureText(sec.label).width;
+      ctx.beginPath();
+      ctx.moveTo(cx - labelW/2 - 50, y + 7);
+      ctx.lineTo(cx - labelW/2 - 8, y + 7);
+      ctx.moveTo(cx + labelW/2 + 8, y + 7);
+      ctx.lineTo(cx + labelW/2 + 50, y + 7);
+      ctx.strokeStyle = 'rgba(168,216,234,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillText(sec.label, cx, y);
+      y += lineHeight + 4;
+    }
+
+    sec.lines.forEach(function(line){
+      if(line.type === 'blank'){ y += 10; return; }
+      if(line.type === 'comment'){
+        ctx.fillStyle = '#5a4a70';
+        ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(line.text, cx, y);
+        y += lineHeight;
+        return;
+      }
+      if(line.type === 'chordline'){
+        // Render chord line: chords on top (y), lyrics below (y + 18)
+        // First pass: measure total width
+        var totalWidth = 0;
+        var segWidths = [];
+        line.segments.forEach(function(seg){
+          ctx.font = 'bold 13px "Cascadia Code","Courier New",monospace';
+          var cw = seg.chord ? ctx.measureText(seg.chord).width : 0;
+          ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif';
+          var lw = ctx.measureText(seg.text).width;
+          var w = Math.max(cw, lw) + 8;
+          segWidths.push(w);
+          totalWidth += w;
+        });
+
+        var startX = cx - totalWidth / 2;
+        var curX = startX;
+
+        line.segments.forEach(function(seg, i){
+          var w = segWidths[i];
+          var midX = curX + w/2;
+
+          // Chord
+          if(seg.chord){
+            ctx.fillStyle = '#a8d8ea';
+            ctx.font = 'bold 13px "Cascadia Code","Courier New",monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(seg.chord, midX, y);
+          }
+
+          // Lyric
+          ctx.fillStyle = '#d0c8e0';
+          ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(seg.text, midX, y + 22);
+
+          curX += w;
+        });
+
+        y += lineHeight + 8;
+      }
+    });
+    y += sectionGap;
+  });
+
+  // Export
+  canvas.toBlob(function(blob){
+    downloadBlob(blob, (eTitle.value.trim() || 'guitar_tab') + '.png');
+  }, 'image/png');
+}
+
+function downloadBlob(blob, filename){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  Import
+// ============================================================
+document.getElementById('importFile').addEventListener('change', function(){
+  var file = this.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      // Support both single tab and full export
+      if(data.content){
+        data.id = null; // force new id
+        var newId = saveTab(data);
+        renderList(filterText);
+        alert('导入成功！曲谱「' + (data.title || '未命名') + '」已添加到列表。');
+      } else if(typeof data === 'object'){
+        // Full backup format
+        var count = 0;
+        var all = loadAll();
+        for(var k in data){
+          if(data[k].content){
+            var newId = 'tab_' + Date.now() + '_' + (count++);
+            data[k].id = newId;
+            data[k].updatedAt = Date.now();
+            all[newId] = data[k];
+          }
+        }
+        saveAll(all);
+        renderList(filterText);
+        alert('导入成功！已导入 ' + count + ' 首曲谱。');
+      }
+    }catch(err){
+      alert('导入失败：文件格式不正确。请使用 .json 格式的备份文件。');
+    }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+// ============================================================
+//  Event Bindings
+// ============================================================
+
+// Search
+var sInp = document.getElementById('sInp');
+var sClr = document.getElementById('sClr');
+sInp.addEventListener('input', function(){
+  filterText = this.value;
+  sClr.classList.toggle('on', filterText.length > 0);
+  renderList(filterText);
+});
+sClr.addEventListener('click', function(){
+  sInp.value = '';
+  filterText = '';
+  sClr.classList.remove('on');
+  renderList('');
+  sInp.focus();
+});
+
+// List click delegation
+listEl.addEventListener('click', function(e){
+  // Delete button
+  if(e.target.closest('.del-card-btn')){
+    e.stopPropagation();
+    var id = e.target.closest('.del-card-btn').dataset.id;
+    confirmDelete(id);
+    return;
+  }
+  // Open editor
+  var card = e.target.closest('.card');
+  if(card){
+    openEditor(card.dataset.id);
+  }
+});
+
+// New button
+document.getElementById('newBtn').addEventListener('click', function(){
+  openEditor(null);
+});
+
+// Save button
+eSave.addEventListener('click', function(){ doSave(true); });
+
+// Close button
+document.getElementById('eClose').addEventListener('click', closeEditor);
+
+// Delete in editor
+document.getElementById('eDelete').addEventListener('click', function(){
+  if(editingId){
+    confirmDelete(editingId);
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e){
+  if(!eOvl.classList.contains('on')) return;
+  if(e.key === 'Escape'){
+    // Don't close if tooltip or dialog is open
+    if(!document.getElementById('delOvl').classList.contains('on')){
+      closeEditor();
+    }
+  }
+  if((e.ctrlKey || e.metaKey) && e.key === 's'){
+    e.preventDefault();
+    doSave(true);
+  }
+});
+
+// ============================================================
+//  Delete Confirmation
+// ============================================================
+var delOvl = document.getElementById('delOvl');
+var delMsg = document.getElementById('delMsg');
+var pendingDeleteId = null;
+
+function confirmDelete(id){
+  pendingDeleteId = id;
+  var tab = getTab(id);
+  delMsg.textContent = '确定要删除「' + (tab ? tab.title || '未命名曲谱' : '这首曲谱') + '」吗？此操作不可撤销。';
+  delOvl.classList.add('on');
+}
+
+document.getElementById('delCancel').addEventListener('click', function(){
+  delOvl.classList.remove('on');
+  pendingDeleteId = null;
+});
+
+document.getElementById('delConfirm').addEventListener('click', function(){
+  if(pendingDeleteId){
+    deleteTab(pendingDeleteId);
+    if(pendingDeleteId === editingId){
+      closeEditor();
+    }
+    renderList(filterText);
+  }
+  delOvl.classList.remove('on');
+  pendingDeleteId = null;
+});
+
+// ============================================================
+//  Init
+// ============================================================
+renderList('');
+
+// Focus on search when pressing Ctrl+F outside editor (browser default prevented)
+document.addEventListener('keydown', function(e){
+  if((e.ctrlKey || e.metaKey) && e.key === 'f' && !eOvl.classList.contains('on')){
+    e.preventDefault();
+    sInp.focus();
+    sInp.select();
+  }
+});
+
+})();
+</script>
+</body>
+</html>
