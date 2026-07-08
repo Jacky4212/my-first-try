@@ -307,7 +307,7 @@
 
 
 /* ===== Custom Tabs (自编谱) ===== */
-.cts-entry{max-width:900px;margin:16px auto 0;padding:0 20px;display:flex;gap:14px}
+.cts-entry{max-width:900px;margin:16px auto 28px;padding:0 20px;display:flex;gap:14px}
 .cts-entry>*{flex:1;min-width:0}
 .cts-card{
   background:linear-gradient(135deg,rgba(244,143,177,0.06),rgba(168,216,234,0.04));
@@ -455,7 +455,7 @@
   </div>
   <div class="cts-card" id="ctsCard">
     <div class="ico">✏️</div>
-    <div class="n"><h3>自编谱</h3><p>创建和编辑自己的吉他谱</p></div>
+    <div class="n"><h3>自编曲谱</h3><p>创建和编辑自己的吉他谱</p></div>
     <span class="arr">→</span>
   </div>
 </div>
@@ -603,7 +603,7 @@
 <!-- ===== 自编谱 Overlay ===== -->
 <div class="ct-ovl" id="ctOvl">
   <div class="ct-top">
-    <span class="ct-ttl" id="ctTopTitle">✏️ 自编谱</span>
+    <span class="ct-ttl" id="ctTopTitle">✏️ 自编曲谱</span>
     <div class="ct-tbtns">
       <button class="ct-btn-sv" id="ctSave" style="display:none">💾 保存</button>
       <button class="ct-back-btn" id="ctBack" style="display:none">← 返回列表</button>
@@ -1893,7 +1893,7 @@ function ctRenderList(filter){
   }
   entries.sort(function(a,b){ return (b.updatedAt||0) - (a.updatedAt||0); });
   if(!entries.length){
-    ctLList.innerHTML = '<div class="ct-lempty">' + (filter ? '没有匹配的曲谱' : '还没有自编谱<br>点击下方按钮创建你的第一首曲谱') + '</div>';
+    ctLList.innerHTML = '<div class="ct-lempty">' + (filter ? '没有匹配的曲谱' : '还没有自编曲谱<br>点击下方按钮创建你的第一首曲谱') + '</div>';
     return;
   }
   ctLList.innerHTML = entries.map(function(t){
@@ -1911,7 +1911,7 @@ function ctRenderList(filter){
 function ctShowList(){
   ctLView.style.display = ''; ctEView.classList.remove('on');
   ctSave.style.display = 'none'; ctBack.style.display = 'none';
-  ctTopTitle.textContent = '✏️ 自编谱';
+  ctTopTitle.textContent = '✏️ 自编曲谱';
   ctRenderList(ctFilter); ctLSearch.value = ctFilter;
   ctLClr.classList.toggle('on', ctFilter.length > 0);
 }
@@ -1940,7 +1940,7 @@ function ctCloseEditor(){
   ctDoSave(false);
   ctLView.style.display = ''; ctEView.classList.remove('on');
   ctSave.style.display = 'none'; ctBack.style.display = 'none';
-  ctTopTitle.textContent = '✏️ 自编谱';
+  ctTopTitle.textContent = '✏️ 自编曲谱';
   ctEditingId = null; ctTpOffset = 0; ctOrigContent = '';
   ctRenderList(ctFilter);
 }
