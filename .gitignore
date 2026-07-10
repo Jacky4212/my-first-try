@@ -7,3 +7,4 @@ guitar-transcriber/__pycache__/
 guitar-transcriber/uploads/
 guitar-transcriber/outputs/*.wav
 guitar-transcriber/server.log
+.mcp.json
